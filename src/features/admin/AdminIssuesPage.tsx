@@ -1,4 +1,6 @@
 import React, { useState } from 'react'
+import { Input } from '@/components/ui/input'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { collection, query, orderBy, getDocs, doc, updateDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
@@ -55,7 +57,7 @@ export default function AdminIssuesPage() {
       <div className="flex gap-3 flex-wrap">
         <div className="relative flex-1 min-w-48">
           <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search issues…" className="w-full pl-9 pr-3 py-2 text-sm border rounded-md bg-background outline-none focus:ring-2 focus:ring-ring" />
+          <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search issues…" className="pl-9" />
         </div>
         <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="px-3 py-2 text-sm border rounded-md bg-background outline-none focus:ring-2 focus:ring-ring">
           <option value="all">All statuses</option>
@@ -70,43 +72,43 @@ export default function AdminIssuesPage() {
       <div className="rounded-lg border bg-card overflow-hidden">
         {isLoading ? <div className="py-16 text-center text-muted-foreground">Loading…</div> : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm min-w-[900px]">
-              <thead className="bg-tl-ink text-white text-xs font-mono uppercase tracking-wider sticky top-0">
-                <tr>
-                  <th className="px-4 py-3 text-left">#</th>
-                  <th className="px-4 py-3 text-left">Type</th>
-                  <th className="px-4 py-3 text-left">Severity</th>
-                  <th className="px-4 py-3 text-left">Machine</th>
-                  <th className="px-4 py-3 text-left">Description</th>
-                  <th className="px-4 py-3 text-left">Reported by</th>
-                  <th className="px-4 py-3 text-left">Submitted</th>
-                  <th className="px-4 py-3 text-left">Status</th>
-                  <th className="px-4 py-3 text-left">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>#</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Severity</TableHead>
+                  <TableHead>Machine</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead>Reported by</TableHead>
+                  <TableHead>Submitted</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {filtered.map((i, idx) => (
-                  <tr key={i.id} className={cn('hover:bg-muted/30', i.severity === 'urgent' && 'bg-red-50/50')}>
-                    <td className="px-4 py-2.5 text-xs font-mono text-muted-foreground">{filtered.length - idx}</td>
-                    <td className="px-4 py-2.5 text-xs">{i.type.replace('_',' ')}</td>
-                    <td className="px-4 py-2.5"><span className={`text-xs px-2 py-0.5 rounded-full font-medium ${SEVERITY_COLOR[i.severity]}`}>{i.severity}</span></td>
-                    <td className="px-4 py-2.5 text-xs text-muted-foreground">{i.relatedMachine || '—'}</td>
-                    <td className="px-4 py-2.5 text-xs text-muted-foreground max-w-52 truncate">{i.description}</td>
-                    <td className="px-4 py-2.5">
+                  <TableRow>
+                    <TableCell>{filtered.length - idx}</TableCell>
+                    <TableCell>{i.type.replace('_',' ')}</TableCell>
+                    <TableCell><span className={`text-xs px-2 py-0.5 rounded-full font-medium ${SEVERITY_COLOR[i.severity]}`}>{i.severity}</span></TableCell>
+                    <TableCell>{i.relatedMachine || '—'}</TableCell>
+                    <TableCell>{i.description}</TableCell>
+                    <TableCell>
                       <div className="text-sm">{i.userName}</div>
                       <div className="text-xs text-muted-foreground">{i.userEmail}</div>
-                    </td>
-                    <td className="px-4 py-2.5 text-xs text-muted-foreground">{formatDateTime(i.createdAt)}</td>
-                    <td className="px-4 py-2.5"><span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLOR[i.status]}`}>{i.status}</span></td>
-                    <td className="px-4 py-2.5">
+                    </TableCell>
+                    <TableCell>{formatDateTime(i.createdAt)}</TableCell>
+                    <TableCell><span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLOR[i.status]}`}>{i.status}</span></TableCell>
+                    <TableCell>
                       <select value={i.status} onChange={e => updateStatus(i.id, e.target.value)} className="text-xs border rounded px-1.5 py-0.5 outline-none">
                         {['open','investigating','resolved','closed'].map(s => <option key={s} value={s}>{s}</option>)}
                       </select>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
             <div className="px-4 py-2 bg-muted/20 text-xs text-muted-foreground border-t">
               {filtered.length} of {issues.length} issues · Latest first · Urgent rows highlighted
             </div>

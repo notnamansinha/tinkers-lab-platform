@@ -3,10 +3,15 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { getDocument, getDocumentsWhere, COLLECTIONS } from '@/services/firebase/firestore'
 import { useAuth } from '@/contexts/AuthContext'
-import { ArrowLeft, Calendar, Wrench, Edit, AlertTriangle } from 'lucide-react'
+import { ArrowLeft, Calendar, Edit } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 import type { Equipment, Booking, MaintenanceRecord } from '@/types'
 import LoadingSpinner from '@/components/common/LoadingSpinner'
+
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 
 export default function EquipmentDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -37,124 +42,162 @@ export default function EquipmentDetailPage() {
   if (!equipment) return (
     <div className="py-16 text-center">
       <p className="text-muted-foreground">Equipment not found.</p>
-      <Link to="/equipment" className="text-primary hover:underline mt-2 inline-block">← Back to equipment</Link>
+      <Button variant="link" onClick={() => navigate('/equipment')}>← Back to equipment</Button>
     </div>
   )
 
-  const statusColor = { available: 'bg-green-100 text-green-700', reserved: 'bg-blue-100 text-blue-700', in_use: 'bg-orange-100 text-orange-700', under_maintenance: 'bg-yellow-100 text-yellow-700', out_of_service: 'bg-red-100 text-red-700', retired: 'bg-gray-100 text-gray-500' }[equipment.status] || 'bg-gray-100 text-gray-600'
+  const statusVariant = {
+    available: 'default',
+    reserved: 'secondary',
+    in_use: 'secondary',
+    under_maintenance: 'destructive',
+    out_of_service: 'destructive',
+    retired: 'outline'
+  }[equipment.status] as any || 'outline'
 
   return (
-    <div className="space-y-6 animate-fade-in max-w-4xl">
-      <div className="flex items-center gap-3">
-        <button onClick={() => navigate(-1)} className="p-2 rounded-md hover:bg-muted">
-          <ArrowLeft size={18} />
-        </button>
+    <div className="container py-6 mx-auto max-w-4xl space-y-6 animate-fade-in">
+      <div className="flex items-center gap-4">
+        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
         <div className="flex-1">
-          <p className="text-xs font-mono text-muted-foreground">{equipment.machineId.toUpperCase()}</p>
-          <h1 className="text-2xl font-display font-bold">{equipment.name}</h1>
+          <p className="text-sm font-mono text-muted-foreground">{equipment.machineId.toUpperCase()}</p>
+          <h1 className="text-3xl font-bold tracking-tight">{equipment.name}</h1>
         </div>
-        <span className={`px-3 py-1 rounded-full text-sm font-medium ${statusColor}`}>{equipment.status.replace('_', ' ')}</span>
-        {isStaff && <Link to={`/equipment/${id}/edit`} className="flex items-center gap-1 px-3 py-2 text-sm border rounded-md hover:bg-muted"><Edit size={14} /> Edit</Link>}
-      </div>
-
-      {/* Details grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        <div className="rounded-lg border bg-card p-5 space-y-4">
-          <h2 className="font-display font-semibold text-sm uppercase tracking-wide text-muted-foreground">Details</h2>
-          {[
-            ['Category', equipment.category],
-            ['Description', equipment.description],
-            ['Location', equipment.location || '—'],
-            ['Manufacturer', equipment.manufacturer || '—'],
-            ['Model', equipment.modelNumber || '—'],
-            ['Serial No.', equipment.serialNumber || '—'],
-            ['Health', equipment.healthStatus],
-            ['Training', equipment.requiresTraining ? 'Required' : 'Open use'],
-          ].map(([k, v]) => (
-            <div key={k} className="flex gap-2">
-              <span className="text-xs text-muted-foreground w-24 shrink-0">{k}</span>
-              <span className="text-sm">{v}</span>
-            </div>
-          ))}
-        </div>
-
-        <div className="rounded-lg border bg-card p-5 space-y-4">
-          <h2 className="font-display font-semibold text-sm uppercase tracking-wide text-muted-foreground">Purchase Info</h2>
-          {[
-            ['Purchase Date', formatDate(equipment.purchaseDate) || '—'],
-            ['Install Date', formatDate(equipment.installationDate) || '—'],
-            ['Warranty', equipment.warrantyInfo || '—'],
-          ].map(([k, v]) => (
-            <div key={k} className="flex gap-2">
-              <span className="text-xs text-muted-foreground w-28 shrink-0">{k}</span>
-              <span className="text-sm">{String(v)}</span>
-            </div>
-          ))}
-          <div className="pt-4 border-t">
-            <Link to={`/bookings/new?machine=${id}`} className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-md text-sm font-semibold hover:bg-primary/90">
-              <Calendar size={16} /> Book this machine
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      {/* Recent bookings */}
-      <div className="rounded-lg border bg-card overflow-hidden">
-        <div className="px-5 py-4 border-b"><h2 className="font-display font-semibold">Recent Bookings</h2></div>
-        {recentBookings.length === 0 ? (
-          <div className="py-8 text-center text-muted-foreground text-sm">No bookings yet.</div>
-        ) : (
-          <table className="w-full text-sm">
-            <thead className="bg-muted text-xs font-mono uppercase tracking-wide">
-              <tr>
-                <th className="px-4 py-2 text-left">Date</th>
-                <th className="px-4 py-2 text-left">Time</th>
-                <th className="px-4 py-2 text-left">Booked by</th>
-                <th className="px-4 py-2 text-left">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {recentBookings.map(b => (
-                <tr key={b.id} className="hover:bg-muted/30">
-                  <td className="px-4 py-2 font-mono text-xs">{b.date}</td>
-                  <td className="px-4 py-2 font-mono text-xs">{b.startTime}–{b.endTime}</td>
-                  <td className="px-4 py-2 text-muted-foreground">{b.userName || b.userEmail}</td>
-                  <td className="px-4 py-2">
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${b.status === 'approved' ? 'bg-green-100 text-green-700' : b.status === 'pending' ? 'bg-orange-100 text-orange-700' : 'bg-gray-100 text-gray-600'}`}>{b.status}</span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <Badge variant={statusVariant} className="text-sm px-3 py-1 capitalize">
+          {equipment.status.replace('_', ' ')}
+        </Badge>
+        {isStaff && (
+          <Button variant="outline" className="gap-2" onClick={() => navigate(`/equipment/${id}/edit`)}>
+            <Edit className="h-4 w-4" /> Edit
+          </Button>
         )}
       </div>
 
-      {/* Maintenance (staff only) */}
-      {isStaff && (
-        <div className="rounded-lg border bg-card overflow-hidden">
-          <div className="px-5 py-4 border-b flex items-center justify-between">
-            <h2 className="font-display font-semibold">Maintenance History</h2>
-            <Link to={`/maintenance/new?equipment=${id}`} className="text-xs text-primary hover:underline">+ Schedule</Link>
-          </div>
-          {maintenanceRecords.length === 0 ? (
-            <div className="py-8 text-center text-muted-foreground text-sm">No maintenance records.</div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Details</CardTitle>
+            <CardDescription>Specifications and training requirements.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {[
+              ['Category', equipment.category],
+              ['Description', equipment.description],
+              ['Location', equipment.location || '—'],
+              ['Manufacturer', equipment.manufacturer || '—'],
+              ['Model', equipment.modelNumber || '—'],
+              ['Serial No.', equipment.serialNumber || '—'],
+              ['Health', equipment.healthStatus],
+              ['Training', equipment.requiresTraining ? 'Required' : 'Open use'],
+            ].map(([k, v]) => (
+              <div key={k} className="flex justify-between items-center border-b pb-2 last:border-0 last:pb-0">
+                <span className="text-sm text-muted-foreground">{k}</span>
+                <span className="text-sm font-medium">{v}</span>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Purchase Info</CardTitle>
+            <CardDescription>Warranty and lifecycle data.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {[
+              ['Purchase Date', formatDate(equipment.purchaseDate) || '—'],
+              ['Install Date', formatDate(equipment.installationDate) || '—'],
+              ['Warranty', equipment.warrantyInfo || '—'],
+            ].map(([k, v]) => (
+              <div key={k} className="flex justify-between items-center border-b pb-2 last:border-0 last:pb-0">
+                <span className="text-sm text-muted-foreground">{k}</span>
+                <span className="text-sm font-medium">{String(v)}</span>
+              </div>
+            ))}
+          </CardContent>
+          <CardFooter className="pt-4 border-t bg-muted/20">
+            <Button className="w-full gap-2" onClick={() => navigate(`/bookings/new?machine=${id}`)}>
+              <Calendar className="h-4 w-4" /> Book this machine
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Bookings</CardTitle>
+          <CardDescription>Latest usage history for this machine.</CardDescription>
+        </CardHeader>
+        <CardContent className="p-0 sm:p-6 sm:pt-0">
+          {recentBookings.length === 0 ? (
+            <div className="py-8 text-center text-muted-foreground text-sm border-t sm:border-t-0">No bookings yet.</div>
           ) : (
-            <div className="divide-y">
-              {maintenanceRecords.map(m => (
-                <div key={m.id} className="px-5 py-3 flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium">{m.title}</p>
-                    <p className="text-xs text-muted-foreground">{m.type} · {m.technician}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs font-mono">{m.scheduledDate}</p>
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${m.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>{m.status}</span>
-                  </div>
-                </div>
-              ))}
+            <div className="overflow-x-auto border-t sm:border-t-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Time</TableHead>
+                    <TableHead>Booked by</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {recentBookings.map(b => (
+                    <TableRow key={b.id}>
+                      <TableCell className="font-mono text-xs">{b.date}</TableCell>
+                      <TableCell className="font-mono text-xs">{b.startTime}–{b.endTime}</TableCell>
+                      <TableCell>{b.userName || b.userEmail}</TableCell>
+                      <TableCell>
+                        <Badge variant={b.status === 'approved' ? 'default' : b.status === 'pending' ? 'secondary' : 'outline'} className="capitalize">
+                          {b.status}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           )}
-        </div>
+        </CardContent>
+      </Card>
+
+      {isStaff && (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>Maintenance History</CardTitle>
+              <CardDescription>Service records and schedules.</CardDescription>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => navigate(`/maintenance/new?equipment=${id}`)}>
+              + Schedule
+            </Button>
+          </CardHeader>
+          <CardContent className="p-0 sm:p-6 sm:pt-0">
+            {maintenanceRecords.length === 0 ? (
+              <div className="py-8 text-center text-muted-foreground text-sm border-t sm:border-t-0">No maintenance records.</div>
+            ) : (
+              <div className="divide-y border-t sm:border-t-0">
+                {maintenanceRecords.map(m => (
+                  <div key={m.id} className="p-4 flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium">{m.title}</p>
+                      <p className="text-xs text-muted-foreground uppercase tracking-widest">{m.type} · {m.technician}</p>
+                    </div>
+                    <div className="text-right flex flex-col items-end gap-1">
+                      <p className="text-xs font-mono text-muted-foreground">{m.scheduledDate}</p>
+                      <Badge variant={m.status === 'completed' ? 'default' : 'secondary'} className="capitalize text-[10px]">
+                        {m.status.replace('_', ' ')}
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       )}
     </div>
   )

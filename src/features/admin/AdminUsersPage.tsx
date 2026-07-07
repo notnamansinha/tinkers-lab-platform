@@ -1,4 +1,6 @@
 import React, { useState } from 'react'
+import { Input } from '@/components/ui/input'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { collection, query, orderBy, getDocs, doc, updateDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
@@ -68,7 +70,7 @@ export default function AdminUsersPage() {
       <div className="flex gap-3">
         <div className="relative flex-1 max-w-sm">
           <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search users…" className="w-full pl-9 pr-3 py-2 text-sm border rounded-md bg-background outline-none focus:ring-2 focus:ring-ring" />
+          <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search users…" className="pl-9" />
         </div>
         <select value={filterRole} onChange={e => setFilterRole(e.target.value)} className="px-3 py-2 text-sm border rounded-md bg-background outline-none focus:ring-2 focus:ring-ring">
           <option value="all">All roles</option>
@@ -79,29 +81,29 @@ export default function AdminUsersPage() {
       <div className="rounded-lg border bg-card overflow-hidden">
         {isLoading ? <div className="py-16 text-center text-muted-foreground">Loading users…</div> : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm min-w-[800px]">
-              <thead className="bg-tl-ink text-white text-xs font-mono uppercase tracking-wider sticky top-0">
-                <tr>
-                  <th className="px-4 py-3 text-left">#</th>
-                  <th className="px-4 py-3 text-left">Name</th>
-                  <th className="px-4 py-3 text-left">Email</th>
-                  <th className="px-4 py-3 text-left">Type</th>
-                  <th className="px-4 py-3 text-left">Department</th>
-                  <th className="px-4 py-3 text-left">Role</th>
-                  <th className="px-4 py-3 text-left">Joined</th>
-                  <th className="px-4 py-3 text-left">Status</th>
-                  <th className="px-4 py-3 text-left">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>#</TableHead>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Department</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead>Joined</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {filtered.map((u, idx) => (
-                  <tr key={u.uid} className="hover:bg-muted/30">
-                    <td className="px-4 py-2.5 text-xs font-mono text-muted-foreground">{filtered.length - idx}</td>
-                    <td className="px-4 py-2.5 font-medium">{u.displayName}</td>
-                    <td className="px-4 py-2.5 text-muted-foreground text-xs">{u.email}</td>
-                    <td className="px-4 py-2.5 text-xs text-muted-foreground">{u.userType}</td>
-                    <td className="px-4 py-2.5 text-xs text-muted-foreground">{u.department || '—'}</td>
-                    <td className="px-4 py-2.5">
+                  <TableRow>
+                    <TableCell>{filtered.length - idx}</TableCell>
+                    <TableCell>{u.displayName}</TableCell>
+                    <TableCell>{u.email}</TableCell>
+                    <TableCell>{u.userType}</TableCell>
+                    <TableCell>{u.department || '—'}</TableCell>
+                    <TableCell>
                       <select
                         value={u.role}
                         onChange={e => updateRole(u.uid, e.target.value as UserRole)}
@@ -109,22 +111,22 @@ export default function AdminUsersPage() {
                       >
                         {ROLES.map(r => <option key={r} value={r}>{r.replace('_',' ')}</option>)}
                       </select>
-                    </td>
-                    <td className="px-4 py-2.5 text-xs text-muted-foreground font-mono">{formatDateTime(u.createdAt)}</td>
-                    <td className="px-4 py-2.5">
+                    </TableCell>
+                    <TableCell>{formatDateTime(u.createdAt)}</TableCell>
+                    <TableCell>
                       <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${u.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
                         {u.isActive ? 'Active' : 'Disabled'}
                       </span>
-                    </td>
-                    <td className="px-4 py-2.5">
+                    </TableCell>
+                    <TableCell>
                       <button onClick={() => toggleActive(u.uid, u.isActive)} className={`text-xs px-2 py-1 rounded border transition-colors ${u.isActive ? 'hover:bg-red-50 hover:border-red-200 hover:text-red-700' : 'hover:bg-green-50 hover:border-green-200 hover:text-green-700'}`}>
                         {u.isActive ? <UserX size={13} /> : <UserCheck size={13} />}
                       </button>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
             <div className="px-4 py-2 bg-muted/20 text-xs text-muted-foreground border-t">
               Showing {filtered.length} of {users.length} users · Ordered latest registered first
             </div>

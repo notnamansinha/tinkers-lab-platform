@@ -3,10 +3,15 @@ import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { LogIn, Mail, Lock, AlertCircle, Wrench } from 'lucide-react'
+import { LogIn, Mail, Lock, AlertCircle } from 'lucide-react'
 import { signInWithGoogle, signInWithEmail } from '@/services/firebase/auth'
-import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
+import { cn } from '@/lib/utils'
+
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -59,29 +64,29 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex animate-fade-in">
       {/* Left panel — brand */}
-      <div className="hidden lg:flex flex-col justify-between w-1/2 bg-tl-ink p-12 text-white">
+      <div className="hidden lg:flex flex-col justify-between w-1/2 bg-zinc-950 p-12 text-white">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-tl-orange flex items-center justify-center">
-            <span className="font-display font-extrabold text-tl-ink text-base">TL</span>
+          <div className="w-10 h-10 bg-primary flex items-center justify-center rounded-sm">
+            <span className="font-display font-extrabold text-primary-foreground text-base">TL</span>
           </div>
           <div>
             <p className="font-display font-bold text-lg leading-tight">Tinkerers' Lab</p>
-            <p className="text-white/50 text-xs">Ahmedabad University</p>
+            <p className="text-zinc-400 text-xs">Ahmedabad University</p>
           </div>
         </div>
 
         <div>
-          <div className="text-tl-orange font-mono text-xs uppercase tracking-widest mb-4">
+          <div className="text-primary font-mono text-xs uppercase tracking-widest mb-4">
             Innovation &amp; Tinkering Lab
           </div>
           <h1 className="font-display font-extrabold text-4xl xl:text-5xl leading-tight mb-6">
             Build it.<br />
-            <em className="text-tl-orange not-italic">Book it.</em><br />
+            <em className="text-primary not-italic">Book it.</em><br />
             Bring it back.
           </h1>
-          <p className="text-white/60 text-base max-w-sm leading-relaxed">
+          <p className="text-zinc-400 text-base max-w-sm leading-relaxed">
             One platform to manage equipment bookings, tool checkout, inventory, 
             workshops, and projects for the Tinkerers' Lab.
           </p>
@@ -95,8 +100,8 @@ export default function LoginPage() {
             ['Firebase', 'Cloud-native'],
           ].map(([val, label]) => (
             <div key={label} className="bg-white/5 rounded-lg p-4 border border-white/10">
-              <p className="font-mono font-semibold text-tl-orange text-xl">{val}</p>
-              <p className="text-white/50 text-xs mt-1">{label}</p>
+              <p className="font-mono font-semibold text-primary text-xl">{val}</p>
+              <p className="text-zinc-400 text-xs mt-1">{label}</p>
             </div>
           ))}
         </div>
@@ -104,11 +109,11 @@ export default function LoginPage() {
 
       {/* Right panel — sign in form */}
       <div className="flex-1 flex items-center justify-center p-6 bg-background">
-        <div className="w-full max-w-md space-y-6">
+        <div className="w-full max-w-[350px] space-y-6">
           {/* Mobile brand */}
           <div className="lg:hidden flex items-center gap-3 mb-8">
-            <div className="w-9 h-9 bg-tl-ink flex items-center justify-center">
-              <span className="font-display font-extrabold text-tl-orange text-sm">TL</span>
+            <div className="w-9 h-9 bg-zinc-950 flex items-center justify-center rounded-sm">
+              <span className="font-display font-extrabold text-white text-sm">TL</span>
             </div>
             <div>
               <p className="font-display font-bold text-base">Tinkerers' Lab</p>
@@ -116,116 +121,116 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <div>
-            <h2 className="font-display font-bold text-2xl">Sign in</h2>
-            <p className="text-muted-foreground text-sm mt-1">
-              Don't have an account?{' '}
-              <Link to="/register" className="text-primary hover:underline font-medium">
-                Register
-              </Link>
+          <div className="flex flex-col space-y-2 text-center">
+            <h1 className="text-2xl font-semibold tracking-tight">Welcome back</h1>
+            <p className="text-sm text-muted-foreground">
+              Enter your email to sign in to your account
             </p>
           </div>
 
           {/* Error */}
           {error && (
-            <div className="flex items-start gap-2 p-3 bg-destructive/10 text-destructive rounded-md text-sm">
-              <AlertCircle size={16} className="shrink-0 mt-0.5" />
-              {error}
-            </div>
+            <Alert variant="destructive" className="py-2.5">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
           )}
 
           {/* Google sign in */}
-          <button
+          <Button
             type="button"
+            variant="outline"
             onClick={handleGoogleSignIn}
             disabled={googleLoading}
-            className="w-full flex items-center justify-center gap-3 px-4 py-2.5 border rounded-md text-sm font-medium hover:bg-muted/50 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+            className="w-full gap-2"
           >
             {googleLoading ? (
               <div className="w-4 h-4 border-2 border-current/20 border-t-current rounded-full animate-spin" />
             ) : (
-              <svg viewBox="0 0 24 24" className="w-5 h-5">
+              <svg viewBox="0 0 24 24" className="h-4 w-4">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                 <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
                 <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
                 <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
               </svg>
             )}
-            Continue with Google
-          </button>
+            Google
+          </Button>
 
-          <div className="flex items-center gap-3 text-muted-foreground text-xs">
-            <div className="flex-1 h-px bg-border" />
-            <span>or sign in with email</span>
-            <div className="flex-1 h-px bg-border" />
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">
+                Or continue with email
+              </span>
+            </div>
           </div>
 
           {/* Email form */}
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium" htmlFor="email">Email</label>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
               <div className="relative">
-                <Mail size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                <input
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
                   id="email"
                   type="email"
                   placeholder="you@ahduni.edu.in"
                   autoComplete="email"
-                  className={cn(
-                    'w-full pl-9 pr-3 py-2 text-sm border rounded-md bg-background outline-none focus:ring-2 focus:ring-ring transition-shadow',
-                    errors.email && 'border-destructive focus:ring-destructive'
-                  )}
+                  className={cn("pl-9", errors.email && 'border-destructive')}
                   {...register('email')}
                 />
               </div>
               {errors.email && (
-                <p className="text-xs text-destructive">{errors.email.message}</p>
+                <p className="text-[0.8rem] text-destructive">{errors.email.message}</p>
               )}
             </div>
 
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium" htmlFor="password">Password</label>
-              <div className="relative">
-                <Lock size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                <input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  autoComplete="current-password"
-                  className={cn(
-                    'w-full pl-9 pr-3 py-2 text-sm border rounded-md bg-background outline-none focus:ring-2 focus:ring-ring transition-shadow',
-                    errors.password && 'border-destructive focus:ring-destructive'
-                  )}
-                  {...register('password')}
-                />
-              </div>
-              {errors.password && (
-                <p className="text-xs text-destructive">{errors.password.message}</p>
-              )}
-              <div className="text-right">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Password</Label>
                 <Link to="/register" className="text-xs text-muted-foreground hover:text-primary">
                   Forgot password?
                 </Link>
               </div>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  autoComplete="current-password"
+                  className={cn("pl-9", errors.password && 'border-destructive')}
+                  {...register('password')}
+                />
+              </div>
+              {errors.password && (
+                <p className="text-[0.8rem] text-destructive">{errors.password.message}</p>
+              )}
             </div>
 
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-md text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-            >
+            <Button type="submit" disabled={isSubmitting} className="w-full gap-2">
               {isSubmitting ? (
                 <div className="w-4 h-4 border-2 border-current/20 border-t-current rounded-full animate-spin" />
               ) : (
-                <LogIn size={16} />
+                <LogIn className="h-4 w-4" />
               )}
-              Sign in
-            </button>
+              Sign In
+            </Button>
           </form>
+          
+          <div className="text-center text-sm text-muted-foreground">
+            Don't have an account?{' '}
+            <Link to="/register" className="underline underline-offset-4 hover:text-primary">
+              Register
+            </Link>
+          </div>
 
-          <p className="text-center text-xs text-muted-foreground">
-            By signing in, you agree to follow lab safety guidelines<br />
-            and the Tinkerers' Lab usage policies.
+          <p className="text-center text-xs text-muted-foreground px-8">
+            By clicking continue, you agree to our lab safety guidelines
+            and usage policies.
           </p>
         </div>
       </div>
