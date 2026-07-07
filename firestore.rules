@@ -24,12 +24,12 @@ service cloud.firestore {
 
     // Admin roles: can do anything
     function isAdmin() {
-      return isAuth() && getUserRole() in ['super_admin', 'manager'];
+      return isAuth() && getUserRole() == 'super_admin';
     }
 
     // Staff roles: elevated access
     function isStaff() {
-      return isAuth() && getUserRole() in ['super_admin', 'manager', 'faculty', 'lab_assistant'];
+      return isAuth() && getUserRole() in ['super_admin', 'faculty'];
     }
 
     // ================================================================
