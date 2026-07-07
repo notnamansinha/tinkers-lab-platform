@@ -15,6 +15,27 @@
 
 var ADMIN_KEY = "CHANGE-ME-to-a-secret";   // <— change this!
 var LAB_EMAIL = "tinkerslab@ahduni.edu.in"; // coordinator alerts go here
+var LAB_NAME  = "Tinkerers' Lab, Ahmedabad University";
+var LAB_LOCATION = "Innovation & Tinkering Lab, Ahmedabad University";
+
+// Human-readable machine names — keep in sync with js/config.js MACHINES.
+var MACHINE_NAMES = {
+  "bambu-x1c":    "Bambu Labs X-1C 3D Printer",
+  "creality-dual":"Creality Dual Nozzle 3D Printer",
+  "laser-cutter": "Success Laser Cutter",
+  "muffle":       "Muffle Furnace S-900",
+  "lathe":        "Lathe Machine KL-2",
+  "sheet-bender": "Manual Sheet Bender",
+  "pillar-drill": "Pillar Drill 2HP",
+  "table-saw":    "Table Saw GTS 10J",
+  "mitre-saw":    "Mitre Saw GCM 254",
+  "cutoff-saw":   "Metal Cut-off Saw GCO 220",
+  "esd-station":  "ESD Workstation",
+  "oscilloscope": "Digital Oscilloscope SDS1022",
+  "func-gen":     "Function Generator SFG1003",
+  "solder":       "Soldering Station WE1010"
+};
+function machineName(id) { return MACHINE_NAMES[id] || id; }
 
 // ---------- HTTP entry point ----------
 function doPost(e) {
@@ -139,11 +160,120 @@ function createBooking(p) {
   var s = sheet(SHEETS.bookings.name, SHEETS.bookings.headers);
   var id = nextId(s, "B");
   s.appendRow([id, new Date(), p.projectId, p.email, p.machineId, p.date, p.start, p.end, p.purpose, "Pending"]);
-  safeMail(p.email, "Tinkerers' Lab — Booking Requested (" + id + ")",
-    "Your booking request:\n\nBooking ID: " + id + "\nMachine: " + p.machineId +
-    "\nDate: " + p.date + "\nTime: " + p.start + "–" + p.end +
-    "\n\nStatus: Pending coordinator approval. You'll get another email once approved.\n\n— Tinkerers' Lab");
+  sendBookingEmail(id, p, "Pending");
   return { ok: true, bookingId: id };
+}
+
+// ============================================================
+// BOOKING EMAILS — HTML confirmation + calendar (.ics) attachment
+// ============================================================
+// Sends a nicely formatted email to the user with an .ics file
+// so they can add the slot to Google Calendar in one click.
+// CC's the lab coordinator on every booking so nothing slips.
+function sendBookingEmail(bookingId, p, status) {
+  var mName = machineName(p.machineId);
+  var statusText = status === "Approved" ? "APPROVED"
+                 : status === "Rejected" ? "REJECTED"
+                 : "PENDING APPROVAL";
+  var accent = status === "Approved" ? "#1F5F3F"
+             : status === "Rejected" ? "#B3261E"
+             : "#E85D26";
+
+  var subject = "[" + LAB_NAME + "] " + mName + " — " +
+                p.date + " " + p.start + "–" + p.end + " (" + bookingId + ")";
+
+  var html =
+    '<div style="font-family:Arial,sans-serif;max-width:560px;color:#16211B">' +
+      '<div style="background:#16211B;color:#fff;padding:18px 22px;border-left:6px solid ' + accent + '">' +
+        '<div style="font-size:11px;letter-spacing:1.5px;color:' + accent + '">BOOKING ' + statusText + '</div>' +
+        '<div style="font-size:20px;font-weight:800;margin-top:4px">' + mName + '</div>' +
+      '</div>' +
+      '<div style="border:1px solid #CBD3CC;border-top:none;padding:22px">' +
+        '<p>Hi,</p>' +
+        '<p>' + bookingSummary(status) + '</p>' +
+        '<table style="border-collapse:collapse;font-size:14px;margin:14px 0">' +
+          row("Booking ID", bookingId) +
+          row("Machine",    mName) +
+          row("Date",       p.date) +
+          row("Time",       p.start + " – " + p.end) +
+          row("Project ID", p.projectId) +
+          row("Purpose",    escapeHtml(p.purpose || "—")) +
+          row("Status",     '<b style="color:' + accent + '">' + statusText + '</b>') +
+        '</table>' +
+        (status !== "Rejected"
+          ? '<p style="margin-top:18px">📅 <b>Add to your calendar:</b> use the attached <code>.ics</code> file — Gmail will show an "Add to Calendar" button.</p>'
+          : '<p style="margin-top:18px">If you believe this was rejected in error, please contact the lab coordinator.</p>') +
+        '<p style="margin-top:22px;color:#45524B;font-size:13px">' +
+          LAB_LOCATION + '<br>' +
+          'Reply to this email to reach the lab coordinator.' +
+        '</p>' +
+      '</div>' +
+    '</div>';
+
+  var options = { htmlBody: html, cc: LAB_EMAIL, name: LAB_NAME, replyTo: LAB_EMAIL };
+  if (status !== "Rejected") {
+    options.attachments = [ makeIcsAttachment(bookingId, p, status) ];
+  }
+  try {
+    MailApp.sendEmail(p.email, subject, "See HTML version.", options);
+  } catch (err) {
+    Logger.log("booking mail failed: " + err.message);
+  }
+}
+
+function bookingSummary(status) {
+  if (status === "Approved") return "Your booking is <b>confirmed</b>. See you at the lab.";
+  if (status === "Rejected") return "Unfortunately your booking request has been <b>rejected</b>.";
+  return "Your booking request has been received and is <b>pending coordinator approval</b>. You'll receive another email once it's reviewed.";
+}
+function row(k, v) {
+  return '<tr>' +
+    '<td style="padding:6px 14px 6px 0;color:#45524B;vertical-align:top">' + k + '</td>' +
+    '<td style="padding:6px 0;font-family:monospace">' + v + '</td>' +
+  '</tr>';
+}
+function escapeHtml(s) {
+  return String(s || "").replace(/[&<>"']/g, function (c) {
+    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+  });
+}
+
+// Build an .ics calendar attachment. Gmail turns this into an
+// "Add to Calendar" button in the message header.
+function makeIcsAttachment(bookingId, p, status) {
+  var tz = Session.getScriptTimeZone();
+  // p.date = "YYYY-MM-DD", p.start/end = "HH:MM"
+  var dtStart = p.date.replace(/-/g, "") + "T" + p.start.replace(":", "") + "00";
+  var dtEnd   = p.date.replace(/-/g, "") + "T" + p.end.replace(":", "")   + "00";
+  var stamp   = Utilities.formatDate(new Date(), "UTC", "yyyyMMdd'T'HHmmss'Z'");
+  var mName   = machineName(p.machineId);
+  var summary = "Lab: " + mName + " (" + (status === "Approved" ? "Confirmed" : "Pending") + ")";
+
+  var ics = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Tinkerers Lab//Booking//EN",
+    "CALSCALE:GREGORIAN",
+    "METHOD:PUBLISH",
+    "BEGIN:VEVENT",
+    "UID:" + bookingId + "@tinkerslab.ahduni",
+    "DTSTAMP:" + stamp,
+    "DTSTART;TZID=" + tz + ":" + dtStart,
+    "DTEND;TZID="   + tz + ":" + dtEnd,
+    "SUMMARY:" + summary,
+    "LOCATION:" + LAB_LOCATION,
+    "DESCRIPTION:" +
+      "Booking ID: " + bookingId + "\\n" +
+      "Machine: " + mName + "\\n" +
+      "Project: " + (p.projectId || "") + "\\n" +
+      "Purpose: " + (p.purpose || "").replace(/\n/g, " ") + "\\n" +
+      "Status: " + status,
+    "STATUS:" + (status === "Approved" ? "CONFIRMED" : "TENTATIVE"),
+    "END:VEVENT",
+    "END:VCALENDAR"
+  ].join("\r\n");
+
+  return Utilities.newBlob(ics, "text/calendar", "booking-" + bookingId + ".ics");
 }
 
 function checkoutTool(p) {
@@ -219,8 +349,18 @@ function setStatus(sheetName, id, status, isBooking) {
       var col = isBooking ? 10 : 10; // status column for both sheets
       s.getRange(i + 2, col).setValue(status);
       if (isBooking && (status === "Approved" || status === "Rejected")) {
-        safeMail(data[i][3], "Tinkerers' Lab — Booking " + status + " (" + id + ")",
-          "Your booking " + id + " (" + data[i][4] + ", " + data[i][5] + " " + fmtTime(data[i][6]) + "–" + fmtTime(data[i][7]) + ") has been " + status.toLowerCase() + ".\n\n— Tinkerers' Lab");
+        var dateStr = data[i][5] instanceof Date
+          ? Utilities.formatDate(data[i][5], Session.getScriptTimeZone(), "yyyy-MM-dd")
+          : String(data[i][5]);
+        sendBookingEmail(id, {
+          email:     data[i][3],
+          projectId: data[i][2],
+          machineId: data[i][4],
+          date:      dateStr,
+          start:     fmtTime(data[i][6]),
+          end:       fmtTime(data[i][7]),
+          purpose:   data[i][8]
+        }, status);
       }
       return { ok: true };
     }
@@ -257,8 +397,12 @@ function dailyReminders() {
 
   getBookings({ date: tomorrow }).bookings.forEach(function (b) {
     if (b.status === "Approved") {
-      safeMail(b.email, "Reminder: your lab booking tomorrow",
-        "You have the " + b.machineId + " booked tomorrow " + b.start + "–" + b.end + ".\n\n— Tinkerers' Lab");
+      safeMail(b.email,
+        "Reminder: " + machineName(b.machineId) + " booked tomorrow " + b.start + "–" + b.end,
+        "Hi,\n\nJust a reminder that you have the " + machineName(b.machineId) +
+        " booked tomorrow (" + tomorrow + "), " + b.start + "–" + b.end + ".\n\n" +
+        "Booking ID: " + b.id + "\n\n" +
+        "— " + LAB_NAME);
     }
   });
 
