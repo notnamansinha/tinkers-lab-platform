@@ -4,11 +4,15 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { getDocument, COLLECTIONS } from '@/services/firebase/firestore'
 import { updateBookingStatus } from '@/services/firebase/bookings'
 import { useAuth } from '@/contexts/AuthContext'
-import { ArrowLeft, CheckCircle, XCircle, Clock, Calendar } from 'lucide-react'
-import { formatDateTime, formatDate } from '@/lib/utils'
+import { ArrowLeft, CheckCircle, XCircle, Trash2 } from 'lucide-react'
+import { formatDateTime } from '@/lib/utils'
 import { toast } from 'sonner'
 import type { Booking } from '@/types'
 import LoadingSpinner from '@/components/common/LoadingSpinner'
+
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 
 export default function BookingDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -29,62 +33,123 @@ export default function BookingDetailPage() {
 
   const approve = async () => {
     await updateBookingStatus(id!, 'approved', profile?.displayName || 'Staff')
-    toast.success('Approved'); qc.invalidateQueries({ queryKey: ['bookings'] })
+    toast.success('Approved')
+    qc.invalidateQueries({ queryKey: ['bookings'] })
   }
+  
   const reject = async () => {
     const reason = window.prompt('Rejection reason:') || ''
     await updateBookingStatus(id!, 'rejected', undefined, reason)
-    toast.success('Rejected'); qc.invalidateQueries({ queryKey: ['bookings'] })
+    toast.success('Rejected')
+    qc.invalidateQueries({ queryKey: ['bookings'] })
   }
+  
   const cancel = async () => {
     if (!window.confirm('Cancel this booking?')) return
     await updateBookingStatus(id!, 'cancelled')
-    toast.success('Cancelled'); navigate('/bookings')
+    toast.success('Cancelled')
+    navigate('/bookings')
   }
 
-  const statusColor = { pending: 'bg-orange-100 text-orange-700', approved: 'bg-green-100 text-green-700', rejected: 'bg-red-100 text-red-700', cancelled: 'bg-gray-100 text-gray-600', completed: 'bg-blue-100 text-blue-700' }[booking.status] || 'bg-gray-100'
+  const badgeVariant = {
+    approved: 'default',
+    pending: 'secondary',
+    rejected: 'destructive',
+    cancelled: 'outline',
+    completed: 'secondary'
+  }[booking.status] as any || 'outline'
 
   return (
-    <div className="max-w-2xl space-y-5 animate-fade-in">
-      <div className="flex items-center gap-3">
-        <button onClick={() => navigate(-1)} className="p-2 rounded-md hover:bg-muted"><ArrowLeft size={18} /></button>
+    <div className="container py-6 mx-auto max-w-3xl space-y-6 animate-fade-in">
+      <div className="flex items-center gap-4">
+        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
         <div className="flex-1">
-          <p className="text-xs font-mono text-muted-foreground">Booking #{id?.slice(-8).toUpperCase()}</p>
-          <h1 className="text-2xl font-display font-bold">{booking.machineName}</h1>
+          <p className="text-sm font-mono text-muted-foreground">Booking #{id?.slice(-8).toUpperCase()}</p>
+          <h1 className="text-3xl font-bold tracking-tight">{booking.machineName}</h1>
         </div>
-        <span className={`px-3 py-1 rounded-full text-sm font-semibold ${statusColor}`}>{booking.status}</span>
+        <Badge variant={badgeVariant} className="text-sm px-3 py-1 capitalize">
+          {booking.status}
+        </Badge>
       </div>
 
-      <div className="rounded-lg border bg-card p-5 grid grid-cols-2 gap-4">
-        {[
-          ['Machine', booking.machineName],
-          ['Date', booking.date],
-          ['Time', `${booking.startTime} – ${booking.endTime}`],
-          ['Booked by', booking.userName || booking.userEmail],
-          ['Purpose', booking.purpose],
-          ['Project ID', booking.projectId || '—'],
-          ['Submitted', formatDateTime(booking.createdAt)],
-          ['Approved by', booking.approvedBy || '—'],
-          ['Rejection reason', booking.rejectionReason || '—'],
-        ].map(([k, v]) => (
-          <div key={k} className={k === 'Purpose' ? 'col-span-2' : ''}>
-            <p className="text-xs text-muted-foreground font-mono">{k}</p>
-            <p className="text-sm font-medium mt-0.5">{String(v)}</p>
+      <Card>
+        <CardHeader>
+          <CardTitle>Booking Details</CardTitle>
+          <CardDescription>Reservation and project information.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-1">
+            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Machine</p>
+            <p className="font-medium">{booking.machineName}</p>
           </div>
-        ))}
-      </div>
+          
+          <div className="space-y-1">
+            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Date & Time</p>
+            <p className="font-medium">{booking.date} · {booking.startTime}–{booking.endTime}</p>
+          </div>
 
-      {/* Actions */}
-      {canManage && booking.status === 'pending' && (
-        <div className="flex gap-3">
-          {isStaff && <button onClick={approve} className="flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white rounded-md text-sm font-semibold hover:bg-green-700"><CheckCircle size={16} /> Approve</button>}
-          {isStaff && <button onClick={reject} className="flex items-center gap-2 px-4 py-2.5 bg-red-600 text-white rounded-md text-sm font-semibold hover:bg-red-700"><XCircle size={16} /> Reject</button>}
-          <button onClick={cancel} className="px-4 py-2.5 border rounded-md text-sm hover:bg-muted">Cancel booking</button>
-        </div>
-      )}
-      {booking.status === 'approved' && booking.userId === user?.uid && (
-        <button onClick={cancel} className="px-4 py-2.5 border border-red-200 text-red-600 rounded-md text-sm hover:bg-red-50">Cancel booking</button>
-      )}
+          <div className="space-y-1">
+            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Booked By</p>
+            <p className="font-medium">{booking.userName || booking.userEmail}</p>
+          </div>
+
+          <div className="space-y-1">
+            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Project ID</p>
+            <p className="font-medium font-mono">{booking.projectId || '—'}</p>
+          </div>
+
+          <div className="col-span-full space-y-1 bg-muted/30 p-4 rounded-lg border">
+            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Purpose</p>
+            <p className="font-medium mt-1">{booking.purpose}</p>
+          </div>
+
+          <div className="space-y-1">
+            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Submitted</p>
+            <p className="font-medium text-sm">{formatDateTime(booking.createdAt)}</p>
+          </div>
+
+          <div className="space-y-1">
+            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Approved By</p>
+            <p className="font-medium text-sm">{booking.approvedBy || '—'}</p>
+          </div>
+
+          {booking.status === 'rejected' && (
+            <div className="col-span-full space-y-1 bg-destructive/10 border-destructive/20 border p-4 rounded-lg">
+              <p className="text-xs text-destructive font-medium uppercase tracking-wider">Rejection Reason</p>
+              <p className="font-medium text-sm text-destructive mt-1">{booking.rejectionReason || 'No reason provided.'}</p>
+            </div>
+          )}
+        </CardContent>
+        <CardFooter className="bg-muted/30 border-t px-6 py-4 flex flex-wrap gap-3">
+          {canManage && booking.status === 'pending' && (
+            <>
+              {isStaff && (
+                <Button onClick={approve} className="gap-2 bg-green-600 hover:bg-green-700 text-white">
+                  <CheckCircle className="h-4 w-4" /> Approve
+                </Button>
+              )}
+              {isStaff && (
+                <Button onClick={reject} variant="destructive" className="gap-2">
+                  <XCircle className="h-4 w-4" /> Reject
+                </Button>
+              )}
+              <Button onClick={cancel} variant="outline" className="gap-2">
+                <Trash2 className="h-4 w-4" /> Cancel Booking
+              </Button>
+            </>
+          )}
+          {booking.status === 'approved' && booking.userId === user?.uid && (
+            <Button onClick={cancel} variant="outline" className="gap-2 text-destructive hover:bg-destructive/10">
+              <Trash2 className="h-4 w-4" /> Cancel Booking
+            </Button>
+          )}
+          {(!canManage || (booking.status !== 'pending' && booking.status !== 'approved')) && (
+            <p className="text-sm text-muted-foreground">No actions available.</p>
+          )}
+        </CardFooter>
+      </Card>
     </div>
   )
 }

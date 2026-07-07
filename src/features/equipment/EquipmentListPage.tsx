@@ -1,21 +1,28 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { collection, query, where, orderBy, getDocs } from 'firebase/firestore'
+import { collection, query, orderBy, getDocs } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { COLLECTIONS } from '@/services/firebase/firestore'
 import { useAuth } from '@/contexts/AuthContext'
-import { Search, Plus, Grid, List, Wrench, CheckCircle, Clock, AlertTriangle, XCircle } from 'lucide-react'
+import { Search, Plus, Grid, List, Wrench, CheckCircle, Clock, AlertTriangle, XCircle, Grid2X2 } from 'lucide-react'
 import type { Equipment, EquipmentCategory } from '@/types'
 
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Badge } from '@/components/ui/badge'
+
 const STATUS_CONFIG = {
-  available: { label: 'Available', color: 'bg-green-100 text-green-700', icon: CheckCircle },
-  reserved: { label: 'Reserved', color: 'bg-blue-100 text-blue-700', icon: Clock },
-  in_use: { label: 'In Use', color: 'bg-orange-100 text-orange-700', icon: Wrench },
-  under_maintenance: { label: 'Maintenance', color: 'bg-yellow-100 text-yellow-700', icon: AlertTriangle },
-  out_of_service: { label: 'Out of Service', color: 'bg-red-100 text-red-700', icon: XCircle },
-  retired: { label: 'Retired', color: 'bg-gray-100 text-gray-500', icon: XCircle },
-}
+  available: { label: 'Available', variant: 'default', icon: CheckCircle },
+  reserved: { label: 'Reserved', variant: 'secondary', icon: Clock },
+  in_use: { label: 'In Use', variant: 'secondary', icon: Wrench },
+  under_maintenance: { label: 'Maintenance', variant: 'destructive', icon: AlertTriangle },
+  out_of_service: { label: 'Out of Service', variant: 'destructive', icon: XCircle },
+  retired: { label: 'Retired', variant: 'outline', icon: XCircle },
+} as const
 
 const CATEGORIES: EquipmentCategory[] = ['Digital Fabrication', 'Heavy Duty', 'Tabletop Power', 'Electronics', 'Other']
 
@@ -46,129 +53,163 @@ export default function EquipmentListPage() {
   })
 
   return (
-    <div className="space-y-5 animate-fade-in">
-      <div className="flex items-start justify-between gap-4">
+    <div className="space-y-6 container py-6 mx-auto animate-fade-in">
+      <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
         <div>
-          <p className="text-xs font-mono uppercase tracking-widest text-accent">Equipment</p>
-          <h1 className="text-2xl font-display font-bold mt-1">Machines & Equipment</h1>
-          <p className="text-muted-foreground text-sm">Tier-1 equipment requires a booking. Hand tools go through Tool Checkout.</p>
+          <h1 className="text-3xl font-bold tracking-tight">Machines & Equipment</h1>
+          <p className="text-muted-foreground mt-1 max-w-xl">Tier-1 equipment requires a booking. Hand tools go through Tool Checkout.</p>
         </div>
         {isStaff && (
-          <Link to="/equipment/new" className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-semibold hover:bg-primary/90 shrink-0">
-            <Plus size={16} /> Add Equipment
-          </Link>
+          <Button className="shrink-0 gap-2" onClick={() => navigate('/equipment/new')}>
+            <Plus className="h-4 w-4" /> Add Equipment
+          </Button>
         )}
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-wrap gap-3 items-center">
-        <div className="relative flex-1 min-w-48">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <input
+      <div className="flex flex-col sm:flex-row flex-wrap gap-3 items-center">
+        <div className="relative flex-1 min-w-[240px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
             type="text"
-            placeholder="Search equipment…"
+            placeholder="Search equipment..."
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 text-sm border rounded-md bg-background outline-none focus:ring-2 focus:ring-ring"
+            className="pl-9"
           />
         </div>
-        <select value={filterCat} onChange={e => setFilterCat(e.target.value)} className="px-3 py-2 text-sm border rounded-md bg-background outline-none focus:ring-2 focus:ring-ring">
-          <option value="all">All categories</option>
-          {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-        </select>
-        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="px-3 py-2 text-sm border rounded-md bg-background outline-none focus:ring-2 focus:ring-ring">
-          <option value="all">All statuses</option>
-          {Object.entries(STATUS_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-        </select>
-        <div className="flex border rounded-md overflow-hidden">
-          <button onClick={() => setViewMode('grid')} className={`px-3 py-2 text-sm ${viewMode === 'grid' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}><Grid size={15} /></button>
-          <button onClick={() => setViewMode('list')} className={`px-3 py-2 text-sm ${viewMode === 'list' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}><List size={15} /></button>
+        
+        <Select value={filterCat} onValueChange={(val) => setFilterCat(val || '')}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="All categories" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All categories</SelectItem>
+            {CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+          </SelectContent>
+        </Select>
+
+        <Select value={filterStatus} onValueChange={(val) => setFilterStatus(val || '')}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="All statuses" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All statuses</SelectItem>
+            {Object.entries(STATUS_CONFIG).map(([k, v]) => (
+              <SelectItem key={k} value={k}>{v.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        
+        <div className="flex items-center space-x-1 border rounded-md p-1 bg-muted/50">
+          <Button 
+            variant={viewMode === 'grid' ? 'secondary' : 'ghost'} 
+            size="icon" 
+            className="h-7 w-7" 
+            onClick={() => setViewMode('grid')}
+          >
+            <Grid2X2 className="h-4 w-4" />
+          </Button>
+          <Button 
+            variant={viewMode === 'list' ? 'secondary' : 'ghost'} 
+            size="icon" 
+            className="h-7 w-7" 
+            onClick={() => setViewMode('list')}
+          >
+            <List className="h-4 w-4" />
+          </Button>
         </div>
       </div>
 
       {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-48 rounded-lg border bg-muted animate-pulse" />
+            <Card key={i} className="animate-pulse h-[240px]" />
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="py-16 text-center text-muted-foreground border rounded-lg">
-          No equipment found matching your filters.
-        </div>
+        <Card className="py-24 text-center">
+          <CardContent>
+            <p className="text-muted-foreground">No equipment found matching your filters.</p>
+          </CardContent>
+        </Card>
       ) : viewMode === 'grid' ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filtered.map(e => {
-            const sc = STATUS_CONFIG[e.status] || STATUS_CONFIG.available
+            const sc = STATUS_CONFIG[e.status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.available
             const Icon = sc.icon
             return (
-              <div key={e.id} className="rounded-lg border bg-card hover:shadow-md transition-all cursor-pointer group" onClick={() => navigate(`/equipment/${e.id}`)}>
-                <div className="p-5">
-                  <div className="flex items-start justify-between mb-3">
-                    <span className="text-xs font-mono text-muted-foreground border px-2 py-0.5 rounded">{e.machineId.toUpperCase()}</span>
-                    <span className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${sc.color}`}>
-                      <Icon size={10} />{sc.label}
-                    </span>
+              <Card key={e.id} className="cursor-pointer hover:border-primary/50 transition-colors flex flex-col h-full" onClick={() => navigate(`/equipment/${e.id}`)}>
+                <CardHeader className="pb-4">
+                  <div className="flex items-start justify-between gap-4 mb-2">
+                    <Badge variant="outline" className="font-mono text-[10px] uppercase">{e.machineId}</Badge>
+                    <Badge variant={sc.variant as any} className="flex items-center gap-1">
+                      <Icon className="h-3 w-3" />
+                      {sc.label}
+                    </Badge>
                   </div>
-                  <h3 className="font-display font-semibold text-base group-hover:text-primary transition-colors">{e.name}</h3>
-                  <p className="text-xs text-accent font-semibold mt-1">{e.category}</p>
-                  <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{e.description}</p>
-                  <div className="flex items-center justify-between mt-4">
-                    <span className={`text-xs px-2 py-1 rounded font-mono ${e.requiresTraining ? 'bg-orange-50 text-orange-700' : 'bg-green-50 text-green-700'}`}>
-                      {e.requiresTraining ? 'TRAINING REQUIRED' : 'OPEN USE'}
-                    </span>
-                    <Link to={`/bookings/new?machine=${e.id}`} onClick={e2 => e2.stopPropagation()} className="text-xs text-primary hover:underline font-medium">
-                      Book →
-                    </Link>
-                  </div>
-                </div>
-              </div>
+                  <CardTitle className="text-xl tracking-tight leading-tight">{e.name}</CardTitle>
+                  <CardDescription className="uppercase tracking-widest text-xs font-medium">{e.category}</CardDescription>
+                </CardHeader>
+                <CardContent className="flex-1 pb-4">
+                  <p className="text-sm text-muted-foreground line-clamp-2">{e.description}</p>
+                </CardContent>
+                <CardFooter className="pt-0 border-t pt-4 mx-6 px-0 justify-between">
+                  <Badge variant={e.requiresTraining ? "secondary" : "default"} className="font-mono text-[10px] uppercase tracking-wider">
+                    {e.requiresTraining ? 'Training Req' : 'Open Use'}
+                  </Badge>
+                  <Button variant="ghost" size="sm" onClick={(ev) => { ev.stopPropagation(); navigate(`/bookings/new?machine=${e.id}`) }}>
+                    Book &rarr;
+                  </Button>
+                </CardFooter>
+              </Card>
             )
           })}
         </div>
       ) : (
-        <div className="rounded-lg border bg-card overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-tl-ink text-white text-xs font-mono uppercase tracking-wider">
-              <tr>
-                <th className="px-4 py-3 text-left">ID</th>
-                <th className="px-4 py-3 text-left">Name</th>
-                <th className="px-4 py-3 text-left">Category</th>
-                <th className="px-4 py-3 text-left">Location</th>
-                <th className="px-4 py-3 text-left">Status</th>
-                <th className="px-4 py-3 text-left">Training</th>
-                <th className="px-4 py-3"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
+        <Card>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[100px]">ID</TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead>Category</TableHead>
+                <TableHead>Location</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Training</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {filtered.map(e => {
-                const sc = STATUS_CONFIG[e.status] || STATUS_CONFIG.available
+                const sc = STATUS_CONFIG[e.status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.available
                 const Icon = sc.icon
                 return (
-                  <tr key={e.id} className="hover:bg-muted/30 cursor-pointer" onClick={() => navigate(`/equipment/${e.id}`)}>
-                    <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{e.machineId}</td>
-                    <td className="px-4 py-3 font-medium">{e.name}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{e.category}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{e.location || '—'}</td>
-                    <td className="px-4 py-3">
-                      <span className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium w-fit ${sc.color}`}>
-                        <Icon size={10} />{sc.label}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`text-xs ${e.requiresTraining ? 'text-orange-600' : 'text-green-600'}`}>
+                  <TableRow key={e.id} className="cursor-pointer group" onClick={() => navigate(`/equipment/${e.id}`)}>
+                    <TableCell className="font-mono text-muted-foreground text-xs">{e.machineId}</TableCell>
+                    <TableCell className="font-medium max-w-[200px] truncate">{e.name}</TableCell>
+                    <TableCell className="text-muted-foreground uppercase text-xs">{e.category}</TableCell>
+                    <TableCell className="text-muted-foreground">{e.location || '—'}</TableCell>
+                    <TableCell>
+                      <Badge variant={sc.variant as any} className="flex w-fit items-center gap-1.5 whitespace-nowrap">
+                        <Icon className="h-3 w-3" />{sc.label}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={e.requiresTraining ? "secondary" : "default"} className="font-mono text-[10px] uppercase">
                         {e.requiresTraining ? 'Required' : 'Open'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <Link to={`/bookings/new?machine=${e.id}`} onClick={e2 => e2.stopPropagation()} className="text-xs text-primary hover:underline">Book</Link>
-                    </td>
-                  </tr>
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity" onClick={ev => { ev.stopPropagation(); navigate(`/bookings/new?machine=${e.id}`) }}>
+                        Book
+                      </Button>
+                    </TableCell>
+                  </TableRow>
                 )
               })}
-            </tbody>
-          </table>
-        </div>
+            </TableBody>
+          </Table>
+        </Card>
       )}
     </div>
   )

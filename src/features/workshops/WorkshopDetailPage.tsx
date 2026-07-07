@@ -1,3 +1,4 @@
+import { Button } from '@/components/ui/button'
 import React from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
@@ -19,7 +20,7 @@ export default function WorkshopDetailPage() {
   return (
     <div className="max-w-2xl space-y-5 animate-fade-in">
       <div className="flex items-center gap-3">
-        <button onClick={() => navigate(-1)} className="p-2 rounded-md hover:bg-muted"><ArrowLeft size={18} /></button>
+        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}><ArrowLeft className="h-5 w-5" /></Button>
         <div className="flex-1">
           <p className="text-xs font-mono text-muted-foreground">{workshop.type.replace('_',' ')}</p>
           <h1 className="text-2xl font-display font-bold">{workshop.title}</h1>

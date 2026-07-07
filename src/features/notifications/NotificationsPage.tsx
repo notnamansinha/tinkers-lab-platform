@@ -1,3 +1,4 @@
+import { Button } from '@/components/ui/button'
 import React from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { doc, updateDoc, writeBatch, collection } from 'firebase/firestore'
@@ -35,9 +36,9 @@ export default function NotificationsPage() {
           <h1 className="text-2xl font-display font-bold mt-1">Notifications</h1>
         </div>
         {notifications.some(n => !n.isRead) && (
-          <button onClick={markAllRead} className="flex items-center gap-1.5 text-xs text-primary hover:underline">
+          <Button variant="link" size="sm" onClick={markAllRead} className="gap-1.5 text-xs h-auto p-0">
             <CheckCheck size={14} /> Mark all read
-          </button>
+          </Button>
         )}
       </div>
 

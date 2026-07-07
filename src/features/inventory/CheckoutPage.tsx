@@ -1,3 +1,5 @@
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
@@ -101,7 +103,7 @@ export default function CheckoutPage() {
   return (
     <div className="space-y-6 max-w-xl animate-fade-in">
       <div className="flex items-center gap-3">
-        <button onClick={() => navigate(-1)} className="p-2 rounded-md hover:bg-muted"><ArrowLeft size={18} /></button>
+        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}><ArrowLeft className="h-5 w-5" /></Button>
         <div>
           <p className="text-xs font-mono uppercase tracking-widest text-accent">Inventory</p>
           <h1 className="text-2xl font-display font-bold">Tool Checkout / Return</h1>
@@ -137,14 +139,14 @@ export default function CheckoutPage() {
 
         <div className="space-y-1.5">
           <label className="text-sm font-medium">Quantity *</label>
-          <input type="number" min={1} className={inp(!!errors.quantity)} {...register('quantity')} />
+          <Input type="number" min={1} className={inp(!!errors.quantity)} {...register('quantity')} />
           {errors.quantity && <p className="text-xs text-destructive">{errors.quantity.message}</p>}
         </div>
 
         {transactionType === 'issue' && (
           <div className="space-y-1.5">
             <label className="text-sm font-medium">Expected Return Date</label>
-            <input type="date" className={inp(false)} {...register('dueDate')} />
+            <Input type="date" className={inp(false)} {...register('dueDate')} />
           </div>
         )}
 
@@ -154,11 +156,11 @@ export default function CheckoutPage() {
         </div>
 
         <div className="flex gap-3 pt-2">
-          <button type="submit" disabled={isSubmitting} className="flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-md text-sm font-semibold hover:bg-primary/90 disabled:opacity-60">
+          <Button type="submit" disabled={isSubmitting} className="gap-2">
             {isSubmitting ? <div className="w-4 h-4 border-2 border-current/20 border-t-current rounded-full animate-spin" /> : <Package size={16} />}
             Submit
-          </button>
-          <button type="button" onClick={() => navigate(-1)} className="px-4 py-2.5 border rounded-md text-sm hover:bg-muted">Cancel</button>
+          </Button>
+          <Button type="button" variant="outline" onClick={() => navigate(-1)}>Cancel</Button>
         </div>
       </form>
     </div>

@@ -1,4 +1,7 @@
 import React, { useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { collection, query, orderBy, getDocs, doc, updateDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
@@ -52,7 +55,7 @@ export default function AdminProjectsPage() {
       <div className="flex gap-3">
         <div className="relative flex-1 max-w-sm">
           <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search projects…" className="w-full pl-9 pr-3 py-2 text-sm border rounded-md bg-background outline-none focus:ring-2 focus:ring-ring" />
+          <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search projects…" className="pl-9" />
         </div>
         <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="px-3 py-2 text-sm border rounded-md bg-background outline-none focus:ring-2 focus:ring-ring">
           <option value="all">All statuses</option>
@@ -63,49 +66,49 @@ export default function AdminProjectsPage() {
       <div className="rounded-lg border bg-card overflow-hidden">
         {isLoading ? <div className="py-16 text-center text-muted-foreground">Loading…</div> : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm min-w-[900px]">
-              <thead className="bg-tl-ink text-white text-xs font-mono uppercase tracking-wider sticky top-0">
-                <tr>
-                  <th className="px-4 py-3 text-left">#</th>
-                  <th className="px-4 py-3 text-left">Project ID</th>
-                  <th className="px-4 py-3 text-left">Title</th>
-                  <th className="px-4 py-3 text-left">Submitted by</th>
-                  <th className="px-4 py-3 text-left">Type</th>
-                  <th className="px-4 py-3 text-left">Department</th>
-                  <th className="px-4 py-3 text-left">Start</th>
-                  <th className="px-4 py-3 text-left">Submitted</th>
-                  <th className="px-4 py-3 text-left">Status</th>
-                  <th className="px-4 py-3 text-left">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>#</TableHead>
+                  <TableHead>Project ID</TableHead>
+                  <TableHead>Title</TableHead>
+                  <TableHead>Submitted by</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Department</TableHead>
+                  <TableHead>Start</TableHead>
+                  <TableHead>Submitted</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {filtered.map((p, idx) => (
-                  <tr key={p.id} className={cn('hover:bg-muted/30', p.status === 'pending' && 'bg-orange-50/50')}>
-                    <td className="px-4 py-2.5 text-xs font-mono text-muted-foreground">{filtered.length - idx}</td>
-                    <td className="px-4 py-2.5 font-mono text-xs">{(p as any).id || '—'}</td>
-                    <td className="px-4 py-2.5 font-medium max-w-48 truncate">{p.title}</td>
-                    <td className="px-4 py-2.5">
+                  <TableRow>
+                    <TableCell>{filtered.length - idx}</TableCell>
+                    <TableCell>{(p as any).id || '—'}</TableCell>
+                    <TableCell>{p.title}</TableCell>
+                    <TableCell>
                       <div className="text-sm font-medium">{p.userName}</div>
                       <div className="text-xs text-muted-foreground">{p.userEmail}</div>
-                    </td>
-                    <td className="px-4 py-2.5 text-xs text-muted-foreground">{p.userType}</td>
-                    <td className="px-4 py-2.5 text-xs text-muted-foreground">{p.department}</td>
-                    <td className="px-4 py-2.5 font-mono text-xs">{p.startDate}</td>
-                    <td className="px-4 py-2.5 text-xs text-muted-foreground">{formatDateTime(p.createdAt)}</td>
-                    <td className="px-4 py-2.5"><span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLOR[p.status] || 'bg-gray-100'}`}>{p.status}</span></td>
-                    <td className="px-4 py-2.5">
+                    </TableCell>
+                    <TableCell>{p.userType}</TableCell>
+                    <TableCell>{p.department}</TableCell>
+                    <TableCell>{p.startDate}</TableCell>
+                    <TableCell>{formatDateTime(p.createdAt)}</TableCell>
+                    <TableCell><span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLOR[p.status] || 'bg-gray-100'}`}>{p.status}</span></TableCell>
+                    <TableCell>
                       {p.status === 'pending' && (
                         <div className="flex gap-1">
-                          <button onClick={() => updateStatus(p.id, 'active')} className="p-1 rounded bg-green-100 text-green-700 hover:bg-green-200" title="Approve"><CheckCircle size={14} /></button>
+                          <Button size="icon" variant="ghost" className="h-7 w-7 text-green-600 hover:text-green-700 hover:bg-green-100" onClick={() => updateStatus(p.id, 'active')}><CheckCircle size={14} /></Button>
                           <button onClick={() => { const r = window.prompt('Rejection reason:') || ''; updateStatus(p.id, 'rejected', r) }} className="p-1 rounded bg-red-100 text-red-700 hover:bg-red-200" title="Reject"><XCircle size={14} /></button>
                         </div>
                       )}
                       {p.status !== 'pending' && <span className="text-xs text-muted-foreground">—</span>}
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
             <div className="px-4 py-2 bg-muted/20 text-xs text-muted-foreground border-t">
               {filtered.length} of {projects.length} projects · Latest first
             </div>
