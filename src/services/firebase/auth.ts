@@ -23,11 +23,25 @@ googleProvider.setCustomParameters({ prompt: 'select_account' })
 // ============================================================
 // SIGN IN — Google
 // ============================================================
+import { signInWithRedirect } from 'firebase/auth'
+
 export async function signInWithGoogle(): Promise<User> {
-  const result = await signInWithPopup(auth, googleProvider)
-  // Create user profile if first time
-  await ensureUserProfile(result.user)
-  return result.user
+  try {
+    const result = await signInWithPopup(auth, googleProvider)
+    // Create user profile if first time
+    await ensureUserProfile(result.user)
+    return result.user
+  } catch (error: any) {
+    if (
+      error.code === 'auth/popup-blocked' ||
+      error.code === 'auth/popup-closed-by-user' ||
+      error.code === 'auth/cross-origin-opener-policy-failed'
+    ) {
+      await signInWithRedirect(auth, googleProvider)
+      throw new Error('Redirecting to Google...')
+    }
+    throw error
+  }
 }
 
 // ============================================================
