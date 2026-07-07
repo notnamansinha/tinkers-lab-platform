@@ -29,7 +29,7 @@ service cloud.firestore {
 
     // Staff roles: elevated access
     function isStaff() {
-      return isAuth() && getUserRole() in ['super_admin', 'faculty'];
+      return isAuth() && getUserRole() in ['super_admin', 'faculty', 'lab_assistant'];
     }
 
     // ================================================================

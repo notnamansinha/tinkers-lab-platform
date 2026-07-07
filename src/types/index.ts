@@ -6,16 +6,18 @@ import { Timestamp } from 'firebase/firestore'
 export type UserRole =
   | 'super_admin'
   | 'faculty'
+  | 'lab_assistant'
   | 'student'
 
 export const ROLE_LABELS: Record<UserRole, string> = {
   super_admin: 'Super Admin',
   faculty: 'Faculty',
+  lab_assistant: 'Lab Assistant',
   student: 'Student',
 }
 
 export const ADMIN_ROLES: UserRole[] = ['super_admin']
-export const STAFF_ROLES: UserRole[] = ['super_admin', 'faculty']
+export const STAFF_ROLES: UserRole[] = ['super_admin', 'faculty', 'lab_assistant']
 
 export interface UserProfile {
   uid: string

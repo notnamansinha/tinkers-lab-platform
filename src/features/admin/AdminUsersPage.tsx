@@ -9,10 +9,11 @@ import { toast } from 'sonner'
 import type { UserProfile, UserRole } from '@/types'
 import { useAuth } from '@/contexts/AuthContext'
 
-const ROLES: UserRole[] = ['super_admin','faculty','student']
+const ROLES: UserRole[] = ['super_admin','faculty','lab_assistant','student']
 const ROLE_COLOR: Record<UserRole, string> = {
   super_admin: 'bg-red-100 text-red-700',
   faculty: 'bg-blue-100 text-blue-700',
+  lab_assistant: 'bg-teal-100 text-teal-700',
   student: 'bg-green-100 text-green-700',
 }
 

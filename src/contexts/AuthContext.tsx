@@ -49,7 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const role = profile?.role ?? null
   const adminRoles: UserRole[] = ['super_admin']
-  const staffRoles: UserRole[] = ['super_admin', 'faculty']
+  const staffRoles: UserRole[] = ['super_admin', 'faculty', 'lab_assistant']
   const isAdmin = role ? adminRoles.includes(role) : false
   const isStaff = role ? staffRoles.includes(role) : false
 
