@@ -11,7 +11,7 @@ const CONFIG = {
 
   // Paste your deployed Apps Script Web App URL here.
   // Leave empty ("") to run in DEMO MODE (sample data, stored in browser).
-  API_URL: "",
+  API_URL: "https://script.google.com/macros/s/AKfycbwugwdaFHSDwc1RdBSpy9kulktQq94CqcJ2VAp6yLLaedlkqe_MXIOcvFmjcck_Iz1E/exec",
 
   LAB_NAME: "Tinkerers' Lab",
   LAB_EMAIL: "tinkerslab@ahduni.edu.in",
