@@ -18,6 +18,22 @@ var LAB_EMAIL = "tinkerslab@ahduni.edu.in"; // coordinator alerts go here
 var LAB_NAME  = "Tinkerers' Lab, Ahmedabad University";
 var LAB_LOCATION = "Innovation & Tinkering Lab, Ahmedabad University";
 
+// ---------- Rate limiting & abuse protection ----------
+// Public endpoints: max N calls per identifier per window (minutes).
+var LIMITS = {
+  registerProject: { max: 5,  windowMin: 1440 }, // 5 per day per email
+  createBooking:   { max: 3,  windowMin: 60   }, // 3 per hour per email
+  reportIssue:     { max: 5,  windowMin: 60   }, // 5 per hour per email
+  checkoutTool:    { max: 20, windowMin: 60   }  // 20 per hour per email (generous)
+};
+
+// Admin lockout: after N wrong keys from same clientId, lock for M minutes.
+var ADMIN_LOCKOUT = { maxAttempts: 5, lockoutMin: 30 };
+
+// Booking sanity limits
+var BOOKING_MAX_HOURS_AHEAD = 24 * 30;   // no bookings > 30 days ahead
+var BOOKING_MAX_LENGTH_HRS  = 4;         // no slot longer than 4 hours
+
 // Human-readable machine names — keep in sync with js/config.js MACHINES.
 var MACHINE_NAMES = {
   "bambu-x1c":    "Bambu Labs X-1C 3D Printer",
@@ -57,6 +73,14 @@ function doGet() {
 
 // ---------- router ----------
 function handle(action, p) {
+  // Honeypot — bots fill hidden fields, humans don't
+  if (p && p.website && p.website.length > 0) throw new Error("Rejected.");
+
+  // Rate limit public actions (keyed by lowercase email)
+  if (LIMITS[action] && p && p.email) {
+    checkRate(action, String(p.email).toLowerCase().trim());
+  }
+
   switch (action) {
     case "registerProject":      return registerProject(p);
     case "getProjectsByEmail":   return getProjectsByEmail(p);
@@ -66,15 +90,84 @@ function handle(action, p) {
     case "returnTool":           return returnTool(p);
     case "getOpenCheckouts":     return getOpenCheckouts();
     case "reportIssue":          return reportIssue(p);
+    case "adminLogin":           return adminLogin(p);
     case "adminGetAll":          requireAdmin(p); return adminGetAll();
     case "adminSetBookingStatus":requireAdmin(p); return setStatus("Platform Bookings", p.id, p.status, true);
     case "adminSetIssueStatus":  requireAdmin(p); return setStatus("Platform Issues", p.id, p.status, false);
+    case "ping":                 return { ok: true, ts: new Date().toISOString() };
     default: throw new Error("Unknown action: " + action);
   }
 }
 
+// ---------- rate limiting ----------
+function checkRate(action, key) {
+  var lim = LIMITS[action];
+  var s = sheet(SHEETS.rate.name, SHEETS.rate.headers);
+  var cutoff = Date.now() - lim.windowMin * 60 * 1000;
+  var data = rows(s);
+  var count = 0;
+  for (var i = 0; i < data.length; i++) {
+    if (data[i][0] === action && data[i][1] === key && new Date(data[i][2]).getTime() > cutoff) count++;
+  }
+  if (count >= lim.max) {
+    throw new Error("You've hit the rate limit for this action. Try again later.");
+  }
+  s.appendRow([action, key, new Date()]);
+  // Occasional cleanup of very old entries
+  if (Math.random() < 0.02) cleanupOldRateEntries(s);
+}
+function cleanupOldRateEntries(s) {
+  var oldCutoff = Date.now() - 30 * 24 * 60 * 60 * 1000; // 30 days
+  var data = rows(s);
+  for (var i = data.length - 1; i >= 0; i--) {
+    if (new Date(data[i][2]).getTime() < oldCutoff) s.deleteRow(i + 2);
+  }
+}
+
+// ---------- admin auth + lockout ----------
 function requireAdmin(p) {
-  if (p.key !== ADMIN_KEY) throw new Error("Invalid admin key");
+  if (isLockedOut(p.clientId)) throw new Error("Too many failed attempts. Locked out — try again later.");
+  if (p.key !== ADMIN_KEY) {
+    logAdmin(p.clientId, "FAIL", "auth", "invalid key");
+    throw new Error("Invalid admin key");
+  }
+}
+
+function adminLogin(p) {
+  if (isLockedOut(p.clientId)) {
+    return { ok: false, error: "Locked out. Too many failed attempts. Try again in " + ADMIN_LOCKOUT.lockoutMin + " minutes." };
+  }
+  if (p.key !== ADMIN_KEY) {
+    logAdmin(p.clientId, "FAIL", "login", "invalid key");
+    var remaining = ADMIN_LOCKOUT.maxAttempts - recentFailCount(p.clientId);
+    if (remaining <= 0) {
+      safeMail(LAB_EMAIL, "⚠ Admin lockout triggered",
+        "Client " + p.clientId + " hit the admin lockout threshold at " + new Date() + ".");
+      return { ok: false, error: "Too many failed attempts. Locked out for " + ADMIN_LOCKOUT.lockoutMin + " minutes." };
+    }
+    return { ok: false, error: "Invalid key. " + remaining + " attempts remaining." };
+  }
+  logAdmin(p.clientId, "OK", "login", "");
+  return { ok: true };
+}
+
+function isLockedOut(clientId) {
+  if (!clientId) return false;
+  return recentFailCount(clientId) >= ADMIN_LOCKOUT.maxAttempts;
+}
+function recentFailCount(clientId) {
+  var s = sheet(SHEETS.adminLog.name, SHEETS.adminLog.headers);
+  var cutoff = Date.now() - ADMIN_LOCKOUT.lockoutMin * 60 * 1000;
+  var data = rows(s);
+  var n = 0;
+  for (var i = 0; i < data.length; i++) {
+    if (data[i][1] === clientId && data[i][2] === "FAIL" && new Date(data[i][0]).getTime() > cutoff) n++;
+  }
+  return n;
+}
+function logAdmin(clientId, result, action, detail) {
+  var s = sheet(SHEETS.adminLog.name, SHEETS.adminLog.headers);
+  s.appendRow([new Date(), clientId || "unknown", result, action, detail || ""]);
 }
 
 // ---------- sheet helpers ----------
@@ -105,7 +198,9 @@ var SHEETS = {
   projects:  { name: "Platform Projects",  headers: ["ID","Timestamp","User Type","Name","Email","Contact","Org","Uni ID","Team","Title","Abstract","Start","End","Link","Status"] },
   bookings:  { name: "Platform Bookings",  headers: ["ID","Timestamp","Project ID","Email","Machine ID","Date","Start","End","Purpose","Status"] },
   checkouts: { name: "Platform Checkouts", headers: ["ID","Timestamp","Name","Email","Category","Tool","Qty","Due","Status"] },
-  issues:    { name: "Platform Issues",    headers: ["ID","Timestamp","Name","Email","Type","Severity","Machine","Description","Date","Status"] }
+  issues:    { name: "Platform Issues",    headers: ["ID","Timestamp","Name","Email","Type","Severity","Machine","Description","Date","Status"] },
+  rate:      { name: "Platform RateLimits",headers: ["Action","Key","Timestamp"] },
+  adminLog:  { name: "Platform Admin Log", headers: ["Timestamp","Client ID","Result","Action","Detail"] }
 };
 
 // ---------- actions ----------
@@ -149,7 +244,27 @@ function getBookings(p) {
 }
 
 function createBooking(p) {
-  // conflict check
+  // Sanity checks
+  var start = new Date(p.date + "T" + p.start + ":00");
+  var end   = new Date(p.date + "T" + p.end   + ":00");
+  var now   = new Date();
+  if (isNaN(start) || isNaN(end))      throw new Error("Invalid date/time.");
+  if (end <= start)                    throw new Error("End time must be after start time.");
+  if (start < now)                     throw new Error("Cannot book in the past.");
+  var hoursAhead = (start - now) / 3600000;
+  if (hoursAhead > BOOKING_MAX_HOURS_AHEAD) throw new Error("Bookings must be within " + Math.floor(BOOKING_MAX_HOURS_AHEAD/24) + " days.");
+  var lengthHrs = (end - start) / 3600000;
+  if (lengthHrs > BOOKING_MAX_LENGTH_HRS)   throw new Error("Single booking cannot exceed " + BOOKING_MAX_LENGTH_HRS + " hours.");
+  if (!p.projectId)                    throw new Error("Project ID required — register a project first.");
+
+  // Verify projectId belongs to this email
+  var pr = sheet(SHEETS.projects.name, SHEETS.projects.headers);
+  var owns = rows(pr).some(function (r) {
+    return r[0] === p.projectId && String(r[4]).toLowerCase() === String(p.email).toLowerCase();
+  });
+  if (!owns) throw new Error("Project ID does not match this email.");
+
+  // Conflict check
   var existing = getBookings({ machineId: p.machineId, date: p.date }).bookings;
   for (var i = 0; i < existing.length; i++) {
     var b = existing[i];

@@ -2,11 +2,21 @@
 // API layer — talks to the Google Apps Script Web App.
 // If CONFIG.API_URL is empty, runs in DEMO MODE using
 // browser localStorage so the site works out of the box.
-// Swap this file for a Supabase/Firebase client later without
-// touching any UI code — every view only calls Api.*
 // ============================================================
 
 const DEMO = !CONFIG.API_URL;
+
+// Persistent per-browser client ID — used for admin lockout tracking.
+// Not a security boundary; just makes brute-force impractical.
+function getClientId() {
+  var id = localStorage.getItem("tl-client-id");
+  if (!id) {
+    id = "c_" + Date.now().toString(36) + "_" +
+         Math.random().toString(36).slice(2, 10);
+    localStorage.setItem("tl-client-id", id);
+  }
+  return id;
+}
 
 const Api = {
 
@@ -15,7 +25,7 @@ const Api = {
     if (DEMO) return Demo.handle(action, payload);
     const res = await fetch(CONFIG.API_URL, {
       method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" }, // avoids CORS preflight with Apps Script
+      headers: { "Content-Type": "text/plain;charset=utf-8" }, // avoids CORS preflight
       body: JSON.stringify({ action, payload })
     });
     if (!res.ok) throw new Error("Server error " + res.status);
@@ -24,20 +34,31 @@ const Api = {
     return data;
   },
 
+  // Warm up the Apps Script runtime so the first real request is snappy.
+  ping: () => Api._post("ping", {}).catch(() => null),
+
   // ---------- public API ----------
-  registerProject: (p)              => Api._post("registerProject", p),
-  getProjectsByEmail: (email)       => Api._post("getProjectsByEmail", { email }),
-  getBookings: (machineId, date)    => Api._post("getBookings", { machineId, date }),
-  createBooking: (b)                => Api._post("createBooking", b),
-  checkoutTool: (c)                 => Api._post("checkoutTool", c),
-  returnTool: (c)                   => Api._post("returnTool", c),
-  getOpenCheckouts: ()              => Api._post("getOpenCheckouts", {}),
-  reportIssue: (r)                  => Api._post("reportIssue", r),
-  // admin
-  adminGetAll: (key)                => Api._post("adminGetAll", { key }),
-  adminSetBookingStatus: (key, id, status) => Api._post("adminSetBookingStatus", { key, id, status }),
-  adminSetIssueStatus: (key, id, status)   => Api._post("adminSetIssueStatus", { key, id, status })
+  registerProject: (p)           => Api._post("registerProject",    withClient(p)),
+  getProjectsByEmail: (email)    => Api._post("getProjectsByEmail", { email }),
+  getBookings: (machineId, date) => Api._post("getBookings",        { machineId, date }),
+  createBooking: (b)             => Api._post("createBooking",      withClient(b)),
+  checkoutTool: (c)              => Api._post("checkoutTool",       withClient(c)),
+  returnTool: (c)                => Api._post("returnTool",         c),
+  getOpenCheckouts: ()           => Api._post("getOpenCheckouts",   {}),
+  reportIssue: (r)               => Api._post("reportIssue",        withClient(r)),
+
+  // ---------- admin ----------
+  adminLogin: (key)              => Api._post("adminLogin",         { key, clientId: getClientId() }),
+  adminGetAll: (key)             => Api._post("adminGetAll",        { key, clientId: getClientId() }),
+  adminSetBookingStatus: (key, id, status) => Api._post("adminSetBookingStatus", { key, id, status, clientId: getClientId() }),
+  adminSetIssueStatus:   (key, id, status) => Api._post("adminSetIssueStatus",   { key, id, status, clientId: getClientId() })
 };
+
+// Adds a client-generated id + honeypot field to public writes.
+// Backend rejects if `website` is filled (it's hidden from users).
+function withClient(p) {
+  return Object.assign({ clientId: getClientId(), website: "" }, p);
+}
 
 
 // ============================================================
@@ -76,6 +97,8 @@ const Demo = {
     const done = (out) => { Demo.save(db); return Promise.resolve(out); };
 
     switch (action) {
+      case "ping": return Promise.resolve({ ok: true, ts: new Date().toISOString() });
+      case "adminLogin": return Promise.resolve({ ok: true }); // demo: any key wins
       case "registerProject": {
         const id = Demo.nextId(db.projects, "TL");
         db.projects.push({ id, status: "Pending", ...p });

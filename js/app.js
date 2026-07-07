@@ -120,6 +120,7 @@ route("/book", async () => {
     <p class="page-sub">Your project must be <a href="#/register">registered</a> first. Enter the email you registered with — we'll find your projects.</p>
 
     <form class="panel" id="bookForm">
+      <div style="position:absolute;left:-9999px" aria-hidden="true"><label>Website<input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
       <div class="field">
         <label>Registered email <span class="req">*</span></label>
         <input type="email" name="email" required placeholder="you@ahduni.edu.in">
@@ -263,6 +264,7 @@ route("/register", async () => {
     <p class="page-sub">Register once per project. You'll get a Project ID by email — use it for all your machine bookings. To add teammates later, email the lab coordinator.</p>
 
     <form class="panel" id="regForm">
+      <div style="position:absolute;left:-9999px" aria-hidden="true"><label>Website<input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
       <div class="field">
         <label>You are a… <span class="req">*</span></label>
         <select name="userType" required>
@@ -353,6 +355,7 @@ route("/checkout", async () => {
 
     <div class="grid grid-2" style="align-items:start">
       <form class="panel" id="coForm">
+      <div style="position:absolute;left:-9999px" aria-hidden="true"><label>Website<input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
         <div class="field">
           <label>Action <span class="req">*</span></label>
           <select name="action"><option value="out">Checking out</option><option value="return">Returning</option></select>
@@ -426,6 +429,7 @@ route("/report", async () => {
     <p class="page-sub">Machine acting up? Missing tool? Idea to improve the lab? Tell us — urgent reports alert the coordinator immediately.</p>
 
     <form class="panel" id="repForm">
+      <div style="position:absolute;left:-9999px" aria-hidden="true"><label>Website<input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
       <div class="field-row">
         <div class="field"><label>Your name <span class="req">*</span></label><input name="name" required></div>
         <div class="field"><label>Email <span class="req">*</span></label><input type="email" name="email" required></div>
@@ -487,10 +491,19 @@ route("/admin", async () => {
         <button class="btn">Enter</button>
         <div class="hint" style="margin-top:8px">In demo mode any key works. In production the key is checked by the backend.</div>
       </form>`;
-    $("#keyForm").addEventListener("submit", (ev) => {
+    $("#keyForm").addEventListener("submit", async (ev) => {
       ev.preventDefault();
-      sessionStorage.setItem("tl-admin-key", ev.target.key.value);
-      render();
+      const key = ev.target.key.value;
+      const btn = ev.target.querySelector("button");
+      btn.disabled = true; btn.textContent = "Checking…";
+      try {
+        const r = await Api.adminLogin(key);
+        if (!r.ok) { toast(r.error || "Invalid key."); btn.disabled = false; btn.textContent = "Enter"; return; }
+        sessionStorage.setItem("tl-admin-key", key);
+        render();
+      } catch (e) {
+        toast(e.message); btn.disabled = false; btn.textContent = "Enter";
+      }
     });
     return;
   }
@@ -570,4 +583,5 @@ route("/admin", async () => {
 
 // ---------- boot ----------
 if (DEMO) $("#demoBadge").innerHTML = `<span class="badge Pending">DEMO MODE — set API_URL in js/config.js</span>`;
+Api.ping();       // warm up Apps Script runtime so first submit is snappy
 render();
