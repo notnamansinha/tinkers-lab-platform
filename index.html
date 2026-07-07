@@ -1,54 +1,15 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tinkerers' Lab — Ahmedabad University</title>
-<meta name="description" content="Machine booking, tool checkout and project registry for the Innovation & Tinkering Lab, Ahmedabad University.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=2026.07.07.2">
-</head>
-<body>
-
-<header class="topbar">
-  <a href="#/" class="brand">
-    <span class="brand-mark">TL</span>
-    <span class="brand-text">
-      <strong>Tinkerers' Lab</strong>
-      <small>Ahmedabad University</small>
-    </span>
-  </a>
-  <nav class="nav" id="nav">
-    <a href="#/" data-route="/">Dashboard</a>
-    <a href="#/machines" data-route="/machines">Machines</a>
-    <a href="#/book" data-route="/book">Book</a>
-    <a href="#/register" data-route="/register">Register Project</a>
-    <a href="#/checkout" data-route="/checkout">Tool Checkout</a>
-    <a href="#/report" data-route="/report">Report</a>
-    <a href="#/admin" data-route="/admin" class="nav-admin">Admin</a>
-  </nav>
-  <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">☰</button>
-</header>
-
-<main id="app" class="app"></main>
-
-<footer class="footer">
-  <div>
-    <strong>Innovation &amp; Tinkering Lab</strong><br>
-    Ahmedabad University, Navrangpura, Ahmedabad
-  </div>
-  <div class="footer-meta">
-    <span id="demoBadge"></span>
-    <span>Open source — <a href="https://github.com/vrucando/tinkers-lab-platform" target="_blank" rel="noopener">GitHub</a></span>
-  </div>
-</footer>
-
-<div id="toast" class="toast" role="status"></div>
-
-<script src="js/config.js?v=2026.07.07.2"></script>
-<script src="js/api.js?v=2026.07.07.2"></script>
-<script src="js/app.js?v=2026.07.07.2"></script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tinkerers' Lab — Ahmedabad University</title>
+    <meta name="description" content="Makerspace management platform for the Innovation & Tinkering Lab, Ahmedabad University. Book equipment, manage inventory, register projects and more." />
+    <meta name="theme-color" content="#16211B" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>

@@ -1,91 +1,32 @@
-# Tinkerers' Lab Platform
+# React + TypeScript + Vite
 
-A free, zero-server makerspace management platform for the **Innovation & Tinkering Lab, Ahmedabad University**.
+This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
 
-Machine booking · Project registry · Tool checkout · Issue reporting · Admin panel
+Currently, two official plugins are available:
 
-**Live site:** enable GitHub Pages (see below) → `https://vrucando.github.io/tinkers-lab-platform./`
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
 
----
+## React Compiler
 
-## How it works
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
 
-```
-Browser (this repo, GitHub Pages — free)
-        │  JSON over HTTPS
-        ▼
-Google Apps Script Web App (apps-script/Code.gs — free)
-        │
-        ▼
-Google Sheets = database (your existing "Tinker's Lab Management" sheet)
-        │
-        ▼
-Gmail (confirmations, approvals, reminders, overdue alerts)
-```
+## Expanding the Oxlint configuration
 
-No servers, no hosting bills, no frameworks, no build step. Any student who knows
-basic HTML/JS can maintain it with just a text editor.
+If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
 
-The site runs in **DEMO MODE** (sample data, stored only in your browser) until you
-connect the backend — so you can try every feature right away.
-
----
-
-## Setup (one time, ~15 minutes)
-
-### 1. Deploy the backend
-1. Open your **Tinker's Lab Management** Google Sheet
-2. `Extensions → Apps Script`, create a file, paste **`apps-script/Code.gs`**
-3. Change `ADMIN_KEY` at the top to a secret only coordinators know
-4. `Deploy → New deployment → Web app`
-   - *Execute as:* **Me**
-   - *Who has access:* **Anyone**
-5. Copy the Web App URL
-6. (Optional) run `setupDailyTrigger` once → enables booking reminders + overdue emails
-
-### 2. Connect the frontend
-1. Edit **`js/config.js`** → paste the URL into `API_URL`
-2. Commit and push
-
-### 3. Enable GitHub Pages
-Repo `Settings → Pages → Source: Deploy from a branch → main / root → Save`.
-Your platform is live a minute later.
-
----
-
-## Everyday maintenance
-
-| Task | Where |
-|---|---|
-| Add / remove a machine | `js/config.js` → `MACHINES` |
-| Change lab hours or slot length | `js/config.js` → `OPEN_HOUR` etc. |
-| Change email wording | `apps-script/Code.gs` |
-| Approve bookings, resolve issues | `/#/admin` on the site |
-| Raw data | the Google Sheet tabs starting with `Platform ` |
-
-## Project structure
-
-```
-index.html          app shell + nav
-css/style.css       all styling
-js/config.js        ← the only file you edit routinely
-js/api.js           API layer + demo mode (swap for Supabase later)
-js/app.js           router + all views
-apps-script/Code.gs backend API + emails + daily reminders
+```json
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["react", "typescript", "oxc"],
+  "options": {
+    "typeAware": true
+  },
+  "rules": {
+    "react/rules-of-hooks": "error",
+    "react/only-export-components": ["warn", { "allowConstantExport": true }]
+  }
+}
 ```
 
-## Scaling path (when you outgrow Sheets)
-
-The UI only ever calls `Api.*` in `js/api.js`. To migrate to Supabase/Firebase/
-a real backend, re-implement those ~10 functions and change nothing else.
-
-## Contributing
-
-1. Fork / branch
-2. Keep it dependency-free (no npm) so future students can maintain it
-3. Test in demo mode (`API_URL: ""`)
-4. PR with a clear description
-
----
-
-Built for the Tinkerers' Lab community. Maintained by lab coordinators & students.
+See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
