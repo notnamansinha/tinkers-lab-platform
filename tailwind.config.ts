@@ -10,7 +10,7 @@ const config: Config = {
     extend: {
       fontFamily: {
         sans: ['PP Mori', 'system-ui', 'sans-serif'],
-        display: ['Sao Torpes', 'sans-serif'],
+        display: ['PP Mori', 'sans-serif'],
         mono: ['IBM Plex Mono', 'Courier New', 'monospace'],
       },
       colors: {
