@@ -1,44 +1,52 @@
 import React from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
   Calendar, Package, Wrench, AlertTriangle,
   ClipboardList, Users, TrendingUp, Clock,
-  CheckCircle, XCircle, Loader2,
+  CheckCircle, XCircle, ChevronRight,
 } from 'lucide-react'
 import { collection, query, where, orderBy, limit, getDocs, getCountFromServer } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { COLLECTIONS } from '@/services/firebase/firestore'
 import { useAuth } from '@/contexts/AuthContext'
-import { formatRelativeTime, todayStr } from '@/lib/utils'
+import { cn, todayStr } from '@/lib/utils'
 import type { Booking, InventoryItem, Announcement } from '@/types'
 
-// Stat card component
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import heroBg from '@/assets/hero.png'
+
 function StatCard({
-  label, value, icon: Icon, color, href,
+  label, value, icon: Icon, href,
 }: {
-  label: string; value: number | string; icon: React.ElementType; color: string; href?: string
+  label: string; value: number | string; icon: React.ElementType; href?: string
 }) {
-  const content = (
-    <div className={`rounded-lg border bg-card p-5 hover:shadow-md transition-shadow ${href ? 'cursor-pointer' : ''}`}>
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-xs font-mono uppercase tracking-widest text-muted-foreground">{label}</p>
-          <p className={`text-3xl font-display font-bold mt-1 ${color}`}>{value}</p>
-        </div>
-        <div className={`p-2 rounded-md ${color.replace('text-', 'bg-').replace('-600', '-100').replace('-500', '-100')}`}>
-          <Icon size={20} className={color} />
-        </div>
-      </div>
-    </div>
+  const navigate = useNavigate()
+  return (
+    <Card 
+      className={href ? 'cursor-pointer hover:border-primary/50 transition-colors' : ''} 
+      onClick={() => href && navigate(href)}
+    >
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <CardTitle className="text-sm font-medium text-muted-foreground">{label}</CardTitle>
+        <Icon className="h-4 w-4 text-muted-foreground" />
+      </CardHeader>
+      <CardContent>
+        <div className="text-3xl font-bold">{value}</div>
+      </CardContent>
+    </Card>
   )
-  return href ? <Link to={href}>{content}</Link> : content
 }
 
 export default function DashboardPage() {
   const { isAdmin, isStaff, profile } = useAuth()
+  const navigate = useNavigate()
 
-  // Fetch today's bookings (narrow query – only today)
+  // Fetch today's bookings
   const { data: todayBookings = [] } = useQuery({
     queryKey: ['bookings', 'today'],
     queryFn: async () => {
@@ -88,140 +96,159 @@ export default function DashboardPage() {
   })
 
   const approvedToday = todayBookings.filter(b => b.status === 'approved').length
-  const pendingToday = todayBookings.filter(b => b.status === 'pending').length
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Header */}
-      <div>
-        <p className="text-xs font-mono uppercase tracking-widest text-accent">Innovation & Tinkering Lab</p>
-        <h1 className="text-2xl font-display font-bold mt-1">
-          Welcome back{profile?.displayName ? `, ${profile.displayName.split(' ')[0]}` : ''}
-        </h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-        </p>
+    <div className="space-y-12 container py-6 mx-auto animate-fade-in">
+      {/* Hero Section - Perception First Design (L1 Impression) */}
+      <div className="relative rounded-2xl overflow-hidden border border-white/5 bg-black">
+        {/* Background Abstract Image */}
+        <div className="absolute inset-0 z-0">
+          <img 
+            src={heroBg} 
+            alt="Tinkers Lab Workspace" 
+            className="w-full h-full object-cover opacity-60 mix-blend-lighten"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black via-black/40 to-transparent" />
+        </div>
+        
+        <div className="relative z-10 px-8 py-16 md:py-24 lg:px-16 flex flex-col justify-end min-h-[360px]">
+          <div className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white backdrop-blur-md mb-4 w-max">
+            <span className="flex h-2 w-2 rounded-full bg-primary mr-2 animate-pulse"></span>
+            System Online
+          </div>
+          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tighter text-white max-w-2xl leading-tight font-display">
+            Welcome back{profile?.displayName ? `, ${profile.displayName.split(' ')[0]}` : ''}.
+          </h1>
+          <p className="text-lg md:text-xl text-white/60 mt-4 font-medium max-w-xl">
+            {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} — The lab is ready for your next project.
+          </p>
+        </div>
       </div>
 
       {/* Announcements */}
       {announcements.length > 0 && (
-        <div className="space-y-2">
+        <div className="space-y-3">
           {announcements.map(a => (
-            <div key={a.id} className={`flex items-start gap-3 px-4 py-3 rounded-md border-l-4 text-sm ${
-              a.priority === 'urgent' ? 'bg-red-50 border-red-500 text-red-800' :
-              a.priority === 'high' ? 'bg-orange-50 border-orange-500 text-orange-800' :
-              'bg-blue-50 border-blue-400 text-blue-800'
-            }`}>
-              <AlertTriangle size={15} className="shrink-0 mt-0.5" />
-              <div>
-                <span className="font-semibold">{a.title}</span>
-                {' — '}
-                <span>{a.body}</span>
-              </div>
-            </div>
+            <Alert key={a.id} variant={a.priority === 'urgent' ? 'destructive' : 'default'} className={a.priority === 'urgent' ? "bg-destructive/10" : ""}>
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>{a.title}</AlertTitle>
+              <AlertDescription>{a.body}</AlertDescription>
+            </Alert>
           ))}
         </div>
       )}
 
       {/* Stats grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard label="Bookings today" value={todayBookings.length} icon={Calendar} color="text-blue-600" href="/bookings" />
-        <StatCard label="Approved today" value={approvedToday} icon={CheckCircle} color="text-green-600" href="/bookings" />
-        {isStaff && <StatCard label="Pending approval" value={pendingCount} icon={Clock} color="text-orange-600" href={isAdmin ? '/admin/bookings' : '/bookings'} />}
-        <StatCard label="Low stock alerts" value={lowStockItems.length} icon={Package} color="text-red-600" href="/inventory" />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard label="Bookings Today" value={todayBookings.length} icon={Calendar} href="/bookings" />
+        <StatCard label="Approved Today" value={approvedToday} icon={CheckCircle} href="/bookings" />
+        {isStaff && <StatCard label="Pending Approvals" value={pendingCount} icon={Clock} href={isAdmin ? '/admin/bookings' : '/bookings'} />}
+        <StatCard label="Low Stock Alerts" value={lowStockItems.length} icon={Package} href="/inventory" />
       </div>
 
       {/* Quick actions */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
-          { label: 'Book Equipment', href: '/bookings/new', icon: Calendar, color: 'bg-tl-ink text-white hover:bg-tl-ink/90' },
-          { label: 'Register Project', href: '/projects/new', icon: ClipboardList, color: 'bg-tl-green text-white hover:bg-tl-green/90' },
-          { label: 'Tool Checkout', href: '/checkout', icon: Package, color: 'bg-tl-orange text-white hover:bg-tl-orange/90' },
-          { label: 'Report Issue', href: '/report-issue', icon: AlertTriangle, color: 'bg-red-600 text-white hover:bg-red-700' },
+          { label: 'Book Equipment', href: '/bookings/new', icon: Calendar, variant: 'default' },
+          { label: 'Register Project', href: '/projects/new', icon: ClipboardList, variant: 'secondary' },
+          { label: 'Tool Checkout', href: '/checkout', icon: Package, variant: 'outline' },
+          { label: 'Report Issue', href: '/report-issue', icon: AlertTriangle, variant: 'destructive' },
         ].map(action => (
-          <Link
+          <Button
             key={action.href}
-            to={action.href}
-            className={`flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-semibold transition-colors ${action.color}`}
+            variant={action.variant as any}
+            className="h-auto py-4 flex flex-col gap-2 items-center justify-center text-center w-full"
+            onClick={() => navigate(action.href)}
           >
-            <action.icon size={16} />
-            {action.label}
-          </Link>
+            <action.icon className="h-5 w-5" />
+            <span className="text-sm font-medium">{action.label}</span>
+          </Button>
         ))}
       </div>
 
-      {/* Today's bookings table */}
-      <div className="rounded-lg border bg-card overflow-hidden">
-        <div className="px-5 py-4 border-b flex items-center justify-between">
-          <h2 className="font-display font-semibold">Today's Bookings</h2>
-          <Link to="/bookings" className="text-xs text-primary hover:underline">View all →</Link>
-        </div>
-        {todayBookings.length === 0 ? (
-          <div className="py-12 text-center text-muted-foreground text-sm">
-            No bookings scheduled for today — every machine is free.
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-tl-ink text-white text-xs font-mono uppercase tracking-wider">
-                <tr>
-                  <th className="px-4 py-3 text-left">Machine</th>
-                  <th className="px-4 py-3 text-left">Time</th>
-                  <th className="px-4 py-3 text-left">Booked by</th>
-                  <th className="px-4 py-3 text-left">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {todayBookings.map(b => (
-                  <tr key={b.id} className="hover:bg-muted/30 transition-colors">
-                    <td className="px-4 py-3 font-medium">{b.machineName}</td>
-                    <td className="px-4 py-3 font-mono text-xs">{b.startTime}–{b.endTime}</td>
-                    <td className="px-4 py-3 text-muted-foreground truncate max-w-40">{b.userName || b.userEmail}</td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${
-                        b.status === 'approved' ? 'bg-green-100 text-green-700' :
-                        b.status === 'pending' ? 'bg-orange-100 text-orange-700' :
-                        'bg-gray-100 text-gray-600'
-                      }`}>
-                        {b.status === 'approved' ? <CheckCircle size={10} /> : b.status === 'pending' ? <Clock size={10} /> : <XCircle size={10} />}
-                        {b.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      {/* Low stock alerts */}
-      {lowStockItems.length > 0 && (
-        <div className="rounded-lg border border-orange-200 bg-orange-50 overflow-hidden">
-          <div className="px-5 py-4 border-b border-orange-200 flex items-center justify-between">
-            <h2 className="font-display font-semibold text-orange-800 flex items-center gap-2">
-              <AlertTriangle size={16} /> Low Stock Alerts
-            </h2>
-            <Link to="/inventory" className="text-xs text-orange-700 hover:underline">Manage →</Link>
-          </div>
-          <div className="divide-y divide-orange-100">
-            {lowStockItems.map(item => (
-              <div key={item.id} className="px-5 py-3 flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-orange-900">{item.name}</p>
-                  <p className="text-xs text-orange-600">{item.category}</p>
-                </div>
-                <div className="text-right">
-                  <span className={`text-sm font-mono font-bold ${item.quantity === 0 ? 'text-red-600' : 'text-orange-600'}`}>
-                    {item.quantity} {item.unit}
-                  </span>
-                  <p className="text-xs text-orange-500">min: {item.minQuantity}</p>
-                </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Today's bookings table */}
+        <Card className="lg:col-span-2">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <div className="space-y-1">
+              <CardTitle>Today's Schedule</CardTitle>
+              <CardDescription>Upcoming equipment reservations for today.</CardDescription>
+            </div>
+            <Button variant="ghost" size="sm" className="hidden sm:flex" onClick={() => navigate('/bookings')}>
+              View all <ChevronRight className="ml-1 h-4 w-4" />
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {todayBookings.length === 0 ? (
+              <div className="py-12 text-center text-muted-foreground text-sm">
+                No bookings scheduled for today — every machine is free.
               </div>
-            ))}
-          </div>
-        </div>
-      )}
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Machine</TableHead>
+                    <TableHead>Time</TableHead>
+                    <TableHead>User</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {todayBookings.map(b => (
+                    <TableRow key={b.id}>
+                      <TableCell className="font-medium">{b.machineName}</TableCell>
+                      <TableCell className="font-mono text-xs text-muted-foreground">{b.startTime}–{b.endTime}</TableCell>
+                      <TableCell className="truncate max-w-[150px]">{b.userName || b.userEmail}</TableCell>
+                      <TableCell>
+                        <Badge variant={b.status === 'approved' ? 'default' : b.status === 'pending' ? 'secondary' : 'outline'} className="capitalize">
+                          {b.status}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Low stock alerts */}
+        <Card className="border-orange-200 dark:border-orange-900/50">
+          <CardHeader className="flex flex-row items-center justify-between pb-2 bg-orange-50/50 dark:bg-orange-950/20">
+            <div className="space-y-1">
+              <CardTitle className="text-orange-800 dark:text-orange-500 flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4" /> Low Stock
+              </CardTitle>
+            </div>
+            <Button variant="ghost" size="sm" className="text-orange-700 dark:text-orange-500" onClick={() => navigate('/inventory')}>
+              Manage
+            </Button>
+          </CardHeader>
+          <CardContent className="p-0">
+            {lowStockItems.length === 0 ? (
+              <div className="p-6 text-center text-sm text-muted-foreground">Inventory levels are healthy.</div>
+            ) : (
+              <div className="divide-y divide-border">
+                {lowStockItems.map(item => (
+                  <div key={item.id} className="p-4 flex items-center justify-between hover:bg-muted/50 cursor-pointer" onClick={() => navigate(`/inventory/${item.id}`)}>
+                    <div>
+                      <p className="font-medium text-sm">{item.name}</p>
+                      <p className="text-xs text-muted-foreground uppercase">{item.category}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className={cn('text-sm font-bold font-mono', item.quantity === 0 ? 'text-destructive' : 'text-orange-500')}>
+                        {item.quantity} {item.unit}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">min: {item.minQuantity}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }

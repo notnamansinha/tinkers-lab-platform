@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { collection, query, orderBy, getDocs, doc, updateDoc, serverTimestamp, addDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
@@ -100,32 +101,32 @@ export default function AdminAnnouncementsPage() {
       <div className="rounded-lg border bg-card overflow-hidden">
         {isLoading ? <div className="py-16 text-center text-muted-foreground">Loading…</div> :
         announcements.length === 0 ? <div className="py-16 text-center text-muted-foreground">No announcements yet.</div> : (
-          <table className="w-full text-sm">
-            <thead className="bg-tl-ink text-white text-xs font-mono uppercase tracking-wider">
-              <tr>
-                <th className="px-4 py-3 text-left">#</th>
-                <th className="px-4 py-3 text-left">Title</th>
-                <th className="px-4 py-3 text-left">Body</th>
-                <th className="px-4 py-3 text-left">Priority</th>
-                <th className="px-4 py-3 text-left">Author</th>
-                <th className="px-4 py-3 text-left">Status</th>
-                <th className="px-4 py-3"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>#</TableHead>
+                <TableHead>Title</TableHead>
+                <TableHead>Body</TableHead>
+                <TableHead>Priority</TableHead>
+                <TableHead>Author</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {announcements.map((a, idx) => (
-                <tr key={a.id} className="hover:bg-muted/30">
-                  <td className="px-4 py-2.5 text-xs font-mono text-muted-foreground">{announcements.length - idx}</td>
-                  <td className="px-4 py-2.5 font-medium">{a.title}</td>
-                  <td className="px-4 py-2.5 text-xs text-muted-foreground max-w-64 truncate">{a.body}</td>
-                  <td className="px-4 py-2.5"><span className={`text-xs px-2 py-0.5 rounded-full font-medium ${PRIORITY_COLOR[a.priority]}`}>{a.priority}</span></td>
-                  <td className="px-4 py-2.5 text-xs text-muted-foreground">{a.authorName}</td>
-                  <td className="px-4 py-2.5"><button onClick={() => toggleActive(a.id, a.isActive)} className={`text-xs px-2 py-0.5 rounded-full font-medium cursor-pointer ${a.isActive ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>{a.isActive ? 'Active' : 'Inactive'}</button></td>
-                  <td className="px-4 py-2.5 text-right"></td>
-                </tr>
+                <TableRow>
+                  <TableCell>{announcements.length - idx}</TableCell>
+                  <TableCell>{a.title}</TableCell>
+                  <TableCell>{a.body}</TableCell>
+                  <TableCell><span className={`text-xs px-2 py-0.5 rounded-full font-medium ${PRIORITY_COLOR[a.priority]}`}>{a.priority}</span></TableCell>
+                  <TableCell>{a.authorName}</TableCell>
+                  <TableCell><button onClick={() => toggleActive(a.id, a.isActive)} className={`text-xs px-2 py-0.5 rounded-full font-medium cursor-pointer ${a.isActive ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>{a.isActive ? 'Active' : 'Inactive'}</button></TableCell>
+                  <TableCell></TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         )}
       </div>
     </div>

@@ -1,17 +1,22 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { collection, query, where, orderBy, getDocs } from 'firebase/firestore'
+import { collection, query, orderBy, getDocs } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { COLLECTIONS } from '@/services/firebase/firestore'
 import { useAuth } from '@/contexts/AuthContext'
 import { Search, Plus } from 'lucide-react'
 import type { Project } from '@/types'
 
-const STATUS_COLOR = { pending: 'bg-orange-100 text-orange-700', active: 'bg-green-100 text-green-700', completed: 'bg-blue-100 text-blue-700', on_hold: 'bg-yellow-100 text-yellow-700', rejected: 'bg-red-100 text-red-700' }
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Badge } from '@/components/ui/badge'
 
 export default function ProjectListPage() {
-  const { user, isStaff } = useAuth()
+  const { isStaff } = useAuth()
   const navigate = useNavigate()
   const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
@@ -34,63 +39,93 @@ export default function ProjectListPage() {
   })
 
   return (
-    <div className="space-y-5 animate-fade-in">
-      <div className="flex items-start justify-between gap-4">
+    <div className="space-y-6 container py-6 mx-auto animate-fade-in">
+      <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
         <div>
-          <p className="text-xs font-mono uppercase tracking-widest text-accent">Projects</p>
-          <h1 className="text-2xl font-display font-bold mt-1">Projects</h1>
-          <p className="text-muted-foreground text-sm">Register and track lab projects from ideation to completion.</p>
+          <h1 className="text-3xl font-bold tracking-tight">Projects</h1>
+          <p className="text-muted-foreground mt-1">Register and track lab projects from ideation to completion.</p>
         </div>
-        <Link to="/projects/new" className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-semibold hover:bg-primary/90 shrink-0"><Plus size={16} /> Register Project</Link>
+        <Button className="shrink-0 gap-2" onClick={() => navigate('/projects/new')}>
+          <Plus className="h-4 w-4" /> Register Project
+        </Button>
       </div>
 
-      <div className="flex gap-3">
-        <div className="relative flex-1 min-w-48">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search projects…" className="w-full pl-9 pr-3 py-2 text-sm border rounded-md bg-background outline-none focus:ring-2 focus:ring-ring" />
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input 
+            value={search} 
+            onChange={e => setSearch(e.target.value)} 
+            placeholder="Search projects by title or member..." 
+            className="pl-9 max-w-sm" 
+          />
         </div>
-        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="px-3 py-2 text-sm border rounded-md bg-background outline-none focus:ring-2 focus:ring-ring">
-          <option value="all">All statuses</option>
-          {['pending','active','completed','on_hold','rejected'].map(s => <option key={s} value={s}>{s.replace('_',' ')}</option>)}
-        </select>
+        
+        <Select value={filterStatus} onValueChange={(val) => setFilterStatus(val || '')}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="All statuses" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All statuses</SelectItem>
+            {['pending','active','completed','on_hold','rejected'].map(s => (
+              <SelectItem key={s} value={s} className="capitalize">{s.replace('_',' ')}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
-      {isLoading ? (
-        <div className="space-y-3">{Array.from({length:5}).map((_,i) => <div key={i} className="h-20 rounded-lg border bg-muted animate-pulse" />)}</div>
-      ) : filtered.length === 0 ? (
-        <div className="py-16 text-center text-muted-foreground border rounded-lg">No projects found.</div>
-      ) : (
-        <div className="rounded-lg border bg-card overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-tl-ink text-white text-xs font-mono uppercase tracking-wider">
-              <tr>
-                <th className="px-4 py-3 text-left">ID</th>
-                <th className="px-4 py-3 text-left">Title</th>
-                <th className="px-4 py-3 text-left">By</th>
-                <th className="px-4 py-3 text-left">Department</th>
-                <th className="px-4 py-3 text-left">Type</th>
-                <th className="px-4 py-3 text-left">Start</th>
-                <th className="px-4 py-3 text-left">Status</th>
-                <th className="px-4 py-3"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {filtered.map(p => (
-                <tr key={p.id} className="hover:bg-muted/30 cursor-pointer" onClick={() => navigate(`/projects/${p.id}`)}>
-                  <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{p.id}</td>
-                  <td className="px-4 py-3 font-medium max-w-48 truncate">{p.title}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{p.userName}</td>
-                  <td className="px-4 py-3 text-muted-foreground text-xs">{p.department}</td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">{p.userType}</td>
-                  <td className="px-4 py-3 font-mono text-xs">{p.startDate}</td>
-                  <td className="px-4 py-3"><span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLOR[p.status] || 'bg-gray-100 text-gray-600'}`}>{p.status}</span></td>
-                  <td className="px-4 py-3"><Link to={`/projects/${p.id}`} onClick={e => e.stopPropagation()} className="text-xs text-primary hover:underline">View</Link></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <Card>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[100px]">ID</TableHead>
+              <TableHead>Title</TableHead>
+              <TableHead>Member</TableHead>
+              <TableHead>Department</TableHead>
+              <TableHead>Type</TableHead>
+              <TableHead>Start Date</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
+                  Loading projects...
+                </TableCell>
+              </TableRow>
+            ) : filtered.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
+                  No projects found.
+                </TableCell>
+              </TableRow>
+            ) : (
+              filtered.map(p => (
+                <TableRow key={p.id} className="cursor-pointer" onClick={() => navigate(`/projects/${p.id}`)}>
+                  <TableCell className="font-mono text-muted-foreground">{p.id.slice(0, 6)}</TableCell>
+                  <TableCell className="font-medium max-w-[200px] truncate">{p.title}</TableCell>
+                  <TableCell>{p.userName}</TableCell>
+                  <TableCell className="text-muted-foreground uppercase text-xs">{p.department}</TableCell>
+                  <TableCell className="capitalize">{p.userType}</TableCell>
+                  <TableCell className="font-mono text-xs">{p.startDate}</TableCell>
+                  <TableCell>
+                    <Badge variant={p.status === 'active' || p.status === 'completed' ? 'default' : p.status === 'rejected' ? 'destructive' : 'secondary'} className="capitalize font-mono text-[10px]">
+                      {p.status.replace('_', ' ')}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); navigate(`/projects/${p.id}`); }}>
+                      View
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </Card>
     </div>
   )
 }

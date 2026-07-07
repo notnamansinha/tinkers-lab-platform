@@ -74,8 +74,8 @@ export default function Sidebar({ isOpen, isMobileOpen, onMobileClose }: Sidebar
       {/* Desktop sidebar */}
       <aside
         className={cn(
-          'hidden lg:flex flex-col h-full bg-tl-ink text-white transition-all duration-300 shrink-0 overflow-hidden',
-          isOpen ? 'w-60' : 'w-16'
+          'hidden lg:flex flex-col h-full bg-zinc-950 text-zinc-100 border-r border-zinc-900 transition-all duration-300 shrink-0 overflow-hidden',
+          isOpen ? 'w-64' : 'w-16'
         )}
       >
         <SidebarContent
@@ -89,15 +89,15 @@ export default function Sidebar({ isOpen, isMobileOpen, onMobileClose }: Sidebar
       {/* Mobile sidebar */}
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-40 flex flex-col w-64 bg-tl-ink text-white lg:hidden transition-transform duration-300',
+          'fixed inset-y-0 left-0 z-50 flex flex-col w-72 bg-zinc-950 text-zinc-100 border-r border-zinc-900 lg:hidden transition-transform duration-300',
           isMobileOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
-        <div className="flex items-center justify-between p-4 border-b border-white/10">
+        <div className="flex items-center justify-between p-4 border-b border-zinc-900">
           <BrandMark expanded />
           <button
             onClick={onMobileClose}
-            className="p-1 rounded hover:bg-white/10 text-white/70 hover:text-white"
+            className="p-1.5 rounded-md hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
           >
             <X size={20} />
           </button>
@@ -117,7 +117,6 @@ function SidebarContent({
   isOpen,
   visibleItems,
   isAdmin,
-  isAdminRoute,
 }: {
   isOpen: boolean
   visibleItems: NavItem[]
@@ -127,14 +126,14 @@ function SidebarContent({
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Brand */}
-      <div className="hidden lg:flex items-center gap-3 px-4 py-5 border-b border-white/10 shrink-0">
+      <div className="hidden lg:flex items-center gap-3 px-4 py-5 border-b border-zinc-900 shrink-0">
         <BrandMark expanded={isOpen} />
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-4 scrollbar-thin">
+      <nav className="flex-1 overflow-y-auto py-6 px-3 space-y-6 scrollbar-thin">
         {/* Main nav */}
-        <div className="space-y-0.5 px-2">
+        <div className="space-y-1">
           {visibleItems.map((item) => (
             <SidebarLink key={item.path} item={item} expanded={isOpen} />
           ))}
@@ -142,16 +141,16 @@ function SidebarContent({
 
         {/* Admin section */}
         {isAdmin && (
-          <div className="mt-6">
+          <div>
             <div
               className={cn(
-                'px-4 mb-2 text-xs font-semibold uppercase tracking-widest text-white/40 font-mono',
+                'px-2 mb-2 text-xs font-semibold uppercase tracking-wider text-zinc-500 font-mono',
                 !isOpen && 'text-center text-[9px]'
               )}
             >
-              {isOpen ? 'Admin' : 'ADM'}
+              {isOpen ? 'Admin & Config' : 'ADM'}
             </div>
-            <div className="space-y-0.5 px-2">
+            <div className="space-y-1">
               {ADMIN_ITEMS.map((item) => (
                 <SidebarLink key={item.path} item={item} expanded={isOpen} />
               ))}
@@ -162,9 +161,9 @@ function SidebarContent({
 
       {/* Footer */}
       {isOpen && (
-        <div className="shrink-0 px-4 py-3 border-t border-white/10">
-          <p className="text-xs text-white/30 font-mono">Tinkerers&apos; Lab</p>
-          <p className="text-[10px] text-white/20 font-mono">Ahmedabad University</p>
+        <div className="shrink-0 px-5 py-4 border-t border-zinc-900 mt-auto">
+          <p className="text-xs text-zinc-500 font-medium">Tinkerers&apos; Lab</p>
+          <p className="text-[10px] text-zinc-600 mt-0.5">Ahmedabad University</p>
         </div>
       )}
     </div>
@@ -179,20 +178,20 @@ function SidebarLink({ item, expanded }: { item: NavItem; expanded: boolean }) {
       end={item.path === '/'}
       className={({ isActive }) =>
         cn(
-          'flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 group',
+          'flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors group',
           isActive
-            ? 'bg-tl-orange text-white'
-            : 'text-white/70 hover:bg-white/10 hover:text-white'
+            ? 'bg-primary text-primary-foreground'
+            : 'text-zinc-400 hover:bg-white/5 hover:text-zinc-100'
         )
       }
       title={!expanded ? item.label : undefined}
     >
-      <Icon size={18} className="shrink-0" />
+      <Icon size={18} className={cn("shrink-0", expanded ? "opacity-70 group-hover:opacity-100 transition-opacity" : "")} />
       {expanded && <span className="truncate">{item.label}</span>}
       {expanded && (
         <ChevronRight
           size={14}
-          className="ml-auto opacity-0 group-hover:opacity-60 transition-opacity"
+          className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity text-zinc-500"
         />
       )}
     </NavLink>
@@ -202,15 +201,14 @@ function SidebarLink({ item, expanded }: { item: NavItem; expanded: boolean }) {
 function BrandMark({ expanded }: { expanded: boolean }) {
   return (
     <div className="flex items-center gap-3">
-      <div className="w-8 h-8 bg-tl-orange flex items-center justify-center shrink-0">
-        <span className="text-tl-ink font-display font-extrabold text-sm leading-none">TL</span>
+      <div className="w-8 h-8 bg-primary flex items-center justify-center shrink-0 rounded-md">
+        <span className="text-primary-foreground font-display font-bold text-sm leading-none">TL</span>
       </div>
       {expanded && (
         <div className="overflow-hidden">
-          <p className="font-display font-bold text-sm leading-tight text-white">
+          <p className="font-display font-bold text-sm leading-tight text-white tracking-tight">
             Tinkerers&apos; Lab
           </p>
-          <p className="text-[10px] text-white/50 leading-tight">Ahmedabad University</p>
         </div>
       )}
     </div>

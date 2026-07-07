@@ -1,13 +1,18 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { collection, query, orderBy, getDocs, doc, updateDoc, serverTimestamp } from 'firebase/firestore'
+import { collection, query, orderBy, getDocs, doc, updateDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { addDocument, COLLECTIONS } from '@/services/firebase/firestore'
 import { useAuth } from '@/contexts/AuthContext'
-import { Search, Plus, Users, Calendar } from 'lucide-react'
+import { Search, Plus, Users, Calendar, MapPin, GraduationCap } from 'lucide-react'
 import { toast } from 'sonner'
 import type { Workshop, WorkshopRegistration } from '@/types'
+
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 
 export default function WorkshopListPage() {
   const { user, profile, isStaff } = useAuth()
@@ -36,59 +41,111 @@ export default function WorkshopListPage() {
         userId: user.uid, userName: profile.displayName, userEmail: user.email!,
         status: 'registered', certificateIssued: false,
       } as Omit<WorkshopRegistration,'id'|'createdAt'|'updatedAt'>)
-      // Increment count
+      
       const wRef = doc(db, COLLECTIONS.WORKSHOPS, workshopId)
       await updateDoc(wRef, { registeredCount: (workshops.find(w => w.id === workshopId)?.registeredCount ?? 0) + 1 })
+      
       toast.success('Registered successfully!')
       qc.invalidateQueries({ queryKey: ['workshops'] })
     } catch (e) { toast.error(e instanceof Error ? e.message : 'Failed') }
   }
 
   return (
-    <div className="space-y-5 animate-fade-in">
-      <div className="flex items-start justify-between gap-4">
+    <div className="space-y-6 container py-6 mx-auto animate-fade-in">
+      <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
         <div>
-          <p className="text-xs font-mono uppercase tracking-widest text-accent">Workshops</p>
-          <h1 className="text-2xl font-display font-bold mt-1">Workshops & Training</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Workshops & Training</h1>
+          <p className="text-muted-foreground mt-1">Register for safety sessions, tool certifications, and workshops.</p>
         </div>
-        {isStaff && <Link to="/workshops/new" className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-semibold hover:bg-primary/90 shrink-0"><Plus size={16} /> Add Workshop</Link>}
+        {isStaff && (
+          <Button className="shrink-0 gap-2" onClick={() => navigate('/workshops/new')}>
+            <Plus className="h-4 w-4" /> Add Workshop
+          </Button>
+        )}
       </div>
 
       <div className="relative max-w-md">
-        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search workshops…" className="w-full pl-9 pr-3 py-2 text-sm border rounded-md bg-background outline-none focus:ring-2 focus:ring-ring" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input 
+          value={search} 
+          onChange={e => setSearch(e.target.value)} 
+          placeholder="Search workshops..." 
+          className="pl-9" 
+        />
       </div>
 
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">{Array.from({length:4}).map((_,i) => <div key={i} className="h-40 rounded-lg border bg-muted animate-pulse" />)}</div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {Array.from({length:3}).map((_,i) => <Card key={i} className="h-48 animate-pulse" />)}
+        </div>
       ) : filtered.length === 0 ? (
-        <div className="py-16 text-center text-muted-foreground border rounded-lg">No workshops scheduled.</div>
+        <Card className="py-24 text-center">
+          <CardContent>
+            <p className="text-muted-foreground">No workshops scheduled.</p>
+          </CardContent>
+        </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {filtered.map(w => (
-            <div key={w.id} className="rounded-lg border bg-card hover:shadow-md transition-shadow">
-              <div className="p-5">
-                <div className="flex items-start justify-between mb-2">
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${w.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>{w.type.replace('_',' ')}</span>
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground"><Users size={12} />{w.registeredCount}/{w.capacity}</div>
-                </div>
-                <h3 className="font-display font-semibold text-base mt-2 cursor-pointer hover:text-primary" onClick={() => navigate(`/workshops/${w.id}`)}>{w.title}</h3>
-                <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{w.description}</p>
-                <div className="flex items-center gap-2 mt-3 text-xs text-muted-foreground">
-                  <Calendar size={12} />
-                  <span>{w.date} · {w.startTime}–{w.endTime}</span>
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">Instructor: {w.instructor}</p>
-                {w.prerequisites && <p className="text-xs text-orange-600 mt-1">Prerequisites: {w.prerequisites}</p>}
-                <div className="mt-4 flex gap-2">
-                  <button onClick={() => register(w.id, w.title)} disabled={!w.isActive || w.registeredCount >= w.capacity} className="flex-1 px-3 py-2 bg-primary text-primary-foreground text-sm rounded hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed">
-                    {w.registeredCount >= w.capacity ? 'Full' : 'Register'}
-                  </button>
-                  <Link to={`/workshops/${w.id}`} className="px-3 py-2 border rounded text-sm hover:bg-muted">Details</Link>
-                </div>
-              </div>
-            </div>
-          ))}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filtered.map(w => {
+            const isFull = w.registeredCount >= w.capacity
+            return (
+              <Card key={w.id} className="flex flex-col hover:border-primary/50 transition-colors">
+                <CardHeader className="pb-4">
+                  <div className="flex items-start justify-between mb-2">
+                    <Badge variant={w.isActive ? 'default' : 'secondary'} className="capitalize font-mono text-[10px]">
+                      {w.type.replace('_',' ')}
+                    </Badge>
+                    <div className="flex items-center gap-1.5 text-xs font-mono text-muted-foreground">
+                      <Users className="h-3.5 w-3.5" />
+                      {w.registeredCount}/{w.capacity}
+                    </div>
+                  </div>
+                  <CardTitle className="text-xl leading-tight cursor-pointer hover:text-primary transition-colors" onClick={() => navigate(`/workshops/${w.id}`)}>
+                    {w.title}
+                  </CardTitle>
+                  <CardDescription className="line-clamp-2 mt-2">
+                    {w.description}
+                  </CardDescription>
+                </CardHeader>
+                
+                <CardContent className="flex-1 space-y-3 pb-4">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Calendar className="h-4 w-4 shrink-0" />
+                    <span className="font-medium text-foreground">{w.date}</span>
+                    <span>· {w.startTime} - {w.endTime}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <MapPin className="h-4 w-4 shrink-0" />
+                    <span>{w.location}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <GraduationCap className="h-4 w-4 shrink-0" />
+                    <span>Instructor: <span className="font-medium text-foreground">{w.instructor}</span></span>
+                  </div>
+                  
+                  {w.prerequisites && (
+                    <div className="mt-4 p-3 bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-900/50 rounded-md">
+                      <p className="text-xs text-orange-800 dark:text-orange-400 font-medium">Prerequisites:</p>
+                      <p className="text-xs text-orange-700 dark:text-orange-300 mt-0.5">{w.prerequisites}</p>
+                    </div>
+                  )}
+                </CardContent>
+                
+                <CardFooter className="pt-0 border-t pt-4 mx-6 px-0 flex gap-3">
+                  <Button 
+                    onClick={() => register(w.id, w.title)} 
+                    disabled={!w.isActive || isFull} 
+                    className="flex-1"
+                  >
+                    {!w.isActive ? 'Closed' : isFull ? 'Full' : 'Register'}
+                  </Button>
+                  <Button variant="outline" onClick={() => navigate(`/workshops/${w.id}`)}>
+                    Details
+                  </Button>
+                </CardFooter>
+              </Card>
+            )
+          })}
         </div>
       )}
     </div>

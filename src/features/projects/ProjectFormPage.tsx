@@ -6,13 +6,19 @@ import { z } from 'zod'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { getDocument, addDocument, updateDocument, getDocumentsWhere, COLLECTIONS } from '@/services/firebase/firestore'
 import { useAuth } from '@/contexts/AuthContext'
-import { ArrowLeft, Save } from 'lucide-react'
+import { ArrowLeft, Save, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn, todayStr } from '@/lib/utils'
-import { collection, query, where, getDocs, getCountFromServer } from 'firebase/firestore'
+import { collection, getCountFromServer } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import type { Project } from '@/types'
 import LoadingSpinner from '@/components/common/LoadingSpinner'
+
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 
 const schema = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters'),
@@ -33,7 +39,7 @@ export default function ProjectFormPage() {
   const { id } = useParams<{ id: string }>()
   const isEdit = !!id
   const navigate = useNavigate()
-  const { user, profile, isAdmin } = useAuth()
+  const { user, profile } = useAuth()
   const qc = useQueryClient()
 
   const { data: existing, isLoading } = useQuery({ queryKey: ['projects', id], queryFn: () => getDocument<Project>(COLLECTIONS.PROJECTS, id!), enabled: isEdit })
@@ -63,7 +69,6 @@ export default function ProjectFormPage() {
         toast.success('Project updated')
         navigate(`/projects/${id}`)
       } else {
-        // Generate project ID
         const ref = collection(db, COLLECTIONS.PROJECTS)
         const snap = await getCountFromServer(ref)
         const projectId = `TL-${String(snap.data().count + 1).padStart(3,'0')}`
@@ -80,40 +85,108 @@ export default function ProjectFormPage() {
   }
 
   if (isLoading) return <LoadingSpinner text="Loading…" />
-  const inp = (e: boolean) => cn('w-full px-3 py-2 text-sm border rounded-md bg-background outline-none focus:ring-2 focus:ring-ring', e && 'border-destructive')
 
   return (
-    <div className="space-y-6 max-w-2xl animate-fade-in">
-      <div className="flex items-center gap-3">
-        <button onClick={() => navigate(-1)} className="p-2 rounded-md hover:bg-muted"><ArrowLeft size={18} /></button>
-        <h1 className="text-2xl font-display font-bold">{isEdit ? 'Edit Project' : 'Register Project'}</h1>
-      </div>
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-        <div className="rounded-lg border bg-card p-5 grid grid-cols-2 gap-4">
-          <h2 className="col-span-full font-display font-semibold text-sm text-muted-foreground uppercase tracking-wide">Project Info</h2>
-          <div className="col-span-full space-y-1"><label className="text-sm font-medium">Project Title * <span className="text-xs text-muted-foreground">(min 5 chars)</span></label>
-            <input className={inp(!!errors.title)} {...register('title')} />{errors.title && <p className="text-xs text-destructive">{errors.title.message}</p>}</div>
-          <div className="col-span-full space-y-1"><label className="text-sm font-medium">Abstract * <span className="text-xs text-muted-foreground">(min 50 chars)</span></label>
-            <textarea rows={4} placeholder="Describe your project, its goals, and methods…" className={cn(inp(!!errors.abstract),'resize-none')} {...register('abstract')} />{errors.abstract && <p className="text-xs text-destructive">{errors.abstract.message}</p>}</div>
-          <div className="space-y-1"><label className="text-sm font-medium">I am a *</label>
-            <select className={inp(false)} {...register('userType')}>{['Student','Faculty','Lab Staff','Venture Studio','External Visitor'].map(t=><option key={t}>{t}</option>)}</select></div>
-          <div className="space-y-1"><label className="text-sm font-medium">Department *</label><input className={inp(!!errors.department)} {...register('department')} />{errors.department && <p className="text-xs text-destructive">{errors.department.message}</p>}</div>
-          <div className="space-y-1"><label className="text-sm font-medium">Contact * <span className="text-xs text-muted-foreground">(phone/email)</span></label><input className={inp(!!errors.contact)} {...register('contact')} />{errors.contact && <p className="text-xs text-destructive">{errors.contact.message}</p>}</div>
-          <div className="space-y-1"><label className="text-sm font-medium">Student ID</label><input placeholder="AU2440123" className={inp(false)} {...register('studentId')} /></div>
-          <div className="col-span-full space-y-1"><label className="text-sm font-medium">Team Members <span className="text-xs text-muted-foreground">(comma separated)</span></label>
-            <input placeholder="Name 1, Name 2…" className={inp(false)} {...register('teamMembers')} /></div>
-          <div className="space-y-1"><label className="text-sm font-medium">Faculty Mentor</label><input className={inp(false)} {...register('facultyMentor')} /></div>
-          <div className="space-y-1"><label className="text-sm font-medium">Start Date *</label><input type="date" className={inp(!!errors.startDate)} {...register('startDate')} /></div>
-          <div className="space-y-1"><label className="text-sm font-medium">Expected End Date</label><input type="date" className={inp(false)} {...register('endDate')} /></div>
-          <div className="col-span-full space-y-1"><label className="text-sm font-medium">Resource Link <span className="text-xs text-muted-foreground">(GitHub, Drive, etc.)</span></label>
-            <input type="url" placeholder="https://…" className={inp(false)} {...register('resourceLink')} /></div>
+    <div className="space-y-6 container py-6 mx-auto max-w-3xl animate-fade-in">
+      <div className="flex items-center gap-4">
+        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">{isEdit ? 'Edit Project' : 'Register Project'}</h1>
+          <p className="text-muted-foreground mt-1">Provide the details for your lab project.</p>
         </div>
-        <div className="flex gap-3">
-          <button type="submit" disabled={isSubmitting} className="flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-md text-sm font-semibold hover:bg-primary/90 disabled:opacity-60">
-            {isSubmitting ? <div className="w-4 h-4 border-2 border-current/20 border-t-current rounded-full animate-spin" /> : <Save size={16} />}
+      </div>
+
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Project Information</CardTitle>
+            <CardDescription>Basic details about the project and team.</CardDescription>
+          </CardHeader>
+          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            <div className="col-span-full space-y-2">
+              <Label>Project Title <span className="text-destructive">*</span></Label>
+              <Input {...register('title')} placeholder="Enter project title" className={errors.title ? 'border-destructive' : ''} />
+              {errors.title && <p className="text-[0.8rem] text-destructive">{errors.title.message}</p>}
+            </div>
+
+            <div className="col-span-full space-y-2">
+              <Label>Abstract <span className="text-destructive">*</span></Label>
+              <Textarea 
+                {...register('abstract')} 
+                rows={4} 
+                placeholder="Describe your project, its goals, and methods..." 
+                className={cn('resize-none', errors.abstract ? 'border-destructive' : '')} 
+              />
+              {errors.abstract && <p className="text-[0.8rem] text-destructive">{errors.abstract.message}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <Label>I am a <span className="text-destructive">*</span></Label>
+              <select 
+                {...register('userType')} 
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {['Student','Faculty','Lab Staff','Venture Studio','External Visitor'].map(t=><option key={t}>{t}</option>)}
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Department <span className="text-destructive">*</span></Label>
+              <Input {...register('department')} placeholder="e.g. Computer Science" className={errors.department ? 'border-destructive' : ''} />
+              {errors.department && <p className="text-[0.8rem] text-destructive">{errors.department.message}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <Label>Contact <span className="text-destructive">*</span></Label>
+              <Input {...register('contact')} placeholder="Phone or email" className={errors.contact ? 'border-destructive' : ''} />
+              {errors.contact && <p className="text-[0.8rem] text-destructive">{errors.contact.message}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <Label>Student ID</Label>
+              <Input {...register('studentId')} placeholder="Optional" />
+            </div>
+
+            <div className="col-span-full space-y-2">
+              <Label>Team Members</Label>
+              <Input {...register('teamMembers')} placeholder="Comma separated names" />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Faculty Mentor</Label>
+              <Input {...register('facultyMentor')} placeholder="Name of mentor (if any)" />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Start Date <span className="text-destructive">*</span></Label>
+              <Input type="date" {...register('startDate')} className={errors.startDate ? 'border-destructive' : ''} />
+              {errors.startDate && <p className="text-[0.8rem] text-destructive">{errors.startDate.message}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <Label>Expected End Date</Label>
+              <Input type="date" {...register('endDate')} />
+            </div>
+
+            <div className="col-span-full space-y-2">
+              <Label>Resource Link</Label>
+              <Input type="url" {...register('resourceLink')} placeholder="https://github.com/..." />
+            </div>
+
+          </CardContent>
+        </Card>
+
+        <div className="flex justify-end gap-4">
+          <Button type="button" variant="outline" onClick={() => navigate(-1)}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={isSubmitting} className="gap-2">
+            {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
             {isEdit ? 'Save changes' : 'Submit for review'}
-          </button>
-          <button type="button" onClick={() => navigate(-1)} className="px-4 py-2.5 border rounded-md text-sm hover:bg-muted">Cancel</button>
+          </Button>
         </div>
       </form>
     </div>
