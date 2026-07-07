@@ -18,6 +18,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import heroBg from '@/assets/hero.png'
 
 function StatCard({
   label, value, icon: Icon, href,
@@ -97,15 +98,32 @@ export default function DashboardPage() {
   const approvedToday = todayBookings.filter(b => b.status === 'approved').length
 
   return (
-    <div className="space-y-6 container py-6 mx-auto animate-fade-in">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">
-          Welcome back{profile?.displayName ? `, ${profile.displayName.split(' ')[0]}` : ''}
-        </h1>
-        <p className="text-muted-foreground mt-1">
-          {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-        </p>
+    <div className="space-y-12 container py-6 mx-auto animate-fade-in">
+      {/* Hero Section - Perception First Design (L1 Impression) */}
+      <div className="relative rounded-2xl overflow-hidden border border-white/5 bg-black">
+        {/* Background Abstract Image */}
+        <div className="absolute inset-0 z-0">
+          <img 
+            src={heroBg} 
+            alt="Tinkers Lab Workspace" 
+            className="w-full h-full object-cover opacity-60 mix-blend-lighten"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black via-black/40 to-transparent" />
+        </div>
+        
+        <div className="relative z-10 px-8 py-16 md:py-24 lg:px-16 flex flex-col justify-end min-h-[360px]">
+          <div className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white backdrop-blur-md mb-4 w-max">
+            <span className="flex h-2 w-2 rounded-full bg-primary mr-2 animate-pulse"></span>
+            System Online
+          </div>
+          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tighter text-white max-w-2xl leading-tight font-display">
+            Welcome back{profile?.displayName ? `, ${profile.displayName.split(' ')[0]}` : ''}.
+          </h1>
+          <p className="text-lg md:text-xl text-white/60 mt-4 font-medium max-w-xl">
+            {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} — The lab is ready for your next project.
+          </p>
+        </div>
       </div>
 
       {/* Announcements */}
