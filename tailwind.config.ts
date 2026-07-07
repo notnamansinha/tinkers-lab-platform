@@ -9,8 +9,8 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-        display: ['Archivo', 'sans-serif'],
+        sans: ['PP Mori', 'system-ui', 'sans-serif'],
+        display: ['Sao Torpes', 'sans-serif'],
         mono: ['IBM Plex Mono', 'Courier New', 'monospace'],
       },
       colors: {
