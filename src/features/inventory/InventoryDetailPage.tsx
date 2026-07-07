@@ -1,13 +1,18 @@
 import React from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { getDocument, getDocumentsWhere, updateDocument, COLLECTIONS } from '@/services/firebase/firestore'
+import { getDocument, getDocumentsWhere, COLLECTIONS } from '@/services/firebase/firestore'
 import { useAuth } from '@/contexts/AuthContext'
 import { ArrowLeft, Edit, TrendingDown, TrendingUp } from 'lucide-react'
 import { formatDateTime } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 import type { InventoryItem, InventoryTransaction } from '@/types'
 import LoadingSpinner from '@/components/common/LoadingSpinner'
+
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 
 export default function InventoryDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -30,81 +35,123 @@ export default function InventoryDetailPage() {
   if (isLoading) return <LoadingSpinner text="Loading…" />
   if (!item) return <div className="py-16 text-center text-muted-foreground">Item not found. <Link to="/inventory" className="text-primary hover:underline">← Back</Link></div>
 
-  const statusColor = { in_stock: 'bg-green-100 text-green-700', low_stock: 'bg-orange-100 text-orange-700', out_of_stock: 'bg-red-100 text-red-700' }[item.status]
+  const statusVariant = {
+    in_stock: 'default',
+    low_stock: 'secondary',
+    out_of_stock: 'destructive'
+  }[item.status] as any || 'outline'
 
   return (
-    <div className="max-w-3xl space-y-5 animate-fade-in">
-      <div className="flex items-center gap-3">
-        <button onClick={() => navigate(-1)} className="p-2 rounded-md hover:bg-muted"><ArrowLeft size={18} /></button>
+    <div className="container py-6 mx-auto max-w-4xl space-y-6 animate-fade-in">
+      <div className="flex items-center gap-4">
+        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
         <div className="flex-1">
-          <p className="text-xs font-mono text-muted-foreground">{item.category}</p>
-          <h1 className="text-2xl font-display font-bold">{item.name}</h1>
+          <p className="text-sm font-mono text-muted-foreground uppercase tracking-widest">{item.category}</p>
+          <h1 className="text-3xl font-bold tracking-tight">{item.name}</h1>
         </div>
-        <span className={`px-3 py-1 rounded-full text-sm font-medium ${statusColor}`}>{item.status.replace('_', ' ')}</span>
-        {isStaff && <Link to={`/inventory/${id}/edit`} className="flex items-center gap-1 px-3 py-2 text-sm border rounded-md hover:bg-muted"><Edit size={14} /> Edit</Link>}
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="rounded-lg border bg-card p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-display font-semibold text-sm text-muted-foreground uppercase tracking-wide">Stock</h2>
-          </div>
-          <div className="text-5xl font-display font-bold mb-1">{item.quantity}</div>
-          <p className="text-muted-foreground text-sm">{item.unit} in stock</p>
-          <p className="text-xs text-muted-foreground mt-2">Minimum threshold: {item.minQuantity} {item.unit}</p>
-          {isStaff && (
-            <div className="mt-4 flex gap-2">
-              <Link to={`/inventory/${id}/checkout`} className="px-3 py-1.5 text-xs border rounded hover:bg-muted">Issue Stock</Link>
-              <Link to={`/inventory/${id}/restock`} className="px-3 py-1.5 text-xs bg-primary text-primary-foreground rounded hover:bg-primary/90">Restock</Link>
-            </div>
-          )}
-        </div>
-        <div className="rounded-lg border bg-card p-5 space-y-3">
-          <h2 className="font-display font-semibold text-sm text-muted-foreground uppercase tracking-wide">Details</h2>
-          {[['Location', item.location || '—'], ['Unit', item.unit], ['Supplier', item.supplierName || '—'], ['Contact', item.supplierContact || '—'], ['Unit Cost', item.unitCost ? `₹${item.unitCost}` : '—']].map(([k, v]) => (
-            <div key={k} className="flex gap-2"><span className="text-xs text-muted-foreground w-24 shrink-0">{k}</span><span className="text-sm">{String(v)}</span></div>
-          ))}
-        </div>
-      </div>
-
-      <div className="rounded-lg border bg-card overflow-hidden">
-        <div className="px-5 py-4 border-b"><h2 className="font-display font-semibold">Transaction History</h2></div>
-        {transactions.length === 0 ? (
-          <div className="py-8 text-center text-muted-foreground text-sm">No transactions yet.</div>
-        ) : (
-          <table className="w-full text-sm">
-            <thead className="bg-tl-ink text-white text-xs font-mono uppercase tracking-wider">
-              <tr>
-                <th className="px-4 py-3 text-left">Type</th>
-                <th className="px-4 py-3 text-left">Qty</th>
-                <th className="px-4 py-3 text-left">Before → After</th>
-                <th className="px-4 py-3 text-left">By</th>
-                <th className="px-4 py-3 text-left">When</th>
-                <th className="px-4 py-3 text-left">Notes</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {transactions.map(t => (
-                <tr key={t.id} className="hover:bg-muted/30">
-                  <td className="px-4 py-3">
-                    <span className={cn('flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full w-fit',
-                      t.type === 'issue' || t.type === 'damage' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
-                    )}>
-                      {t.quantity < 0 ? <TrendingDown size={10} /> : <TrendingUp size={10} />}
-                      {t.type}
-                    </span>
-                  </td>
-                  <td className={cn('px-4 py-3 font-mono font-bold', t.quantity < 0 ? 'text-red-600' : 'text-green-600')}>{t.quantity > 0 ? '+' : ''}{t.quantity}</td>
-                  <td className="px-4 py-3 font-mono text-xs">{t.quantityBefore} → {t.quantityAfter}</td>
-                  <td className="px-4 py-3 text-muted-foreground text-xs">{t.userName}</td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">{formatDateTime(t.createdAt)}</td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">{t.notes || '—'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <Badge variant={statusVariant} className="text-sm px-3 py-1 capitalize">
+          {item.status.replace('_', ' ')}
+        </Badge>
+        {isStaff && (
+          <Button variant="outline" className="gap-2" onClick={() => navigate(`/inventory/${id}/edit`)}>
+            <Edit className="h-4 w-4" /> Edit
+          </Button>
         )}
       </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Stock Level</CardTitle>
+            <CardDescription>Current available quantity.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-baseline gap-2">
+              <span className={cn("text-5xl font-bold tracking-tighter", item.quantity === 0 ? "text-destructive" : item.quantity <= item.minQuantity ? "text-orange-500" : "")}>
+                {item.quantity}
+              </span>
+              <span className="text-xl text-muted-foreground">{item.unit}</span>
+            </div>
+            <p className="text-sm text-muted-foreground mt-2">Minimum threshold: {item.minQuantity} {item.unit}</p>
+            
+            {isStaff && (
+              <div className="mt-6 flex gap-3">
+                <Button variant="outline" onClick={() => navigate(`/inventory/${id}/checkout`)}>Issue Stock</Button>
+                <Button onClick={() => navigate(`/inventory/${id}/restock`)}>Restock</Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Details</CardTitle>
+            <CardDescription>Item location and supplier information.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {[
+              ['Location', item.location || '—'], 
+              ['Unit', item.unit], 
+              ['Supplier', item.supplierName || '—'], 
+              ['Contact', item.supplierContact || '—'], 
+              ['Unit Cost', item.unitCost ? `₹${item.unitCost}` : '—']
+            ].map(([k, v]) => (
+              <div key={k} className="flex justify-between items-center border-b pb-2 last:border-0 last:pb-0">
+                <span className="text-sm text-muted-foreground">{k}</span>
+                <span className="text-sm font-medium">{String(v)}</span>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Transaction History</CardTitle>
+          <CardDescription>Recent stock changes for this item.</CardDescription>
+        </CardHeader>
+        <CardContent className="p-0 sm:p-6 sm:pt-0">
+          {transactions.length === 0 ? (
+            <div className="py-8 text-center text-muted-foreground text-sm border-t sm:border-t-0">No transactions yet.</div>
+          ) : (
+            <div className="overflow-x-auto border-t sm:border-t-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Type</TableHead>
+                    <TableHead className="text-right">Qty</TableHead>
+                    <TableHead>Before → After</TableHead>
+                    <TableHead>By</TableHead>
+                    <TableHead>When</TableHead>
+                    <TableHead className="hidden md:table-cell">Notes</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {transactions.map(t => (
+                    <TableRow key={t.id}>
+                      <TableCell>
+                        <Badge variant={t.type === 'issue' || t.type === 'damage' ? 'destructive' : 'default'} className="flex w-fit items-center gap-1">
+                          {t.quantity < 0 ? <TrendingDown className="h-3 w-3" /> : <TrendingUp className="h-3 w-3" />}
+                          <span className="capitalize">{t.type}</span>
+                        </Badge>
+                      </TableCell>
+                      <TableCell className={cn('text-right font-mono font-bold', t.quantity < 0 ? 'text-destructive' : 'text-green-600 dark:text-green-500')}>
+                        {t.quantity > 0 ? '+' : ''}{t.quantity}
+                      </TableCell>
+                      <TableCell className="font-mono text-xs text-muted-foreground">{t.quantityBefore} → {t.quantityAfter}</TableCell>
+                      <TableCell className="text-sm">{t.userName}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">{formatDateTime(t.createdAt)}</TableCell>
+                      <TableCell className="hidden md:table-cell text-xs text-muted-foreground max-w-[150px] truncate">{t.notes || '—'}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 }

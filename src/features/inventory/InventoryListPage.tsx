@@ -5,11 +5,24 @@ import { collection, query, orderBy, getDocs } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { COLLECTIONS } from '@/services/firebase/firestore'
 import { useAuth } from '@/contexts/AuthContext'
-import { Search, Plus, AlertTriangle, Package } from 'lucide-react'
+import { Search, Plus, Package } from 'lucide-react'
 import type { InventoryItem } from '@/types'
 import { cn } from '@/lib/utils'
 
-const STATUS_COLOR = { in_stock: 'bg-green-100 text-green-700', low_stock: 'bg-orange-100 text-orange-700', out_of_stock: 'bg-red-100 text-red-700' }
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Card } from '@/components/ui/card'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Badge } from '@/components/ui/badge'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { AlertCircle } from 'lucide-react'
+
+const STATUS_COLOR = { 
+  in_stock: 'default', 
+  low_stock: 'secondary', 
+  out_of_stock: 'destructive' 
+} as const
 
 export default function InventoryListPage() {
   const { isStaff } = useAuth()
@@ -34,81 +47,111 @@ export default function InventoryListPage() {
     return matchSearch && matchStatus
   })
 
+  const outOfStock = items.filter(i => i.status === 'out_of_stock').length
+  const lowStock = items.filter(i => i.status === 'low_stock').length
+
   return (
-    <div className="space-y-5 animate-fade-in">
-      <div className="flex items-start justify-between gap-4">
+    <div className="space-y-6 container py-6 mx-auto animate-fade-in">
+      <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
         <div>
-          <p className="text-xs font-mono uppercase tracking-widest text-accent">Inventory</p>
-          <h1 className="text-2xl font-display font-bold mt-1">Inventory</h1>
-          <p className="text-muted-foreground text-sm">Materials, components, consumables and hand tools.</p>
+          <h1 className="text-3xl font-bold tracking-tight">Inventory</h1>
+          <p className="text-muted-foreground mt-1">Materials, components, consumables and hand tools.</p>
         </div>
-        <div className="flex gap-2 shrink-0">
-          <Link to="/checkout" className="flex items-center gap-1 px-4 py-2 border rounded-md text-sm font-medium hover:bg-muted"><Package size={15} /> Tool Checkout</Link>
-          {isStaff && <Link to="/inventory/new" className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-semibold hover:bg-primary/90"><Plus size={16} /> Add Item</Link>}
+        <div className="flex flex-wrap gap-2 shrink-0">
+          <Button variant="outline" className="gap-2" onClick={() => navigate('/checkout')}>
+            <Package className="h-4 w-4" /> Tool Checkout
+          </Button>
+          {isStaff && (
+            <Button className="gap-2" onClick={() => navigate('/inventory/new')}>
+              <Plus className="h-4 w-4" /> Add Item
+            </Button>
+          )}
         </div>
       </div>
 
-      <div className="flex gap-3">
-        <div className="relative flex-1 min-w-48">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search inventory…" className="w-full pl-9 pr-3 py-2 text-sm border rounded-md bg-background outline-none focus:ring-2 focus:ring-ring" />
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input 
+            value={search} 
+            onChange={e => setSearch(e.target.value)} 
+            placeholder="Search inventory..." 
+            className="pl-9" 
+          />
         </div>
-        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="px-3 py-2 text-sm border rounded-md bg-background outline-none focus:ring-2 focus:ring-ring">
-          <option value="all">All statuses</option>
-          <option value="in_stock">In Stock</option>
-          <option value="low_stock">Low Stock</option>
-          <option value="out_of_stock">Out of Stock</option>
-        </select>
+        <Select value={filterStatus} onValueChange={(val) => setFilterStatus(val || '')}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="All statuses" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All statuses</SelectItem>
+            <SelectItem value="in_stock">In Stock</SelectItem>
+            <SelectItem value="low_stock">Low Stock</SelectItem>
+            <SelectItem value="out_of_stock">Out of Stock</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
-      {/* Low stock alert */}
-      {items.filter(i => i.status !== 'in_stock').length > 0 && (
-        <div className="flex items-center gap-2 px-4 py-2.5 bg-orange-50 border border-orange-200 rounded-md text-sm text-orange-800">
-          <AlertTriangle size={15} />
-          {items.filter(i => i.status === 'out_of_stock').length} items out of stock, {items.filter(i => i.status === 'low_stock').length} low
-        </div>
+      {(outOfStock > 0 || lowStock > 0) && (
+        <Alert variant="destructive" className="bg-destructive/10 text-destructive border-destructive/20">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Low Stock Alert</AlertTitle>
+          <AlertDescription>
+            {outOfStock} items out of stock, {lowStock} running low.
+          </AlertDescription>
+        </Alert>
       )}
 
-      <div className="rounded-lg border bg-card overflow-hidden">
-        {isLoading ? (
-          <div className="py-16 text-center text-muted-foreground">Loading inventory…</div>
-        ) : filtered.length === 0 ? (
-          <div className="py-16 text-center text-muted-foreground">No items found.</div>
-        ) : (
-          <table className="w-full text-sm">
-            <thead className="bg-tl-ink text-white text-xs font-mono uppercase tracking-wider sticky top-0">
-              <tr>
-                <th className="px-4 py-3 text-left">Item</th>
-                <th className="px-4 py-3 text-left">Category</th>
-                <th className="px-4 py-3 text-left">Qty</th>
-                <th className="px-4 py-3 text-left">Min</th>
-                <th className="px-4 py-3 text-left">Unit</th>
-                <th className="px-4 py-3 text-left">Location</th>
-                <th className="px-4 py-3 text-left">Status</th>
-                <th className="px-4 py-3"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {filtered.map(item => (
-                <tr key={item.id} className="hover:bg-muted/30 cursor-pointer" onClick={() => navigate(`/inventory/${item.id}`)}>
-                  <td className="px-4 py-3 font-medium">{item.name}</td>
-                  <td className="px-4 py-3 text-muted-foreground text-xs">{item.category}</td>
-                  <td className={cn('px-4 py-3 font-mono font-bold', item.quantity === 0 ? 'text-red-600' : item.quantity <= item.minQuantity ? 'text-orange-600' : 'text-green-700')}>{item.quantity}</td>
-                  <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{item.minQuantity}</td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">{item.unit}</td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">{item.location || '—'}</td>
-                  <td className="px-4 py-3">
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLOR[item.status]}`}>{item.status.replace('_', ' ')}</span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <Link to={`/inventory/${item.id}`} onClick={e => e.stopPropagation()} className="text-xs text-primary hover:underline">View</Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+      <Card>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Item</TableHead>
+              <TableHead>Category</TableHead>
+              <TableHead className="text-right">Qty</TableHead>
+              <TableHead className="text-right">Min</TableHead>
+              <TableHead>Unit</TableHead>
+              <TableHead>Location</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+               <TableRow>
+                <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">Loading...</TableCell>
+              </TableRow>
+            ) : filtered.length === 0 ? (
+               <TableRow>
+                <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">No items found.</TableCell>
+              </TableRow>
+            ) : (
+              filtered.map(item => (
+                <TableRow key={item.id} className="cursor-pointer" onClick={() => navigate(`/inventory/${item.id}`)}>
+                  <TableCell className="font-medium max-w-[200px] truncate">{item.name}</TableCell>
+                  <TableCell className="text-muted-foreground text-xs uppercase tracking-widest">{item.category}</TableCell>
+                  <TableCell className={cn('font-mono text-right', item.quantity === 0 ? 'text-destructive font-bold' : item.quantity <= item.minQuantity ? 'text-orange-500 font-bold' : 'text-primary')}>
+                    {item.quantity}
+                  </TableCell>
+                  <TableCell className="font-mono text-xs text-muted-foreground text-right">{item.minQuantity}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground">{item.unit}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground">{item.location || '—'}</TableCell>
+                  <TableCell>
+                    <Badge variant={STATUS_COLOR[item.status as keyof typeof STATUS_COLOR] || 'default'} className="capitalize">
+                      {item.status.replace('_', ' ')}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); navigate(`/inventory/${item.id}`); }}>
+                      View
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </Card>
     </div>
   )
 }

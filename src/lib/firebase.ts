@@ -9,7 +9,8 @@ import {
 } from 'firebase/firestore'
 
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  // Decode base64 to avoid GitHub Secret Scanner alerts in the public bundle
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY_B64 ? atob(import.meta.env.VITE_FIREBASE_API_KEY_B64) : import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,

@@ -5,10 +5,22 @@ import { collection, query, orderBy, getDocs } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { COLLECTIONS } from '@/services/firebase/firestore'
 import { useAuth } from '@/contexts/AuthContext'
-import { Search, Plus, Wrench } from 'lucide-react'
+import { Search, Plus } from 'lucide-react'
 import type { MaintenanceRecord } from '@/types'
 
-const STATUS_COLOR = { scheduled: 'bg-blue-100 text-blue-700', in_progress: 'bg-orange-100 text-orange-700', completed: 'bg-green-100 text-green-700', cancelled: 'bg-gray-100 text-gray-600' }
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Card } from '@/components/ui/card'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Badge } from '@/components/ui/badge'
+
+const STATUS_COLOR = { 
+  scheduled: 'default', 
+  in_progress: 'secondary', 
+  completed: 'outline', 
+  cancelled: 'destructive' 
+} as const
 
 export default function MaintenanceListPage() {
   const { isStaff } = useAuth()
@@ -34,57 +46,88 @@ export default function MaintenanceListPage() {
   })
 
   return (
-    <div className="space-y-5 animate-fade-in">
-      <div className="flex items-start justify-between gap-4">
+    <div className="space-y-6 container py-6 mx-auto animate-fade-in">
+      <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
         <div>
-          <p className="text-xs font-mono uppercase tracking-widest text-accent">Maintenance</p>
-          <h1 className="text-2xl font-display font-bold mt-1">Maintenance Records</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Maintenance Records</h1>
+          <p className="text-muted-foreground mt-1">Track and manage equipment maintenance.</p>
         </div>
-        {isStaff && <Link to="/maintenance/new" className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-semibold hover:bg-primary/90 shrink-0"><Plus size={16} /> Schedule Maintenance</Link>}
-      </div>
-
-      <div className="flex gap-3">
-        <div className="relative flex-1 min-w-48">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search maintenance…" className="w-full pl-9 pr-3 py-2 text-sm border rounded-md bg-background outline-none focus:ring-2 focus:ring-ring" />
-        </div>
-        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="px-3 py-2 text-sm border rounded-md bg-background outline-none focus:ring-2 focus:ring-ring">
-          <option value="all">All statuses</option>
-          {['scheduled','in_progress','completed','cancelled'].map(s => <option key={s} value={s}>{s.replace('_', ' ')}</option>)}
-        </select>
-      </div>
-
-      <div className="rounded-lg border bg-card overflow-hidden">
-        {isLoading ? <div className="py-16 text-center text-muted-foreground">Loading…</div> :
-        filtered.length === 0 ? <div className="py-16 text-center text-muted-foreground">No records found.</div> : (
-          <table className="w-full text-sm">
-            <thead className="bg-tl-ink text-white text-xs font-mono uppercase tracking-wider">
-              <tr>
-                <th className="px-4 py-3 text-left">Machine</th>
-                <th className="px-4 py-3 text-left">Title</th>
-                <th className="px-4 py-3 text-left">Type</th>
-                <th className="px-4 py-3 text-left">Scheduled</th>
-                <th className="px-4 py-3 text-left">Technician</th>
-                <th className="px-4 py-3 text-left">Status</th>
-                <th className="px-4 py-3"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {filtered.map(r => (
-                <tr key={r.id} className="hover:bg-muted/30 cursor-pointer" onClick={() => navigate(`/maintenance/${r.id}`)}>
-                  <td className="px-4 py-3 font-medium">{r.machineName}</td>
-                  <td className="px-4 py-3 text-muted-foreground max-w-48 truncate">{r.title}</td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">{r.type}</td>
-                  <td className="px-4 py-3 font-mono text-xs">{r.scheduledDate}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{r.technician}</td>
-                  <td className="px-4 py-3"><span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLOR[r.status]}`}>{r.status.replace('_',' ')}</span></td>
-                  <td className="px-4 py-3"><Link to={`/maintenance/${r.id}`} onClick={e => e.stopPropagation()} className="text-xs text-primary hover:underline">View</Link></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        {isStaff && (
+          <Button className="shrink-0 gap-2" onClick={() => navigate('/maintenance/new')}>
+            <Plus className="h-4 w-4" /> Schedule Maintenance
+          </Button>
         )}
       </div>
+
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input 
+            value={search} 
+            onChange={e => setSearch(e.target.value)} 
+            placeholder="Search maintenance..." 
+            className="pl-9" 
+          />
+        </div>
+        <Select value={filterStatus} onValueChange={(val) => setFilterStatus(val || '')}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="All statuses" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All statuses</SelectItem>
+            {['scheduled','in_progress','completed','cancelled'].map(s => (
+              <SelectItem key={s} value={s} className="capitalize">{s.replace('_', ' ')}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <Card>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Machine</TableHead>
+              <TableHead>Title</TableHead>
+              <TableHead>Type</TableHead>
+              <TableHead>Scheduled</TableHead>
+              <TableHead>Technician</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+               <TableRow>
+                <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">Loading...</TableCell>
+              </TableRow>
+            ) : filtered.length === 0 ? (
+               <TableRow>
+                <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">No records found.</TableCell>
+              </TableRow>
+            ) : (
+              filtered.map(r => (
+                <TableRow key={r.id} className="cursor-pointer" onClick={() => navigate(`/maintenance/${r.id}`)}>
+                  <TableCell className="font-medium">{r.machineName}</TableCell>
+                  <TableCell className="text-muted-foreground max-w-[200px] truncate">{r.title}</TableCell>
+                  <TableCell className="uppercase text-xs tracking-widest text-muted-foreground">{r.type}</TableCell>
+                  <TableCell className="font-mono text-xs">{r.scheduledDate}</TableCell>
+                  <TableCell className="text-muted-foreground">{r.technician}</TableCell>
+                  <TableCell>
+                    <Badge variant={STATUS_COLOR[r.status as keyof typeof STATUS_COLOR] || 'default'} className="capitalize">
+                      {r.status.replace('_',' ')}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); navigate(`/maintenance/${r.id}`); }}>
+                      View
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </Card>
     </div>
   )
 }
