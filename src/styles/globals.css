@@ -1,21 +1,4 @@
-/* Google Fonts — must be first, before @tailwind */
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap');
-
-@font-face {
-  font-family: 'PP Mori';
-  src: url('/fonts/PPMori-Regular.otf') format('opentype');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'PP Mori';
-  src: url('/fonts/PPMori-SemiBold.otf') format('opentype');
-  font-weight: 600;
-  font-style: normal;
-  font-display: swap;
-}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -23,66 +6,44 @@
 
 @layer base {
   :root {
-    /* Background - Deep Obsidian */
-    --background: 156 25% 6%;
-    --foreground: 150 10% 94%;
-
-    /* Card */
-    --card: 156 20% 8%;
-    --card-foreground: 150 10% 94%;
+    /* Base */
+    --background: 220 13% 9%; /* #14161A - graphite */
+    --foreground: 220 20% 94%; /* #EDEEF0 - chalk */
+    
+    /* Card / Surface */
+    --card: 218 12% 13%; /* #1D2025 - steel */
+    --card-foreground: 220 20% 94%; /* chalk */
 
     /* Popover */
-    --popover: 156 20% 8%;
-    --popover-foreground: 150 10% 94%;
+    --popover: 218 12% 13%; /* steel */
+    --popover-foreground: 220 20% 94%;
 
-    /* Primary — machine green #1F5F3F */
-    --primary: 150 51% 35%;
-    --primary-foreground: 0 0% 100%;
+    /* Primary / Action */
+    --primary: 36 89% 59%; /* #F2A93B - hazard */
+    --primary-foreground: 220 13% 9%; /* graphite */
 
     /* Secondary */
-    --secondary: 156 15% 12%;
-    --secondary-foreground: 150 10% 94%;
+    --secondary: 218 12% 13%; /* steel */
+    --secondary-foreground: 220 20% 94%;
 
     /* Muted */
-    --muted: 156 15% 12%;
-    --muted-foreground: 150 8% 55%;
+    --muted: 218 12% 13%;
+    --muted-foreground: 215 14% 65%; /* lighter gray for text */
 
-    /* Accent — Terracotta #C2542B */
-    --accent: 16 64% 46%;
-    --accent-foreground: 0 0% 100%;
+    /* Accent */
+    --accent: 36 89% 59%;
+    --accent-foreground: 220 13% 9%;
 
     /* Destructive */
-    --destructive: 0 84% 60%;
+    --destructive: 357 88% 65%; /* #F2545B - signal-red */
     --destructive-foreground: 0 0% 100%;
 
-    /* Border */
-    --border: 156 15% 15%;
-    --input: 156 15% 15%;
-    --ring: 150 51% 35%;
-    --radius: 0.75rem;
-  }
-
-  .dark {
-    /* Keep the same for dark mode to unify */
-    --background: 156 25% 6%;
-    --foreground: 150 10% 94%;
-    --card: 156 20% 8%;
-    --card-foreground: 150 10% 94%;
-    --popover: 156 20% 8%;
-    --popover-foreground: 150 10% 94%;
-    --primary: 150 51% 35%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 156 15% 12%;
-    --secondary-foreground: 150 10% 94%;
-    --muted: 156 15% 12%;
-    --muted-foreground: 150 8% 55%;
-    --accent: 16 64% 46%;
-    --accent-foreground: 0 0% 100%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 156 15% 15%;
-    --input: 156 15% 15%;
-    --ring: 150 51% 35%;
+    /* Borders / Dividers */
+    --border: 218 11% 19%; /* #2A2E35 - hairline */
+    --input: 218 11% 19%; /* hairline */
+    --ring: 36 89% 59%; /* hazard */
+    
+    --radius: 0.5rem;
   }
 }
 
@@ -96,28 +57,17 @@
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    font-family: 'PP Mori', system-ui, sans-serif;
-    position: relative;
-  }
-
-  body::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    opacity: 0.05;
-    pointer-events: none;
-    z-index: 9999;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    font-family: 'Inter', system-ui, sans-serif;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'PP Mori', sans-serif;
-    font-weight: 600;
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
     letter-spacing: -0.02em;
   }
 
   code, pre, .font-mono {
-    font-family: 'IBM Plex Mono', 'Courier New', monospace;
+    font-family: 'JetBrains Mono', 'Courier New', monospace;
   }
 }
 
@@ -142,16 +92,9 @@
   .animate-fade-in {
     animation: fade-in 0.3s ease-in-out;
   }
-  .animate-slide-in {
-    animation: slide-in 0.3s ease-out;
-  }
 
   @keyframes fade-in {
     from { opacity: 0; }
     to { opacity: 1; }
-  }
-  @keyframes slide-in {
-    from { transform: translateY(-8px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
   }
 }

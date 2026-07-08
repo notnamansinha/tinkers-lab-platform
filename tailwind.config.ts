@@ -19,11 +19,24 @@ const config = {
     },
     extend: {
       fontFamily: {
-        sans: ['PP Mori', 'system-ui', 'sans-serif'],
-        display: ['PP Mori', 'sans-serif'],
-        mono: ['IBM Plex Mono', 'Courier New', 'monospace'],
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+        display: ['Space Grotesk', 'sans-serif'],
+        mono: ['JetBrains Mono', 'Courier New', 'monospace'],
       },
       colors: {
+        // Core tokens
+        graphite: '#14161A',
+        steel: '#1D2025',
+        hairline: '#2A2E35',
+        chalk: '#EDEEF0',
+        hazard: '#F2A93B',
+
+        // Signal System
+        'signal-green': '#4ADE80',
+        'signal-amber': '#F2A93B',
+        'signal-red': '#F2545B',
+        'signal-grey': '#5B606B',
+
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
@@ -57,13 +70,6 @@ const config = {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
         },
-        // Custom premium brand colors
-        'tl-ink': '#0a0b0a',
-        'tl-obsidian': '#080808',
-        'tl-terracotta': '#C2542B',
-        'tl-green': '#1F5F3F',
-        'tl-paper': '#F7F8F6',
-        'tl-grid': '#E4E8E2',
       },
       borderRadius: {
         lg: 'var(--radius)',
@@ -79,10 +85,15 @@ const config = {
           from: { height: 'var(--radix-accordion-content-height)' },
           to: { height: '0' },
         },
+        'pulse-slow': {
+          '0%, 100%': { opacity: '1' },
+          '50%': { opacity: '0.4' },
+        }
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
+        'pulse-slow': 'pulse-slow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
       },
     },
   },
