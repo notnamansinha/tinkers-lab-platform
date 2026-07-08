@@ -1,44 +1,51 @@
 import React, { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { collection, query, orderBy, getDocs } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { COLLECTIONS } from '@/services/firebase/firestore'
 import { useAuth } from '@/contexts/AuthContext'
-import { Search, Plus, Grid, List, Wrench, CheckCircle, Clock, AlertTriangle, XCircle, Grid2X2 } from 'lucide-react'
+import { Search, Plus } from 'lucide-react'
 import type { Equipment, EquipmentCategory } from '@/types'
-
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Badge } from '@/components/ui/badge'
+import { cn } from '@/lib/utils'
 
 const STATUS_CONFIG = {
-  available: { label: 'Available', variant: 'default', icon: CheckCircle },
-  reserved: { label: 'Reserved', variant: 'secondary', icon: Clock },
-  in_use: { label: 'In Use', variant: 'secondary', icon: Wrench },
-  under_maintenance: { label: 'Maintenance', variant: 'destructive', icon: AlertTriangle },
-  out_of_service: { label: 'Out of Service', variant: 'destructive', icon: XCircle },
-  retired: { label: 'Retired', variant: 'outline', icon: XCircle },
+  available:         { label: 'Available',    color: '#34C759' },
+  reserved:          { label: 'Reserved',     color: '#FF9500' },
+  in_use:            { label: 'In Use',       color: '#FF9500' },
+  under_maintenance: { label: 'Maintenance',  color: '#8E8E93' },
+  out_of_service:    { label: 'Out of Service', color: '#FF3B30' },
+  retired:           { label: 'Retired',      color: '#8E8E93' },
 } as const
 
-const CATEGORIES: EquipmentCategory[] = ['Digital Fabrication', 'Heavy Duty', 'Tabletop Power', 'Electronics', 'Other']
+const CATEGORY_LABELS: Record<string, string> = {
+  'Digital Fabrication': '3D Printing',
+  'Electronics':         'Electronics',
+  'Heavy Duty':          'Metal / CNC',
+  'Tabletop Power':      'Woodshop',
+  'Other':               'Test & Measurement',
+  'all':                 'All Categories',
+}
+
+const CATEGORIES: EquipmentCategory[] = [
+  'Digital Fabrication', 'Heavy Duty', 'Tabletop Power', 'Electronics', 'Other',
+]
+
+const STATUS_FILTERS = ['available', 'in_use', 'under_maintenance', 'out_of_service'] as const
 
 export default function EquipmentListPage() {
   const { isStaff } = useAuth()
-  const navigate = useNavigate()
-  const [search, setSearch] = useState('')
-  const [filterCat, setFilterCat] = useState<string>('all')
-  const [filterStatus, setFilterStatus] = useState<string>('all')
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+  const navigate    = useNavigate()
+  const [search,       setSearch]       = useState('')
+  const [filterCat,    setFilterCat]    = useState('all')
+  const [filterStatus, setFilterStatus] = useState('all')
+  const [viewMode, setViewMode]         = useState<'grid' | 'list'>('grid')
 
   const { data: equipment = [], isLoading } = useQuery({
     queryKey: ['equipment'],
     queryFn: async () => {
-      const ref = collection(db, COLLECTIONS.EQUIPMENT)
-      const q = query(ref, orderBy('createdAt', 'desc'))
+      const ref  = collection(db, COLLECTIONS.EQUIPMENT)
+      const q    = query(ref, orderBy('createdAt', 'desc'))
       const snap = await getDocs(q)
       return snap.docs.map(d => ({ id: d.id, ...d.data() }) as Equipment)
     },
@@ -46,187 +53,391 @@ export default function EquipmentListPage() {
   })
 
   const filtered = equipment.filter(e => {
-    const matchSearch = search === '' || e.name.toLowerCase().includes(search.toLowerCase()) || e.machineId.toLowerCase().includes(search.toLowerCase())
-    const matchCat = filterCat === 'all' || e.category === filterCat
-    const matchStatus = filterStatus === 'all' || e.status === filterStatus
+    const matchSearch = !search ||
+      e.name.toLowerCase().includes(search.toLowerCase()) ||
+      e.machineId.toLowerCase().includes(search.toLowerCase())
+    const matchCat    = filterCat    === 'all' || e.category === filterCat
+    const matchStatus = filterStatus === 'all' || e.status   === filterStatus
     return matchSearch && matchCat && matchStatus
   })
 
+  // ── Pill chip helper ──────────────────────────────────────────────────────
+  function Chip({
+    label, active, onClick,
+  }: { label: string; active: boolean; onClick: () => void }) {
+    return (
+      <button
+        onClick={onClick}
+        style={{
+          padding: '5px 14px',
+          borderRadius: 999,
+          fontSize: 13,
+          fontWeight: 500,
+          border: active ? 'none' : '1px solid rgba(255,255,255,0.14)',
+          background: active ? '#0A84FF' : 'transparent',
+          color: active ? '#fff' : '#98989D',
+          cursor: 'pointer',
+          transition: 'background 200ms ease, color 200ms ease, border-color 200ms ease',
+          fontFamily: '-apple-system, SF Pro Text, Inter, sans-serif',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {label}
+      </button>
+    )
+  }
+
+  // ── Status dot ───────────────────────────────────────────────────────────
+  function StatusDot({ status }: { status: Equipment['status'] }) {
+    const cfg  = STATUS_CONFIG[status] ?? STATUS_CONFIG.available
+    const pulse = status === 'in_use' || status === 'reserved'
+    return (
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+        <span
+          className={cn('inline-block rounded-full', pulse && 'animate-status-pulse')}
+          style={{ width: 7, height: 7, background: cfg.color, flexShrink: 0 }}
+        />
+        <span style={{ fontSize: 12, color: '#98989D' }}>{cfg.label}</span>
+      </span>
+    )
+  }
+
   return (
-    <div className="space-y-8 max-w-[1400px] py-8 mx-auto animate-fade-in px-4">
-      {/* Header section with gradient */}
-      <div className="flex flex-col sm:flex-row justify-between items-start gap-6 border-b border-border pb-6">
+    <div className="animate-fade-in" style={{ paddingBottom: 48 }}>
+
+      {/* ── Page header ─────────────────────────────────────────── */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28 }}>
         <div>
-          <h1 className="text-4xl font-display font-extrabold tracking-tight bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+          <h1
+            style={{
+              fontFamily: '-apple-system, SF Pro Display, Inter, sans-serif',
+              fontWeight: 600, fontSize: 30, letterSpacing: '-0.01em', lineHeight: 1.1,
+              color: '#F5F5F7', marginBottom: 6,
+            }}
+          >
             Machines & Equipment
           </h1>
-          <p className="text-muted-foreground mt-2 max-w-xl text-lg">
-            Browse our catalog. Tier-1 equipment requires induction and booking.
+          <p style={{ color: '#98989D', fontSize: 14 }}>
+            Browse the catalog. Tier-1 equipment requires induction and booking.
           </p>
         </div>
         {isStaff && (
-          <Button size="lg" className="shrink-0 gap-2 font-bold shadow-md" onClick={() => navigate('/equipment/new')}>
-            <Plus className="h-5 w-5" /> Add Equipment
-          </Button>
+          <button
+            onClick={() => navigate('/equipment/new')}
+            className="animate-press"
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 7,
+              borderRadius: 12, background: '#0A84FF',
+              color: '#fff', border: 'none', cursor: 'pointer',
+              padding: '8px 16px', fontSize: 14, fontWeight: 600,
+              fontFamily: '-apple-system, SF Pro Text, Inter, sans-serif',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            <Plus size={15} /> Add Equipment
+          </button>
         )}
       </div>
 
-      <div className="flex flex-col sm:flex-row flex-wrap gap-4 items-center bg-card/40 backdrop-blur-md p-4 rounded-xl border border-border shadow-sm">
-        <div className="relative flex-1 min-w-[280px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
+      {/* ── Filter bar ──────────────────────────────────────────── */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, marginBottom: 28, alignItems: 'center' }}>
+        {/* Search input */}
+        <div style={{ position: 'relative', flex: '1 1 240px', minWidth: 240 }}>
+          <Search
+            size={14}
+            style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#98989D', pointerEvents: 'none' }}
+          />
+          <input
             type="text"
-            placeholder="Search equipment by name or ID..."
+            placeholder="Search by name or ID..."
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="pl-9 bg-background/50 h-11"
+            style={{
+              width: '100%', paddingLeft: 34, paddingRight: 14,
+              height: 36, borderRadius: 999,
+              background: 'rgba(255,255,255,0.05)',
+              border: '1px solid rgba(255,255,255,0.10)',
+              color: '#F5F5F7', fontSize: 13,
+              fontFamily: '-apple-system, SF Pro Text, Inter, sans-serif',
+              outline: 'none',
+            }}
           />
         </div>
-        
-        <Select value={filterCat} onValueChange={(val) => setFilterCat(val || '')}>
-          <SelectTrigger className="w-[200px] h-11 bg-background/50">
-            <SelectValue placeholder="All categories" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All categories</SelectItem>
-            {CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-          </SelectContent>
-        </Select>
 
-        <Select value={filterStatus} onValueChange={(val) => setFilterStatus(val || '')}>
-          <SelectTrigger className="w-[200px] h-11 bg-background/50">
-            <SelectValue placeholder="All statuses" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All statuses</SelectItem>
-            {Object.entries(STATUS_CONFIG).map(([k, v]) => (
-              <SelectItem key={k} value={k}>{v.label}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        
-        <div className="flex items-center space-x-1 border border-border rounded-lg p-1 bg-background/30 h-11">
-          <Button 
-            variant={viewMode === 'grid' ? 'secondary' : 'ghost'} 
-            size="icon" 
-            className="h-8 w-8 rounded-md" 
-            onClick={() => setViewMode('grid')}
-          >
-            <Grid2X2 className="h-4 w-4" />
-          </Button>
-          <Button 
-            variant={viewMode === 'list' ? 'secondary' : 'ghost'} 
-            size="icon" 
-            className="h-8 w-8 rounded-md" 
-            onClick={() => setViewMode('list')}
-          >
-            <List className="h-4 w-4" />
-          </Button>
+        {/* Category chips */}
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          <Chip label="All" active={filterCat === 'all'} onClick={() => setFilterCat('all')} />
+          {CATEGORIES.map(c => (
+            <Chip key={c} label={CATEGORY_LABELS[c] ?? c} active={filterCat === c} onClick={() => setFilterCat(c)} />
+          ))}
+        </div>
+
+        {/* Status chips */}
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          <Chip label="Any Status" active={filterStatus === 'all'} onClick={() => setFilterStatus('all')} />
+          {STATUS_FILTERS.map(s => (
+            <Chip
+              key={s}
+              label={STATUS_CONFIG[s].label}
+              active={filterStatus === s}
+              onClick={() => setFilterStatus(s)}
+            />
+          ))}
+        </div>
+
+        {/* View toggle */}
+        <div
+          style={{
+            display: 'flex', gap: 2,
+            border: '1px solid rgba(255,255,255,0.10)',
+            borderRadius: 10, padding: 3,
+            background: 'rgba(255,255,255,0.03)',
+          }}
+        >
+          {(['grid', 'list'] as const).map(v => (
+            <button
+              key={v}
+              onClick={() => setViewMode(v)}
+              style={{
+                padding: '4px 10px', borderRadius: 7, fontSize: 12, fontWeight: 500,
+                border: 'none', cursor: 'pointer',
+                background: viewMode === v ? 'rgba(255,255,255,0.10)' : 'transparent',
+                color: viewMode === v ? '#F5F5F7' : '#98989D',
+                transition: 'background 200ms ease, color 200ms ease',
+                fontFamily: '-apple-system, SF Pro Text, Inter, sans-serif',
+              }}
+            >
+              {v === 'grid' ? '⊞ Grid' : '≡ List'}
+            </button>
+          ))}
         </div>
       </div>
 
+      {/* ── Loading skeleton ─────────────────────────────────────── */}
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+            gap: 16,
+          }}
+        >
           {Array.from({ length: 8 }).map((_, i) => (
-            <Card key={i} className="animate-pulse h-[320px] bg-muted/20 border-border" />
+            <div
+              key={i}
+              style={{
+                height: 240, borderRadius: 24,
+                background: '#141518',
+                border: '1px solid rgba(255,255,255,0.06)',
+                opacity: 0.5,
+              }}
+            />
           ))}
         </div>
+
       ) : filtered.length === 0 ? (
-        <Card className="py-32 text-center bg-card/40 backdrop-blur-sm border-dashed">
-          <CardContent className="flex flex-col items-center justify-center">
-            <Wrench className="h-12 w-12 text-muted-foreground/30 mb-4" />
-            <p className="text-xl text-muted-foreground font-medium">No equipment found matching your filters.</p>
-          </CardContent>
-        </Card>
+        <div
+          style={{
+            padding: '80px 0', textAlign: 'center',
+            color: '#98989D', fontSize: 15,
+          }}
+        >
+          No equipment found matching your filters.
+        </div>
+
       ) : viewMode === 'grid' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        // ── Grid view ──────────────────────────────────────────────
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+            gap: 16,
+          }}
+        >
           {filtered.map(e => {
-            const sc = STATUS_CONFIG[e.status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.available
-            const Icon = sc.icon
+            const cfg  = STATUS_CONFIG[e.status] ?? STATUS_CONFIG.available
+            const pulse = e.status === 'in_use' || e.status === 'reserved'
+
             return (
-              <Card 
-                key={e.id} 
-                className="group cursor-pointer hover:border-primary/50 hover:shadow-xl transition-all duration-300 flex flex-col h-full bg-card/60 backdrop-blur-sm overflow-hidden" 
+              <button
+                key={e.id}
                 onClick={() => navigate(`/equipment/${e.id}`)}
+                className="group text-left w-full"
+                style={{
+                  background: '#141518',
+                  borderRadius: 24,
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  boxShadow: '0 4px 24px rgba(0,0,0,0.30)',
+                  overflow: 'hidden',
+                  transition: 'transform 300ms cubic-bezier(0.32,0.72,0,1), border-color 300ms ease, box-shadow 300ms ease',
+                  display: 'flex', flexDirection: 'column',
+                  cursor: 'pointer',
+                }}
+                onMouseEnter={el => {
+                  ;(el.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'
+                  ;(el.currentTarget as HTMLElement).style.borderColor = 'rgba(10,132,255,0.28)'
+                  ;(el.currentTarget as HTMLElement).style.boxShadow = '0 8px 32px rgba(0,0,0,0.45)'
+                }}
+                onMouseLeave={el => {
+                  ;(el.currentTarget as HTMLElement).style.transform = 'translateY(0)'
+                  ;(el.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)'
+                  ;(el.currentTarget as HTMLElement).style.boxShadow = '0 4px 24px rgba(0,0,0,0.30)'
+                }}
               >
-                {/* Image Placeholder area, but we'll leave it as a gradient for now since there are no images mapped here */}
-                <div className="h-2 bg-gradient-to-r from-primary/40 to-primary/10 w-full" />
-                
-                <CardHeader className="pb-4 pt-5">
-                  <div className="flex items-start justify-between gap-4 mb-3">
-                    <Badge variant="outline" className="font-mono text-[10px] uppercase bg-background/50 backdrop-blur-sm">
-                      {e.machineId}
-                    </Badge>
-                    <Badge variant={sc.variant as any} className="flex items-center gap-1.5 shadow-sm">
-                      <Icon className="h-3 w-3" />
-                      {sc.label}
-                    </Badge>
+                {/* Photo placeholder */}
+                <div
+                  style={{
+                    aspectRatio: '16/9', overflow: 'hidden', flexShrink: 0,
+                    background: '#0D0E10',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}
+                >
+                  {e.imageUrls?.[0] ? (
+                    <img src={e.imageUrls[0]} alt={e.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <span style={{ fontFamily: 'ui-monospace, SF Mono, monospace', fontSize: 10, color: 'rgba(255,255,255,0.15)', letterSpacing: '0.08em' }}>
+                      NO IMAGE
+                    </span>
+                  )}
+                </div>
+
+                {/* Info */}
+                <div style={{ padding: '13px 16px 15px', flex: 1, display: 'flex', flexDirection: 'column', gap: 5 }}>
+                  <span
+                    style={{
+                      fontFamily: 'ui-monospace, SF Mono, monospace',
+                      fontSize: 10, color: '#98989D', letterSpacing: '0.06em', textTransform: 'uppercase',
+                    }}
+                  >
+                    {CATEGORY_LABELS[e.category] ?? e.category}
+                  </span>
+                  <p
+                    style={{
+                      fontFamily: '-apple-system, SF Pro Display, Inter, sans-serif',
+                      fontWeight: 600, fontSize: 14, lineHeight: 1.3, color: '#F5F5F7',
+                      overflow: 'hidden', display: '-webkit-box',
+                      WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+                    }}
+                  >
+                    {e.name}
+                  </p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 'auto', paddingTop: 6 }}>
+                    <span
+                      className={cn('inline-block rounded-full', pulse && 'animate-status-pulse')}
+                      style={{ width: 7, height: 7, background: cfg.color, flexShrink: 0 }}
+                    />
+                    <span style={{ fontSize: 12, color: '#98989D' }}>{cfg.label}</span>
+                    {e.status === 'available' && (
+                      <span
+                        onClick={ev => { ev.stopPropagation(); navigate(`/bookings/new?machine=${e.id}`) }}
+                        style={{
+                          marginLeft: 'auto', fontSize: 12, color: '#0A84FF',
+                          fontFamily: '-apple-system, SF Pro Text, Inter, sans-serif',
+                          cursor: 'pointer', padding: '2px 8px',
+                          borderRadius: 999, border: '1px solid rgba(10,132,255,0.35)',
+                          transition: 'background 200ms ease',
+                        }}
+                      >
+                        Book →
+                      </span>
+                    )}
                   </div>
-                  <CardTitle className="text-xl tracking-tight leading-tight group-hover:text-primary transition-colors">{e.name}</CardTitle>
-                  <CardDescription className="uppercase tracking-widest text-xs font-semibold">{e.category}</CardDescription>
-                </CardHeader>
-                <CardContent className="flex-1 pb-4">
-                  <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed">{e.description || 'No description available.'}</p>
-                </CardContent>
-                <CardFooter className="pt-0 border-t border-border/50 pt-4 mx-6 px-0 justify-between items-center">
-                  <Badge variant={e.requiresTraining ? "secondary" : "default"} className="font-mono text-[10px] uppercase tracking-wider">
-                    {e.requiresTraining ? 'Training Req' : 'Open Use'}
-                  </Badge>
-                  <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity -mr-2" onClick={(ev) => { ev.stopPropagation(); navigate(`/bookings/new?machine=${e.id}`) }}>
-                    Book &rarr;
-                  </Button>
-                </CardFooter>
-              </Card>
+                </div>
+              </button>
             )
           })}
         </div>
+
       ) : (
-        <Card className="bg-card/60 backdrop-blur-sm border-border shadow-md overflow-hidden">
-          <Table>
-            <TableHeader className="bg-muted/50">
-              <TableRow className="hover:bg-transparent">
-                <TableHead className="w-[120px] font-semibold">ID</TableHead>
-                <TableHead className="font-semibold">Name</TableHead>
-                <TableHead className="font-semibold">Category</TableHead>
-                <TableHead className="font-semibold">Location</TableHead>
-                <TableHead className="font-semibold">Status</TableHead>
-                <TableHead className="font-semibold">Training</TableHead>
-                <TableHead className="text-right font-semibold">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.map(e => {
-                const sc = STATUS_CONFIG[e.status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.available
-                const Icon = sc.icon
-                return (
-                  <TableRow key={e.id} className="cursor-pointer group hover:bg-muted/30 transition-colors" onClick={() => navigate(`/equipment/${e.id}`)}>
-                    <TableCell className="font-mono text-muted-foreground text-xs">{e.machineId}</TableCell>
-                    <TableCell className="font-medium max-w-[240px] truncate text-foreground group-hover:text-primary transition-colors">{e.name}</TableCell>
-                    <TableCell className="text-muted-foreground uppercase text-xs font-medium">{e.category}</TableCell>
-                    <TableCell className="text-muted-foreground">{e.location || '—'}</TableCell>
-                    <TableCell>
-                      <Badge variant={sc.variant as any} className="flex w-fit items-center gap-1.5 whitespace-nowrap shadow-sm">
-                        <Icon className="h-3 w-3" />{sc.label}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={e.requiresTraining ? "secondary" : "default"} className="font-mono text-[10px] uppercase">
-                        {e.requiresTraining ? 'Required' : 'Open'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity" onClick={ev => { ev.stopPropagation(); navigate(`/bookings/new?machine=${e.id}`) }}>
-                        Book
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                )
-              })}
-            </TableBody>
-          </Table>
-        </Card>
+        // ── List view ────────────────────────────────────────────
+        <div
+          style={{
+            background: '#141518',
+            borderRadius: 16,
+            border: '1px solid rgba(255,255,255,0.08)',
+            overflow: 'hidden',
+          }}
+        >
+          {/* Header row */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '120px 1fr 160px 140px 120px auto',
+              gap: 12, padding: '10px 20px',
+              borderBottom: '1px solid rgba(255,255,255,0.08)',
+              fontFamily: 'ui-monospace, SF Mono, monospace',
+              fontSize: 10, color: '#98989D', letterSpacing: '0.08em', textTransform: 'uppercase',
+            }}
+          >
+            <span>ID</span>
+            <span>Name</span>
+            <span>Category</span>
+            <span>Location</span>
+            <span>Status</span>
+            <span></span>
+          </div>
+
+          {filtered.map((e, idx) => {
+            const cfg  = STATUS_CONFIG[e.status] ?? STATUS_CONFIG.available
+            const pulse = e.status === 'in_use' || e.status === 'reserved'
+
+            return (
+              <div
+                key={e.id}
+                onClick={() => navigate(`/equipment/${e.id}`)}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '120px 1fr 160px 140px 120px auto',
+                  gap: 12, padding: '12px 20px',
+                  borderBottom: idx < filtered.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
+                  cursor: 'pointer',
+                  transition: 'background 150ms ease',
+                  alignItems: 'center',
+                }}
+                onMouseEnter={el => {
+                  ;(el.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.03)'
+                }}
+                onMouseLeave={el => {
+                  ;(el.currentTarget as HTMLElement).style.background = 'transparent'
+                }}
+              >
+                <span style={{ fontFamily: 'ui-monospace, SF Mono, monospace', fontSize: 11, color: '#98989D' }}>
+                  {e.machineId}
+                </span>
+                <span style={{ fontFamily: '-apple-system, SF Pro Text, Inter, sans-serif', fontSize: 14, fontWeight: 500, color: '#F5F5F7' }}>
+                  {e.name}
+                </span>
+                <span style={{ fontFamily: 'ui-monospace, SF Mono, monospace', fontSize: 11, color: '#98989D' }}>
+                  {CATEGORY_LABELS[e.category] ?? e.category}
+                </span>
+                <span style={{ fontSize: 13, color: '#98989D' }}>
+                  {e.location || '—'}
+                </span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <span
+                    className={cn('inline-block rounded-full', pulse && 'animate-status-pulse')}
+                    style={{ width: 7, height: 7, background: cfg.color, flexShrink: 0 }}
+                  />
+                  <span style={{ fontSize: 12, color: '#98989D' }}>{cfg.label}</span>
+                </span>
+                {e.status === 'available' && (
+                  <button
+                    onClick={ev => { ev.stopPropagation(); navigate(`/bookings/new?machine=${e.id}`) }}
+                    style={{
+                      fontSize: 12, color: '#0A84FF',
+                      background: 'transparent', border: '1px solid rgba(10,132,255,0.35)',
+                      borderRadius: 999, padding: '3px 10px', cursor: 'pointer',
+                      fontFamily: '-apple-system, SF Pro Text, Inter, sans-serif',
+                    }}
+                  >
+                    Book
+                  </button>
+                )}
+              </div>
+            )
+          })}
+        </div>
       )}
     </div>
   )
 }
-
