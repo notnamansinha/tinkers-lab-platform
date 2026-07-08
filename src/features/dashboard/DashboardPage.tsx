@@ -314,8 +314,9 @@ function EquipmentCard({
 export default function DashboardPage() {
   const navigate = useNavigate()
   const [activeCategory, setActiveCategory] = useState<CategoryId | null>(null)
+  const [isSeeding, setIsSeeding] = useState(false)
 
-  const { data: equipment = [], isLoading } = useQuery({
+  const { data: equipment = [], isLoading, refetch } = useQuery({
     queryKey: ['equipment', 'all'],
     queryFn: async () => {
       const ref = collection(db, COLLECTIONS.EQUIPMENT)
@@ -342,8 +343,66 @@ export default function DashboardPage() {
     ? CATEGORY_META.find(c => c.id === activeCategory)
     : null
 
+  const handleSeed = async () => {
+    setIsSeeding(true)
+    try {
+      const { addDoc, serverTimestamp } = await import('firebase/firestore')
+      const MACHINES = [
+        { machineId: "bambu-x1c",    name: "Bambu Labs X-1C 3D Printer",      category: "Digital Fabrication", requiresTraining: true,  description: "Multi-colour FDM printer, 256mm build volume." },
+        { machineId: "creality-dual",name: "Creality Dual Nozzle 3D Printer", category: "Digital Fabrication", requiresTraining: true,  description: "Dual-material FDM printing." },
+        { machineId: "laser-cutter", name: "Success Laser Cutter",            category: "Digital Fabrication", requiresTraining: true,  description: "CO₂ laser for acrylic, wood, cardboard." },
+        { machineId: "muffle",       name: "Muffle Furnace S-900",            category: "Heavy Duty",          requiresTraining: true,  description: "High-temperature furnace." },
+        { machineId: "lathe",        name: "Lathe Machine KL-2",              category: "Heavy Duty",          requiresTraining: true,  description: "ESSKAY metal lathe." },
+        { machineId: "sheet-bender", name: "Manual Sheet Bender",             category: "Heavy Duty",          requiresTraining: false, description: "Sheet-metal bending." },
+        { machineId: "pillar-drill", name: "Pillar Drill 2HP",                category: "Heavy Duty",          requiresTraining: true,  description: "Panchavati bench drill press." },
+        { machineId: "table-saw",    name: "Table Saw GTS 10J",               category: "Tabletop Power",      requiresTraining: true,  description: "Bosch table saw." },
+        { machineId: "mitre-saw",    name: "Mitre Saw GCM 254",               category: "Tabletop Power",      requiresTraining: true,  description: "Bosch mitre saw." },
+        { machineId: "cutoff-saw",   name: "Metal Cut-off Saw GCO 220",       category: "Tabletop Power",      requiresTraining: true,  description: "Bosch abrasive cut-off." },
+        { machineId: "esd-station",  name: "ESD Workstation",                 category: "Electronics",         requiresTraining: false, description: "Anti-static electronics bench." },
+        { machineId: "oscilloscope", name: "Digital Oscilloscope SDS1022",    category: "Electronics",         requiresTraining: false, description: "OWON 2-channel scope." },
+        { machineId: "func-gen",     name: "Function Generator SFG1003",      category: "Electronics",         requiresTraining: false, description: "GW Instek signal source." },
+        { machineId: "solder",       name: "Soldering Station WE1010",        category: "Electronics",         requiresTraining: false, description: "Weller temperature-controlled iron." }
+      ];
+      const equipCollection = collection(db, COLLECTIONS.EQUIPMENT);
+      for (const machine of MACHINES) {
+        await addDoc(equipCollection, {
+          ...machine,
+          status: "available",
+          healthStatus: "good",
+          location: "Main Lab",
+          imageUrls: [],
+          manualUrls: [],
+          safetyDocUrls: [],
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+      }
+      alert('14 Machines successfully seeded to Firestore!');
+      refetch();
+    } catch (err: any) {
+      alert('Error seeding machines: ' + err.message);
+    } finally {
+      setIsSeeding(false);
+    }
+  }
+
   return (
     <div className="flex flex-col w-full animate-fade-in">
+      {/* ── Temporary Seed Button ── */}
+      {equipment.length === 0 && (
+        <div style={{ marginBottom: 20, padding: 16, background: 'rgba(10, 132, 255, 0.1)', borderRadius: 12, border: '1px solid rgba(10, 132, 255, 0.3)' }}>
+          <p style={{ color: '#F5F5F7', marginBottom: 12, fontSize: 14 }}>
+            <strong>Action Required:</strong> The equipment database is empty. Click below to seed the 14 machines from the Phase 2 migration plan.
+          </p>
+          <button 
+            onClick={handleSeed}
+            disabled={isSeeding}
+            style={{ padding: '8px 16px', background: '#0A84FF', color: 'white', borderRadius: 8, border: 'none', cursor: 'pointer' }}
+          >
+            {isSeeding ? 'Seeding...' : 'Seed Machines'}
+          </button>
+        </div>
+      )}
 
       {/* ── Hero tagline ─────────────────────────────────────────── */}
       <div style={{ marginBottom: 28 }}>
