@@ -504,18 +504,3 @@ export interface AuditLog {
   createdAt: Timestamp
 }
 
-// ============================================================
-// UTILITY TYPES
-// ============================================================
-export interface PaginationState {
-  page: number
-  pageSize: number
-  total: number
-}
-
-export type SortOrder = 'asc' | 'desc'
-
-export interface SortState {
-  field: string
-  order: SortOrder
-}
