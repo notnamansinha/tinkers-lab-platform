@@ -88,7 +88,7 @@ export default function AdminIssuesPage() {
               </TableHeader>
               <TableBody>
                 {filtered.map((i, idx) => (
-                  <TableRow>
+                  <TableRow key={i.id}>
                     <TableCell>{filtered.length - idx}</TableCell>
                     <TableCell>{i.type.replace('_',' ')}</TableCell>
                     <TableCell><span className={`text-xs px-2 py-0.5 rounded-full font-medium ${SEVERITY_COLOR[i.severity]}`}>{i.severity}</span></TableCell>

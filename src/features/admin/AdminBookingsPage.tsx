@@ -17,7 +17,6 @@ import { useAuth } from '@/contexts/AuthContext'
 const STATUS_COLOR = { pending: 'bg-orange-100 text-orange-700', approved: 'bg-green-100 text-green-700', rejected: 'bg-red-100 text-red-700', cancelled: 'bg-gray-100 text-gray-600', completed: 'bg-blue-100 text-blue-700' }
 
 export default function AdminBookingsPage() {
-  const { profile } = useAuth()
   const qc = useQueryClient()
   const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
@@ -25,9 +24,7 @@ export default function AdminBookingsPage() {
   const { data: bookings = [], isLoading } = useQuery({
     queryKey: ['admin', 'bookings'],
     queryFn: async () => {
-      const ref = collection(db, COLLECTIONS.BOOKINGS)
-      const q = query(ref, orderBy('createdAt', 'desc'))
-      const snap = await getDocs(q)
+      const snap = await getDocs(query(collection(db, COLLECTIONS.BOOKINGS), orderBy('createdAt', 'desc')))
       return snap.docs.map(d => ({ id: d.id, ...d.data() }) as Booking)
     },
     staleTime: 2 * 60 * 1000,
@@ -35,15 +32,9 @@ export default function AdminBookingsPage() {
 
   const filtered = bookings.filter(b => {
     const matchSearch = !search || b.machineName.toLowerCase().includes(search.toLowerCase()) || b.userName?.toLowerCase().includes(search.toLowerCase()) || b.userEmail.toLowerCase().includes(search.toLowerCase())
-    const matchStatus = filterStatus === 'all' || b.status === filterStatus
-    return matchSearch && matchStatus
+    return matchSearch && (filterStatus === 'all' || b.status === filterStatus)
   })
-
-  const approve = async (id: string) => {
-    await updateBookingStatus(id, 'approved')
-    toast.success('Booking approved')
-    qc.invalidateQueries({ queryKey: ['admin', 'bookings'] })
-  }
+  // ponytail: kept reject since admin might still reject approved bookings manually
 
   const reject = async (id: string) => {
     const reason = window.prompt('Rejection reason (optional):') ?? ''
@@ -57,7 +48,7 @@ export default function AdminBookingsPage() {
       <div>
         <p className="text-xs font-mono uppercase tracking-widest text-accent">Admin · Bookings</p>
         <h1 className="text-2xl font-display font-bold mt-1">All Bookings</h1>
-        <p className="text-muted-foreground text-sm">{bookings.length} total · Latest to oldest · Approve or reject pending requests.</p>
+        <p className="text-muted-foreground text-sm">{bookings.length} total · Latest to oldest</p>
       </div>
 
       <div className="flex gap-3">
@@ -65,7 +56,7 @@ export default function AdminBookingsPage() {
           <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search bookings…" className="pl-9" />
         </div>
-        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="px-3 py-2 text-sm border rounded-md bg-background outline-none focus:ring-2 focus:ring-ring">
+        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="px-3 py-2 text-sm border rounded-md bg-background outline-none">
           <option value="all">All statuses</option>
           {['pending','approved','rejected','cancelled','completed'].map(s => <option key={s} value={s}>{s}</option>)}
         </select>
@@ -90,7 +81,7 @@ export default function AdminBookingsPage() {
               </TableHeader>
               <TableBody>
                 {filtered.map((b, idx) => (
-                  <TableRow>
+                  <TableRow key={b.id}>
                     <TableCell>{filtered.length - idx}</TableCell>
                     <TableCell>{b.machineName}</TableCell>
                     <TableCell>{b.date}</TableCell>

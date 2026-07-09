@@ -76,7 +76,7 @@ export default function AdminInventoryPage() {
               </TableHeader>
               <TableBody>
                 {filtered.map((item, idx) => (
-                  <TableRow>
+                  <TableRow key={item.id}>
                     <TableCell>{filtered.length - idx}</TableCell>
                     <TableCell>{item.name}</TableCell>
                     <TableCell>{item.category}</TableCell>
