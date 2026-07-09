@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react'
+import React, { useState } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { Box, Calendar, LayoutDashboard, LogOut, Menu, MessageSquare, Wrench, X } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
@@ -6,6 +6,7 @@ import { signOut } from '@/services/firebase/auth'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import flowerMark from '@/assets/tinkerer-figjam/flower-mark.svg'
+import { MathicalLogo } from '@/components/ui/svgs'
 
 const NAV_LINKS = [
   { name: 'Home',      icon: LayoutDashboard, path: '/' },
@@ -58,7 +59,7 @@ export default function AppLayout() {
           <button className="w-9 h-9 rounded-[10px] overflow-hidden" onClick={() => navigate('/')} aria-label="Go home">
             <img src={flowerMark} alt="" className="h-full w-full" />
           </button>
-          <span className="text-pink font-display font-black lowercase text-xl leading-none">tinkerers lab</span>
+          <MathicalLogo className="h-6 text-[#EC68D8]" />
         </div>
         <button className="text-white p-2" onClick={() => setMenuOpen(!menuOpen)} aria-label="Toggle navigation">
           {menuOpen ? <X size={24} /> : <Menu size={24} />}
@@ -72,8 +73,8 @@ export default function AppLayout() {
               key={link.path}
               onClick={() => { navigate(link.path); setMenuOpen(false) }}
               className={cn(
-                'flex items-center gap-4 px-6 py-4 rounded-full font-bold text-lg transition-all',
-                isActive(link.path) ? 'bg-indigo text-white' : 'text-white/60 hover:text-white hover:bg-white/5'
+                'flex items-center gap-4 px-6 py-4 rounded-full transition-all',
+                isActive(link.path) ? 'bg-indigo text-white text-sidebar-active' : 'text-white/60 hover:text-white hover:bg-white/5 text-sidebar-normal'
               )}
             >
               <link.icon size={24} />
@@ -84,8 +85,8 @@ export default function AppLayout() {
             <button
               onClick={() => { navigate('/admin'); setMenuOpen(false) }}
               className={cn(
-                'flex items-center gap-4 px-6 py-4 rounded-full font-bold text-lg transition-all',
-                isActive('/admin') ? 'bg-indigo text-white' : 'text-white/60 hover:text-white hover:bg-white/5'
+                'flex items-center gap-4 px-6 py-4 rounded-full transition-all',
+                isActive('/admin') ? 'bg-indigo text-white text-sidebar-active' : 'text-white/60 hover:text-white hover:bg-white/5 text-sidebar-normal'
               )}
             >
               <LayoutDashboard size={24} />
@@ -93,12 +94,12 @@ export default function AppLayout() {
             </button>
           )}
           <div className="mt-auto flex items-center gap-4 px-6 py-4">
-            <div className="w-10 h-10 rounded-full bg-pink text-black flex items-center justify-center font-black text-sm">
+            <div className="w-10 h-10 rounded-full bg-pink text-black flex items-center justify-center font-bold text-[14px]">
               {initials}
             </div>
             <div className="flex-1 text-left">
-              <p className="text-white font-bold">{profile?.displayName || 'User'}</p>
-              <button onClick={handleSignOut} className="text-pink text-sm font-bold uppercase hover:underline">Log out</button>
+              <p className="text-white text-sidebar-normal">{profile?.displayName || 'User'}</p>
+              <button onClick={handleSignOut} className="text-pink text-badge hover:underline">Log out</button>
             </div>
           </div>
         </div>
@@ -123,7 +124,7 @@ export default function AppLayout() {
               )}
             >
               <link.icon size={20} />
-              <span className="hidden lg:inline text-xs font-black uppercase tracking-[0.08em]">{link.name}</span>
+              <span className={cn("hidden lg:inline", isActive(link.path) ? "text-sidebar-active" : "text-sidebar-normal")}>{link.name}</span>
             </button>
           ))}
           {isStaff && (
@@ -138,7 +139,7 @@ export default function AppLayout() {
               )}
             >
               <LayoutDashboard size={20} />
-              <span className="hidden lg:inline text-xs font-black uppercase tracking-[0.08em]">Admin</span>
+              <span className={cn("hidden lg:inline", isActive('/admin') ? "text-sidebar-active" : "text-sidebar-normal")}>Admin</span>
             </button>
           )}
         </nav>
@@ -151,7 +152,7 @@ export default function AppLayout() {
           >
             <LogOut size={20} />
           </button>
-          <div className="w-12 h-12 rounded-full bg-pink flex items-center justify-center text-black font-black text-sm shadow-lg">
+          <div className="w-12 h-12 rounded-full bg-pink flex items-center justify-center text-black font-bold text-[16px] shadow-lg">
             {initials}
           </div>
         </div>
@@ -159,7 +160,7 @@ export default function AppLayout() {
 
       <main className="flex-1 w-full min-w-0 max-w-full relative z-0 flex flex-col">
         <div className="hidden md:flex h-20 items-center justify-center">
-          <h1 className="text-pink font-display font-black lowercase text-[34px] leading-none">tinkerers lab</h1>
+          <MathicalLogo className="h-10 text-[#EC68D8]" />
         </div>
 
         <div className="flex-1 p-4 pt-0 md:p-8 md:pt-0 overflow-y-auto">

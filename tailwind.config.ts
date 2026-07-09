@@ -124,6 +124,41 @@ const config = {
         '12u': '96px',
       },
 
+      fontSize: {
+        'hero': ['clamp(64px, 5vw, 72px)', { lineHeight: '1', fontWeight: '900' }],
+        'onboarding': ['clamp(40px, 4vw, 56px)', { lineHeight: '1.1', fontWeight: '800' }],
+        'empty-state': ['32px', { lineHeight: '1.2', fontWeight: '700' }],
+        'dashboard-title': ['28px', { lineHeight: '1.2', fontWeight: '700' }],
+        'card-title': ['clamp(22px, 2vw, 24px)', { lineHeight: '1.2', fontWeight: '700' }],
+        'widget-title': ['clamp(18px, 1.5vw, 20px)', { lineHeight: '1.2', fontWeight: '600' }],
+        'chart-title': ['18px', { lineHeight: '1.2', fontWeight: '700' }],
+        'form-heading': ['18px', { lineHeight: '1.2', fontWeight: '700' }],
+        
+        'sidebar-active': ['15px', { lineHeight: '1.4', fontWeight: '600' }],
+        'sidebar-normal': ['15px', { lineHeight: '1.4', fontWeight: '500' }],
+        'nav': ['15px', { lineHeight: '1.4', fontWeight: '500' }],
+        
+        'input-label': ['13px', { lineHeight: '1', fontWeight: '500' }],
+        'input-text': ['16px', { lineHeight: '1.5', fontWeight: '400' }],
+        'dropdown-text': ['16px', { lineHeight: '1.5', fontWeight: '500' }],
+        'placeholder': ['16px', { lineHeight: '1.5', fontWeight: '400' }],
+        
+        'btn': ['15px', { lineHeight: '1.2', fontWeight: '600' }],
+        
+        'kpi': ['clamp(32px, 3vw, 42px)', { lineHeight: '1', fontWeight: '700' }],
+        'card-stat': ['clamp(24px, 2.5vw, 28px)', { lineHeight: '1', fontWeight: '700' }],
+        
+        'table-th': ['14px', { lineHeight: '1.4', fontWeight: '600' }],
+        'table-td': ['14px', { lineHeight: '1.4', fontWeight: '400' }],
+        
+        'chart-label': ['12px', { lineHeight: '1.4', fontWeight: '500' }],
+        'axis-label': ['11px', { lineHeight: '1.4', fontWeight: '500' }],
+        
+        'helper': ['12px', { lineHeight: '1.4', fontWeight: '400' }],
+        'tooltip': ['13px', { lineHeight: '1.4', fontWeight: '500' }],
+        'badge': ['12px', { lineHeight: '1', fontWeight: '600' }],
+      },
+
       keyframes: {
         'status-pulse': {
           '0%, 100%': { opacity: '1' },

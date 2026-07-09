@@ -26,13 +26,38 @@ This document outlines the core design language, typography, colors, and UI patt
 - **White:** `#FFFFFF` (Primary text on dark backgrounds)
 
 ## 3. Typography
-- **Display Typeface:** PP Mori SemiBold (or Arial Black fallback). Used for chunky, compressed, extra bold hero typography.
-- **Body Typeface:** Compact modern sans-serif (Inter or similar). Medium weight, small labels.
-- **Line Heights:**
-  - Headlines: Very tight (`0.82` - `0.95`).
-  - Body: Normal (`1.5`).
-- **Letter Spacing:** `0` for headlines. Do not use negative tracking.
-- **Labels:** Uppercase, small, medium/bold weight.
+- **Display Typeface:** Fredoka. Used for brand, headings, and large numbers.
+- **Body Typeface:** Inter. Used for all functional UI text.
+
+### Typography Scale
+| Element | Font | Weight | Size |
+| :--- | :--- | :--- | :--- |
+| Logo | Fredoka | Black (900) | Custom |
+| Landing Hero Heading | Fredoka | Black (900) | 64–72px |
+| Onboarding Questions | Fredoka | ExtraBold (800) | 40–56px |
+| Empty State Heading | Fredoka | Bold (700) | 32px |
+| Dashboard Section Title | Inter | Bold (700) | 28px |
+| Card Titles | Inter | Bold (700) | 22–24px |
+| Widget Titles | Inter | SemiBold (600) | 18–20px |
+| Chart Titles | Inter | Bold (700) | 18px |
+| Form Section Heading | Inter | Bold (700) | 18px |
+| Sidebar Active Item | Inter | SemiBold (600) | 15px |
+| Sidebar Normal | Inter | Medium (500) | 15px |
+| Navigation | Inter | Medium (500) | 15px |
+| Input Labels | Inter | Medium (500) | 13px |
+| Input Text | Inter | Regular (400) | 16px |
+| Dropdown Text | Inter | Medium (500) | 16px |
+| Buttons | Inter | SemiBold (600) | 15–16px |
+| KPI Numbers | Inter | Bold (700) | 32–42px |
+| Card Statistics | Inter | Bold (700) | 24–28px |
+| Table Headers | Inter | SemiBold (600) | 14px |
+| Table Content | Inter | Regular (400) | 14px |
+| Chart Labels | Inter | Medium (500) | 12px |
+| Axis Labels | Inter | Medium (500) | 11px |
+| Helper Text | Inter | Regular (400) | 12px |
+| Placeholder | Inter | Regular (400) | 16px |
+| Tooltip | Inter | Medium (500) | 13px |
+| Badge Text | Inter | SemiBold (600) | 12px |
 
 ## 4. Geometry & Border Radii
 - **Pills & Badges:** `999px` radius (fully rounded). Used for primary buttons, nav chips, and large color bars.
