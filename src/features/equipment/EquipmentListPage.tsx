@@ -152,10 +152,10 @@ export default function EquipmentListPage() {
               <button
                 key={e.id}
                 onClick={() => navigate(`/equipment/${e.id}`)}
-                className="group text-left w-full bg-[#101010] rounded-[16px] border border-white/5 hover:border-pink/80 transition-colors overflow-hidden flex flex-col shadow-[0_16px_36px_rgba(0,0,0,0.28)]"
+                className="group text-left w-full bg-[#101010] rounded-[24px] border-4 border-[#191919] hover:border-pink transition-colors overflow-hidden flex flex-col shadow-2xl"
               >
                 {/* Photo */}
-                <div className="aspect-[16/10] relative bg-black border-b border-white/5 overflow-hidden flex-shrink-0">
+                <div className="aspect-[16/10] relative bg-black border-b-4 border-[#191919] overflow-hidden flex-shrink-0">
                   {e.imageUrls?.[0] ? (
                     <img src={e.imageUrls[0]} alt={e.name} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
                   ) : (
