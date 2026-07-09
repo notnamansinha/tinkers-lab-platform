@@ -132,7 +132,7 @@ export default function InventoryDetailPage() {
                   {transactions.map(t => (
                     <TableRow key={t.id}>
                       <TableCell>
-                        <Badge variant={t.type === 'issue' || t.type === 'damage' ? 'destructive' : 'default'} className="flex w-fit items-center gap-1">
+                        <Badge variant={t.type === 'damage' || t.type === 'write_off' ? 'destructive' : 'default'} className="flex w-fit items-center gap-1">
                           {t.quantity < 0 ? <TrendingDown className="h-3 w-3" /> : <TrendingUp className="h-3 w-3" />}
                           <span className="capitalize">{t.type}</span>
                         </Badge>

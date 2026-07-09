@@ -22,6 +22,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 const equipmentSchema = z.object({
   machineId: z.string().min(2, 'Machine ID required (e.g. laser-cutter)'),
   name: z.string().min(2, 'Name required'),
+  tier: z.enum(['bookable', 'checkout', 'freely_available']),
+  confirmed: z.boolean().default(false),
   category: z.enum(['Digital Fabrication', 'Heavy Duty', 'Tabletop Power', 'Electronics', 'Other']),
   description: z.string().min(10, 'Description required'),
   manufacturer: z.string().optional(),

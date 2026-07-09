@@ -32,14 +32,14 @@ export default function BookingDetailPage() {
   const canManage = isStaff || booking.userId === user?.uid
 
   const approve = async () => {
-    await updateBookingStatus(id!, 'approved', profile?.displayName || 'Staff')
+    await updateBookingStatus(id!, 'approved')
     toast.success('Approved')
     qc.invalidateQueries({ queryKey: ['bookings'] })
   }
   
   const reject = async () => {
     const reason = window.prompt('Rejection reason:') || ''
-    await updateBookingStatus(id!, 'rejected', undefined, reason)
+    await updateBookingStatus(id!, 'rejected', { rejectionReason: reason })
     toast.success('Rejected')
     qc.invalidateQueries({ queryKey: ['bookings'] })
   }
@@ -53,7 +53,6 @@ export default function BookingDetailPage() {
 
   const badgeVariant = {
     approved: 'default',
-    pending: 'secondary',
     rejected: 'destructive',
     cancelled: 'outline',
     completed: 'secondary'
@@ -111,8 +110,8 @@ export default function BookingDetailPage() {
           </div>
 
           <div className="space-y-1">
-            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Approved By</p>
-            <p className="font-medium text-sm">{booking.approvedBy || '—'}</p>
+            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Status</p>
+            <p className="font-medium text-sm capitalize">{booking.status}</p>
           </div>
 
           {booking.status === 'rejected' && (
@@ -123,29 +122,21 @@ export default function BookingDetailPage() {
           )}
         </CardContent>
         <CardFooter className="bg-muted/30 border-t px-6 py-4 flex flex-wrap gap-3">
-          {canManage && booking.status === 'pending' && (
+          {booking.status === 'approved' && (
             <>
-              {isStaff && (
-                <Button onClick={approve} className="gap-2 bg-green-600 hover:bg-green-700 text-white">
-                  <CheckCircle className="h-4 w-4" /> Approve
-                </Button>
-              )}
               {isStaff && (
                 <Button onClick={reject} variant="destructive" className="gap-2">
                   <XCircle className="h-4 w-4" /> Reject
                 </Button>
               )}
-              <Button onClick={cancel} variant="outline" className="gap-2">
-                <Trash2 className="h-4 w-4" /> Cancel Booking
-              </Button>
+              {booking.userId === user?.uid && (
+                <Button onClick={cancel} variant="outline" className="gap-2 text-destructive hover:bg-destructive/10">
+                  <Trash2 className="h-4 w-4" /> Cancel Booking
+                </Button>
+              )}
             </>
           )}
-          {booking.status === 'approved' && booking.userId === user?.uid && (
-            <Button onClick={cancel} variant="outline" className="gap-2 text-destructive hover:bg-destructive/10">
-              <Trash2 className="h-4 w-4" /> Cancel Booking
-            </Button>
-          )}
-          {(!canManage || (booking.status !== 'pending' && booking.status !== 'approved')) && (
+          {booking.status !== 'approved' && (
             <p className="text-sm text-muted-foreground">No actions available.</p>
           )}
         </CardFooter>

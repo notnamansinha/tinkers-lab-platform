@@ -40,14 +40,14 @@ export default function AdminBookingsPage() {
   })
 
   const approve = async (id: string) => {
-    await updateBookingStatus(id, 'approved', profile?.displayName || 'Admin')
+    await updateBookingStatus(id, 'approved')
     toast.success('Booking approved')
     qc.invalidateQueries({ queryKey: ['admin', 'bookings'] })
   }
 
   const reject = async (id: string) => {
     const reason = window.prompt('Rejection reason (optional):') ?? ''
-    await updateBookingStatus(id, 'rejected', undefined, reason)
+    await updateBookingStatus(id, 'rejected', { rejectionReason: reason })
     toast.success('Booking rejected')
     qc.invalidateQueries({ queryKey: ['admin', 'bookings'] })
   }
@@ -105,9 +105,8 @@ export default function AdminBookingsPage() {
                       <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLOR[b.status] || 'bg-gray-100'}`}>{b.status}</span>
                     </TableCell>
                     <TableCell>
-                      {b.status === 'pending' && (
+                       {b.status === 'approved' && (
                         <div className="flex gap-1">
-                          <Button size="icon" variant="ghost" className="h-7 w-7 text-green-600 hover:text-green-700 hover:bg-green-100" onClick={() => approve(b.id)}><CheckCircle size={14} /></Button>
                           <Button size="icon" variant="ghost" className="h-7 w-7 text-red-600 hover:text-red-700 hover:bg-red-100" onClick={() => reject(b.id)}><XCircle size={14} /></Button>
                         </div>
                       )}

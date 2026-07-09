@@ -17,7 +17,9 @@ const BookingDetailPage = React.lazy(() => import('@/features/bookings/BookingDe
 const InventoryListPage = React.lazy(() => import('@/features/inventory/InventoryListPage'))
 const InventoryDetailPage = React.lazy(() => import('@/features/inventory/InventoryDetailPage'))
 const InventoryFormPage = React.lazy(() => import('@/features/inventory/InventoryFormPage'))
-const CheckoutPage = React.lazy(() => import('@/features/inventory/CheckoutPage'))
+const CheckoutPage = React.lazy(() => import('@/features/inventory/CheckoutPage'))  // admin stock mgmt
+const ToolCheckoutPage = React.lazy(() => import('@/features/checkout/ToolCheckoutPage'))
+const ToolCheckoutListPage = React.lazy(() => import('@/features/checkout/ToolCheckoutListPage'))
 const MaintenanceListPage = React.lazy(() => import('@/features/maintenance/MaintenanceListPage'))
 const MaintenanceDetailPage = React.lazy(() => import('@/features/maintenance/MaintenanceDetailPage'))
 const MaintenanceFormPage = React.lazy(() => import('@/features/maintenance/MaintenanceFormPage'))
@@ -99,7 +101,9 @@ export default function AppRoutes() {
           <Route path="/inventory/:id" element={<InventoryDetailPage />} />
           <Route path="/inventory/new" element={<InventoryFormPage />} />
           <Route path="/inventory/:id/edit" element={<InventoryFormPage />} />
-          <Route path="/checkout" element={<CheckoutPage />} />
+          <Route path="/checkout" element={<ToolCheckoutPage />} />
+          <Route path="/checkout/history" element={<ToolCheckoutListPage />} />
+          <Route path="/stock/checkout" element={<CheckoutPage />} />  {/* admin stock mgmt */}
 
           {/* Maintenance */}
           <Route path="/maintenance" element={<MaintenanceListPage />} />
