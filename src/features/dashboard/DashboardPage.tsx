@@ -22,6 +22,7 @@ import {
 } from 'lucide-react'
 import flowerMark from '@/assets/tinkerer-figjam/flower-mark.svg'
 import dashboardClusters from '@/assets/tinkerer-figjam/dashboard-clusters.svg'
+import { NetWorthChart, CashflowChart, InvestmentsChart, MathicalLogo } from '@/components/ui/svgs'
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 const NAV_ITEMS = [
@@ -82,7 +83,7 @@ function Sidebar({ activeId }: { activeId: string }) {
                 <span className="absolute left-1.5 top-1/2 -translate-y-1/2 w-1 h-5 rounded-full bg-[#DDF237]" />
               )}
               <Icon size={18} strokeWidth={isActive ? 2.5 : 2} />
-              <span className="text-[9px] font-semibold uppercase tracking-[0.06em] leading-none">
+              <span className={cn(isActive ? "text-sidebar-active" : "text-sidebar-normal", "leading-none")}>
                 {item.label}
               </span>
             </button>
@@ -110,9 +111,7 @@ function Header() {
 
   return (
     <header className="flex items-center justify-between px-6 bg-black border-b border-white/5 flex-shrink-0" style={{ height: 56 }}>
-      <span className="font-brand text-[#EC68D8] text-2xl leading-none select-none tracking-[-0.01em]">
-        tinkerer
-      </span>
+      <MathicalLogo className="h-8 text-[#EC68D8]" />
       <div className="flex items-center gap-3">
         <button className="hidden sm:flex items-center gap-2 bg-[#191919] rounded-[8px] px-3 h-9 text-white/40 text-sm hover:bg-[#222] transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-[#EC68D8]">
           <Search size={14} />
@@ -131,35 +130,35 @@ function Header() {
 }
 
 // ─── Stat Strip ──────────────────────────────────────────────────────────────
-function StatStrip({ sessions, checkouts, projects, available, offline }: {
-  sessions: number; checkouts: number; projects: number; available: number; offline: number
-}) {
-  const navigate = useNavigate()
+function StatStrip() {
   const stats = [
-    { label: 'Sessions Today',   value: sessions,   href: '/bookings',         highlight: false },
-    { label: 'Active Checkouts', value: checkouts,  href: '/checkout/history', highlight: checkouts > 0 },
-    { label: 'My Projects',      value: projects,   href: '/projects',         highlight: false },
-    { label: 'Available Equip.', value: available,  href: '/equipment',        highlight: false },
-    { label: 'Offline',          value: offline,    href: '/equipment',        highlight: offline > 0 },
+    { label: 'NET WORTH', value: '€536K', badge: '+2452.4%', badgeBg: '#E1D7A8', bg: '#E1D7A8' },
+    { label: 'DEBT', value: '€0', bg: '#E1D7A8' },
+    { label: 'SAVINGS', value: '€17K', bg: '#E1D7A8' },
+    { label: 'ASSETS', value: '€515K', badge: '+-%', badgeBg: '#E1D7A8', bg: '#E1D7A8' },
+    { label: 'INVESTMENTS VALUE', value: '€4K', bg: '#E1D7A8' },
+    { label: 'MONTHLY INCOME', value: '€5K', bg: '#E1D7A8' },
+    { label: 'MONTHLY EXPENSES', value: '€3K', bg: '#E1D7A8' },
   ]
 
   return (
-    <div className="bg-[#FFF4BE] flex items-stretch flex-shrink-0" style={{ height: 72 }}>
-      {stats.map((stat, i) => (
-        <React.Fragment key={stat.label}>
-          <button
-            onClick={() => navigate(stat.href)}
-            className="flex-1 flex flex-col items-center justify-center gap-0.5 px-2 hover:bg-black/5 transition-colors focus:outline-none"
-          >
-            <span className={cn('font-brand text-3xl leading-none tabular-nums', stat.highlight ? 'text-[#EC68D8]' : 'text-black')}>
+    <div className="flex items-stretch flex-shrink-0 px-6 py-6 overflow-x-auto scrollbar-hide gap-2 bg-black">
+      {stats.map((stat) => (
+        <div key={stat.label} className="flex-1 min-w-[130px] rounded-[16px] p-4 flex flex-col gap-2" style={{ backgroundColor: stat.bg }}>
+          <span className="text-[11px] font-bold text-black/50 tracking-wider leading-none">
+            {stat.label}
+          </span>
+          <div className="flex items-center gap-2">
+            <span className="font-brand text-[28px] font-bold text-black leading-none tracking-tight">
               {stat.value}
             </span>
-            <span className="text-[9px] sm:text-[10px] font-semibold uppercase tracking-[0.07em] text-black/50 leading-none text-center">
-              {stat.label}
-            </span>
-          </button>
-          {i < stats.length - 1 && <div className="w-px bg-[#E1D7A8] my-3" />}
-        </React.Fragment>
+            {stat.badge && (
+              <span className="text-[10px] font-bold text-black/60 bg-black/5 px-1.5 py-0.5 rounded-sm">
+                {stat.badge}
+              </span>
+            )}
+          </div>
+        </div>
       ))}
     </div>
   )
@@ -175,13 +174,13 @@ function FormPanel({ overdueCount }: { overdueCount: number }) {
     <div className="bg-[#514AF1] flex flex-col overflow-hidden" style={{ borderRadius: 12 }}>
       {/* Header */}
       <div className="flex items-center justify-between px-6 pt-6 pb-4">
-        <h2 className="text-white text-[13px] font-bold uppercase tracking-[0.1em] leading-none">
+        <h2 className="text-white text-form-heading leading-none">
           Future Plans
         </h2>
         {overdueCount > 0 && (
           <button
             onClick={() => navigate('/checkout/history')}
-            className="flex items-center gap-1.5 bg-[#EC68D8] text-black text-[11px] font-bold uppercase tracking-wide px-3 py-1.5 rounded-full hover:brightness-110 transition-all"
+            className="flex items-center gap-1.5 bg-[#EC68D8] text-black text-badge px-3 py-1.5 rounded-full hover:brightness-110 transition-all"
           >
             <AlertTriangle size={11} />
             {overdueCount} overdue
@@ -195,7 +194,7 @@ function FormPanel({ overdueCount }: { overdueCount: number }) {
           <div key={field.id} className="flex flex-col gap-1">
             <label
               htmlFor={`plan-${field.id}`}
-              className="text-[10px] font-semibold uppercase tracking-[0.08em] text-white/60 leading-none"
+              className="text-input-label text-white/60 leading-none"
             >
               {field.label}
             </label>
@@ -207,7 +206,7 @@ function FormPanel({ overdueCount }: { overdueCount: number }) {
                 value={formData[field.id] || ''}
                 onChange={e => onChange(field.id, e.target.value)}
                 className={cn(
-                  'w-full h-10 bg-[#746EF8] rounded-[6px] px-3 text-white text-sm',
+                  'w-full h-10 bg-[#746EF8] rounded-[6px] px-3 text-white text-input-text',
                   'placeholder:text-white/35 outline-none border-2 border-transparent',
                   'focus:border-[#DDF237] focus:bg-[#6A63F0] hover:bg-[#6E68F5] transition-all'
                 )}
@@ -225,13 +224,13 @@ function FormPanel({ overdueCount }: { overdueCount: number }) {
       <div className="flex gap-2 px-6 py-5 border-t border-white/10">
         <button
           onClick={() => navigate('/bookings/new')}
-          className="flex-1 h-10 bg-[#746EF8] text-white text-[12px] font-bold uppercase tracking-wide rounded-[8px] hover:bg-[#6A63F0] transition-colors focus:outline-none"
+          className="flex-1 h-10 bg-[#746EF8] text-white text-btn rounded-[8px] hover:bg-[#6A63F0] transition-colors focus:outline-none"
         >
           Book Session
         </button>
         <button
           onClick={() => navigate('/projects/new')}
-          className="flex-1 h-10 bg-[#EC68D8] text-black text-[12px] font-bold uppercase tracking-wide rounded-[8px] hover:brightness-110 active:scale-[0.98] transition-all focus:outline-none"
+          className="flex-1 h-10 bg-[#EC68D8] text-black text-btn rounded-[8px] hover:brightness-110 active:scale-[0.98] transition-all focus:outline-none"
         >
           New Project
         </button>
@@ -276,7 +275,7 @@ function BarChart({ bars, height = 120 }: {
               height: Math.max(8, (bar.value / max) * (height - 20)),
             }}
           />
-          <span className="text-[9px] font-semibold text-[#A9957A] uppercase tracking-[0.04em]">
+          <span className="text-axis-label text-[#A9957A]">
             {bar.label}
           </span>
         </div>
@@ -293,7 +292,7 @@ function AnalyticsCard({ title, children, className }: {
 }) {
   return (
     <div className={cn('bg-[#FFF4BE] flex flex-col p-6 gap-4', className)} style={{ borderRadius: 12 }}>
-      <h3 className="text-black text-[11px] font-bold uppercase tracking-[0.1em] leading-none">
+      <h3 className="text-black text-card-title leading-none">
         {title}
       </h3>
       {children}
@@ -301,100 +300,55 @@ function AnalyticsCard({ title, children, className }: {
   )
 }
 
-// ─── Analytics Stack ──────────────────────────────────────────────────────────
-function AnalyticsStack({ equipment, todayBookings, userProjects, activeCheckouts }: {
-  equipment: Equipment[]
-  todayBookings: Booking[]
-  userProjects: { id: string }[]
-  activeCheckouts: { id: string }[]
-}) {
-  const available = equipment.filter(e => e.status === 'available').length
-  const inUse     = equipment.filter(e => e.status === 'in_use' || e.status === 'reserved').length
-  const offline   = equipment.filter(e => ['under_maintenance','out_of_service','retired'].includes(e.status)).length
-  const total     = equipment.length || 1
-
-  const categories = [
-    { label: '3D Print',    color: '#FFB13F', count: equipment.filter(e => e.category === 'Digital Fabrication').length },
-    { label: 'Electronics', color: '#EC68D8', count: equipment.filter(e => e.category === 'Electronics').length },
-    { label: 'Metal/CNC',   color: '#514AF1', count: equipment.filter(e => e.category === 'Heavy Duty').length },
-    { label: 'Woodshop',    color: '#DDF237', count: equipment.filter(e => e.category === 'Tabletop Power').length },
-    { label: 'Other',       color: '#E1D7A8', count: equipment.filter(e => e.category === 'Other').length },
-  ]
-
-  const barData = [
-    { color: '#E1D7A8', value: available,               label: 'Avail' },
-    { color: '#FFB13F', value: inUse,                   label: 'In Use' },
-    { color: '#EC68D8', value: todayBookings.length,    label: 'Today' },
-    { color: '#514AF1', value: userProjects.length,     label: 'Proj' },
-    { color: '#DDF237', value: activeCheckouts.length,  label: 'Tools' },
-    { color: '#A9957A', value: offline,                 label: 'Down' },
-  ]
-
+// ─── Financial Analytics ────────────────────────────────────────────────────────
+function FinancialAnalytics() {
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col lg:flex-row gap-6 w-full">
+      {/* Net Worth Card */}
+      <div className="bg-[#FFF4BE] p-6 rounded-[24px] flex-1 min-w-[300px] flex flex-col gap-4">
+        <div className="flex justify-between items-start">
+          <div className="flex flex-col">
+            <span className="text-[10px] font-bold text-black/50 tracking-wider">A FAIRLY PRECISE ESTIMATE</span>
+            <h3 className="text-chart-title text-black mt-1">NET WORTH PROJECTION</h3>
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="w-2 h-2 bg-[#FFB13F]" />
+            <span className="text-[10px] font-bold text-black/80">NET WORTH</span>
+          </div>
+        </div>
+        <div className="flex-1 w-full h-[360px]">
+          <NetWorthChart className="w-full h-full" />
+        </div>
+      </div>
 
-      {/* Card 1: Equipment Status — capsule bars (replicates investment-screen.svg layout) */}
-      <AnalyticsCard title="Equipment Overview">
-        <div className="flex flex-col gap-2">
-          <CapsuleBar
-            height={24}
-            segments={[
-              { color: '#E1D7A8', flex: available || 1,  label: `Available: ${available}` },
-              { color: '#FFB13F', flex: inUse || 0.01,   label: `In Use: ${inUse}` },
-              { color: '#A9957A', flex: offline || 0.01, label: `Offline: ${offline}` },
-            ]}
-          />
-          <CapsuleBar
-            height={24}
-            segments={categories.map(c => ({ color: c.color, flex: c.count || 0.01, label: `${c.label}: ${c.count}` }))}
-          />
+      {/* Cashflow Card */}
+      <div className="bg-[#FFF4BE] p-6 rounded-[24px] flex-1 min-w-[280px] flex flex-col gap-4">
+        <div className="flex flex-col">
+          <span className="text-[10px] font-bold text-black/50 tracking-wider">WHERE YOUR MONTHLY INCOME GOES</span>
+          <h3 className="text-chart-title text-black mt-1">CASHFLOW DISTRIBUTION</h3>
         </div>
-        <div className="flex flex-wrap gap-x-3 gap-y-1">
-          {[
-            { color: '#E1D7A8', label: `Avail (${available})` },
-            { color: '#FFB13F', label: `In Use (${inUse})` },
-            { color: '#A9957A', label: `Offline (${offline})` },
-          ].map(l => (
-            <div key={l.label} className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: l.color }} />
-              <span className="text-[10px] font-medium text-black/60">{l.label}</span>
-            </div>
-          ))}
+        <div className="flex-1 w-full flex items-center justify-center">
+          <CashflowChart className="w-full max-w-[280px]" />
         </div>
-      </AnalyticsCard>
+      </div>
 
-      {/* Card 2: Activity breakdown — vertical rounded bars */}
-      <AnalyticsCard title="Activity Breakdown">
-        <BarChart bars={barData} height={128} />
-        <div className="flex flex-wrap gap-x-3 gap-y-1">
-          {barData.map(b => (
-            <div key={b.label} className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: b.color }} />
-              <span className="text-[10px] font-medium text-black/60">{b.label}: {b.value}</span>
-            </div>
-          ))}
+      {/* Investments Card */}
+      <div className="bg-[#EC68D8] p-6 rounded-[24px] flex-1 min-w-[250px] flex flex-col gap-4">
+        <div className="flex justify-between items-start">
+          <div className="flex flex-col">
+            <span className="text-[10px] font-bold text-black/50 tracking-wider">UNTIL 2048</span>
+            <h3 className="text-chart-title text-black mt-1">INVESTMENTS</h3>
+          </div>
+          <div className="flex flex-col gap-1 items-end">
+             <div className="flex items-center gap-1"><div className="w-2 h-2 bg-[#DDF237]"/><span className="text-[9px] font-bold text-black">FIXED</span></div>
+             <div className="flex items-center gap-1"><div className="w-2 h-2 bg-black"/><span className="text-[9px] font-bold text-black">FUNDS</span></div>
+             <div className="flex items-center gap-1"><div className="w-2 h-2 bg-[#514AF1]"/><span className="text-[9px] font-bold text-black">INTERNAL</span></div>
+          </div>
         </div>
-      </AnalyticsCard>
-
-      {/* Card 3: Category distribution — horizontal progress bars */}
-      <AnalyticsCard title="Category Distribution">
-        <div className="flex flex-col gap-2.5">
-          {categories.map(cat => (
-            <div key={cat.label} className="flex items-center gap-2">
-              <span className="text-[10px] font-semibold text-black/50 uppercase tracking-[0.05em] w-16 shrink-0">
-                {cat.label}
-              </span>
-              <div className="flex-1 bg-[#E1D7A8] rounded-full overflow-hidden" style={{ height: 20 }}>
-                <div
-                  className="h-full rounded-full transition-all duration-500"
-                  style={{ width: `${Math.max(4, (cat.count / total) * 100)}%`, backgroundColor: cat.color }}
-                />
-              </div>
-              <span className="text-[11px] font-bold tabular-nums text-black/70 w-5 text-right">{cat.count}</span>
-            </div>
-          ))}
+        <div className="flex-1 w-full h-[360px]">
+          <InvestmentsChart className="w-full h-full" />
         </div>
-      </AnalyticsCard>
+      </div>
     </div>
   )
 }
@@ -414,7 +368,7 @@ function AttentionPanel({ overdueCount, activeCheckouts, todayBookings }: {
         <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center text-[#EC68D8] shrink-0">
           <AlertTriangle size={14} />
         </div>
-        <h3 className="text-black text-[11px] font-bold uppercase tracking-[0.1em] leading-none">
+        <h3 className="text-black text-card-title leading-none">
           Attention Required
         </h3>
       </div>
@@ -424,30 +378,30 @@ function AttentionPanel({ overdueCount, activeCheckouts, todayBookings }: {
             onClick={() => navigate('/checkout/history')}
             className="bg-black text-white p-3 rounded-[8px] text-left hover:bg-black/80 transition-colors w-full"
           >
-            <p className="text-[#EC68D8] font-bold text-sm">{overdueCount} tools overdue</p>
-            <p className="text-white/60 text-xs mt-0.5">Return immediately</p>
+            <p className="text-[#EC68D8] text-form-heading">{overdueCount} tools overdue</p>
+            <p className="text-white/60 text-helper mt-0.5">Return immediately</p>
           </button>
         )}
         {activeCheckouts.length > 0 && overdueCount === 0 && (
           <div className="bg-white/40 p-3 rounded-[8px]">
-            <p className="text-black font-semibold text-sm">
-              <span className="font-bold">{activeCheckouts.length}</span> tools checked out
+            <p className="text-black text-form-heading">
+              {activeCheckouts.length} tools checked out
             </p>
-            <p className="text-black/60 text-xs mt-0.5">Return on time</p>
+            <p className="text-black/60 text-helper mt-0.5">Return on time</p>
           </div>
         )}
         {todayBookings.length > 0 && (
           <div className="bg-white/40 p-3 rounded-[8px]">
-            <p className="text-black font-semibold text-sm">
-              <span className="font-bold">{todayBookings.length}</span> bookings today
+            <p className="text-black text-form-heading">
+              {todayBookings.length} bookings today
             </p>
-            <p className="text-black/60 text-xs mt-0.5">Don&apos;t be late!</p>
+            <p className="text-black/60 text-helper mt-0.5">Don&apos;t be late!</p>
           </div>
         )}
       </div>
       <button
         onClick={() => navigate('/bookings')}
-        className="flex items-center justify-between w-full bg-black text-white text-[12px] font-bold uppercase tracking-wide px-4 py-2.5 rounded-full hover:bg-black/80 transition-colors mt-auto"
+        className="flex items-center justify-between w-full bg-black text-white text-btn px-4 py-2.5 rounded-full hover:bg-black/80 transition-colors mt-auto"
       >
         View Schedule
         <ChevronRight size={14} />
@@ -461,11 +415,11 @@ function EmptyState({ onSeed, seeding }: { onSeed: () => void; seeding: boolean 
   return (
     <div className="flex flex-col items-center gap-4 py-8">
       <img src={dashboardClusters} alt="Dashboard illustration" className="w-full max-w-xs opacity-60" />
-      <p className="text-white/40 text-sm font-medium text-center">No equipment yet.</p>
+      <p className="text-white/40 text-helper text-center">No equipment yet.</p>
       <button
         onClick={onSeed}
         disabled={seeding}
-        className="bg-[#EC68D8] text-black text-[12px] font-bold uppercase tracking-wide px-6 py-2.5 rounded-full hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-50"
+        className="bg-[#EC68D8] text-black text-btn px-6 py-2.5 rounded-full hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-50"
       >
         {seeding ? 'Seeding…' : 'Seed Equipment'}
       </button>
@@ -482,11 +436,11 @@ function MobileHeader() {
         <button onClick={() => navigate('/')} className="w-8 h-8 rounded-[8px] overflow-hidden">
           <img src={flowerMark} alt="" className="w-full h-full" />
         </button>
-        <span className="font-brand text-[#EC68D8] text-xl leading-none">tinkerer</span>
+        <MathicalLogo className="h-6 text-[#EC68D8]" />
       </div>
       <button
         onClick={() => navigate('/bookings/new')}
-        className="flex items-center gap-1.5 bg-[#EC68D8] text-black text-[11px] font-bold uppercase tracking-wide px-3 py-1.5 rounded-full"
+        className="flex items-center gap-1.5 bg-[#EC68D8] text-black text-btn px-3 py-1.5 rounded-full"
       >
         <Plus size={12} />
         Book
@@ -581,13 +535,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Stat strip */}
-          <StatStrip
-            sessions={todayBookings.length}
-            checkouts={activeCheckouts.length}
-            projects={userProjects.length}
-            available={availableCount}
-            offline={offlineCount}
-          />
+          <StatStrip />
 
           {/* Content body */}
           <div className="flex-1 overflow-y-auto scrollbar-thin">
@@ -615,7 +563,7 @@ export default function DashboardPage() {
                     <button
                       key={a.label}
                       onClick={() => navigate(a.path)}
-                      className="flex items-center gap-2 text-[12px] font-bold uppercase tracking-wide px-4 py-2.5 rounded-full hover:brightness-110 active:scale-[0.98] transition-all focus:outline-none"
+                      className="flex items-center gap-2 text-btn px-4 py-2.5 rounded-full hover:brightness-110 active:scale-[0.98] transition-all focus:outline-none"
                       style={{ backgroundColor: a.bg, color: a.fg }}
                     >
                       {a.label}
@@ -625,34 +573,15 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              {/* Right: analytics stack */}
-              <div className="w-full lg:w-[340px] xl:w-[380px] shrink-0 flex flex-col gap-6">
-                <AttentionPanel
-                  overdueCount={overdueCount}
-                  activeCheckouts={activeCheckouts}
-                  todayBookings={todayBookings}
-                />
-
-                {eqLoading ? (
-                  <div className="flex flex-col gap-6">
-                    {[128, 160, 136].map(h => (
-                      <div
-                        key={h}
-                        className="bg-[#FFF4BE]/30 animate-pulse"
-                        style={{ height: h, borderRadius: 12 }}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <AnalyticsStack
-                    equipment={equipment}
-                    todayBookings={todayBookings}
-                    userProjects={userProjects}
-                    activeCheckouts={activeCheckouts}
-                  />
-                )}
-              </div>
+              {/* Mathical Financial Analytics Section inserted below the form panel */}
+              
             </div>
+            
+            {/* Full Width Financial Analytics */}
+            <div className="px-6 pb-6 max-w-[1400px] mx-auto w-full">
+               <FinancialAnalytics />
+            </div>
+
           </div>
         </div>
       </div>

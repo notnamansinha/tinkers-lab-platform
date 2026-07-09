@@ -123,15 +123,7 @@
     font-weight: 800 !important;
   }
 
-  /* Fintech label utility — small caps, tight tracking */
-  .tl-field-label {
-    font-size: 10px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    line-height: 1;
-    color: rgba(255, 255, 255, 0.6);
-  }
+
 
   /* Status dot — starting-soon pulse, once every 2 s */
   @keyframes status-pulse {
