@@ -159,6 +159,7 @@ export default function LoginPage() {
       >
         <div style={{ minWidth: 0 }}>
           <div
+            className="max-md:!min-h-0 max-md:!justify-start max-md:!gap-4 max-md:!py-6 max-md:!px-6"
             style={{
               background: palette.beige,
               borderRadius: 14,
@@ -172,12 +173,13 @@ export default function LoginPage() {
               boxShadow: '0 26px 70px rgba(0,0,0,0.45)',
             }}
           >
-            <p style={{ maxWidth: 230, color: palette.black, fontSize: 13, lineHeight: 1.1, fontWeight: 800 }}>
-              Make smarter reservations and keep the lab moving.
+            <p style={{ maxWidth: 230, color: palette.black, fontSize: 20, lineHeight: 1.1, fontWeight: 800, fontFamily: displayFont }}>
+              Make smarter reservations and keep the lab moving
             </p>
 
             <img
               src={dashboardArt}
+              className="max-md:!w-[108%] max-md:!max-w-none"
               alt="Dashboard preview with rounded charts and bright planning blocks"
               style={{
                 width: 'min(760px, 92%)',
