@@ -8,17 +8,17 @@ import { useAuth } from '@/contexts/AuthContext'
 import { getActiveUserCheckouts, isCheckoutOverdue } from '@/services/firebase/toolCheckouts'
 import { getUserProjects } from '@/services/firebase/projects'
 import { EQUIPMENT_SEED } from '@/../scripts/seedEquipment'
-import type { Equipment, Booking, ToolCheckout } from '@/types'
+import type { Equipment, Booking } from '@/types'
 import { cn, todayStr } from '@/lib/utils'
-import { CalendarDays, Package, AlertTriangle, Plus, ArrowRight } from 'lucide-react'
+import { AlertTriangle, ArrowRight, Circle, Cog, Cpu, Ruler, Zap } from 'lucide-react'
 
 // ─── Category metadata ──────────────────────────────────────────────────────
 const CATEGORY_META = [
-  { id: 'Digital Fabrication', label: '3D Printing', icon: '⬡', colorClass: 'bg-lime text-black' },
-  { id: 'Electronics', label: 'Electronics', icon: '⚡', colorClass: 'bg-blue text-black' },
-  { id: 'Heavy Duty', label: 'Metal & CNC', icon: '⚙', colorClass: 'bg-indigo text-white' },
-  { id: 'Tabletop Power', label: 'Woodshop', icon: '🪚', colorClass: 'bg-orange text-black' },
-  { id: 'Other', label: 'Test & Measure', icon: '◎', colorClass: 'bg-cream text-black' },
+  { id: 'Digital Fabrication', label: '3D Printing', icon: Cpu, colorClass: 'bg-lime text-black' },
+  { id: 'Electronics', label: 'Electronics', icon: Zap, colorClass: 'bg-pink text-black' },
+  { id: 'Heavy Duty', label: 'Metal & CNC', icon: Cog, colorClass: 'bg-indigo text-white' },
+  { id: 'Tabletop Power', label: 'Woodshop', icon: Ruler, colorClass: 'bg-orange text-black' },
+  { id: 'Other', label: 'Test & Measure', icon: Circle, colorClass: 'bg-cream text-black' },
 ] as const
 
 type CategoryId = typeof CATEGORY_META[number]['id']
@@ -48,19 +48,23 @@ function CategoryTile({
   isActive: boolean
   onClick: () => void
 }) {
+  const Icon = meta.icon
+
   return (
     <button
       onClick={onClick}
       className={cn(
-        "relative text-left p-5 md:p-6 rounded-[24px] border-4 border-black transition-all overflow-hidden flex flex-col justify-between min-h-[140px]",
+        "relative text-left p-5 md:p-6 rounded-[16px] border border-black/10 transition-all overflow-hidden flex flex-col justify-between min-h-[136px]",
         meta.colorClass,
-        isActive ? "shadow-[0_0_0_4px_#fff] -translate-y-1" : "shadow-[4px_4px_0_0_#000] hover:-translate-y-1"
+        isActive ? "shadow-[0_0_0_3px_#fff] -translate-y-1" : "shadow-[0_14px_30px_rgba(0,0,0,0.24)] hover:-translate-y-1"
       )}
     >
-      <span className="text-3xl mb-4 block">{meta.icon}</span>
+      <span className="mb-4 grid h-10 w-10 place-items-center rounded-full bg-black/10">
+        <Icon size={22} />
+      </span>
       <div>
-        <p className="font-bold text-lg md:text-xl leading-tight uppercase font-['Arial_Black'] tracking-tight">{meta.label}</p>
-        <p className="font-bold opacity-70 text-xs mt-1 uppercase tracking-widest">{count} {count === 1 ? 'machine' : 'machines'}</p>
+        <p className="font-display font-black text-lg md:text-xl leading-tight uppercase">{meta.label}</p>
+        <p className="font-bold opacity-70 text-xs mt-1 uppercase tracking-[0.08em]">{count} {count === 1 ? 'machine' : 'machines'}</p>
       </div>
     </button>
   )
@@ -215,7 +219,7 @@ export default function DashboardPage() {
     <div className="w-full max-w-7xl mx-auto space-y-8 animate-in fade-in duration-300 pb-12">
       {/* ── Temporary Seed Button ── */}
       {equipment.length === 0 && !isLoading && (
-        <div className="bg-blue/20 border-2 border-blue text-white p-4 rounded-xl flex items-center justify-between font-bold">
+        <div className="bg-indigo/20 border-2 border-indigo text-white p-4 rounded-xl flex items-center justify-between font-bold">
           <p>The equipment database is empty.</p>
           <button 
             onClick={handleSeed}
@@ -234,7 +238,7 @@ export default function DashboardPage() {
         <div className="lg:col-span-2 flex flex-col gap-6">
           {/* Indigo Action Strip */}
           <div className="tl-panel-indigo p-8 flex flex-col justify-center flex-1 rounded-[32px] min-h-[260px]">
-            <h1 className="font-['Arial_Black'] uppercase text-4xl lg:text-5xl font-black text-white tracking-tight leading-[0.95]">
+            <h1 className="font-display uppercase text-4xl lg:text-5xl font-black text-white leading-[0.95]">
               Book time.<br />Build things.
             </h1>
             <p className="text-white/80 font-bold mt-4 mb-8 max-w-md">
@@ -251,16 +255,16 @@ export default function DashboardPage() {
           <div className="tl-panel-cream p-8 rounded-[32px]">
             <div className="grid grid-cols-3 gap-4 divide-x-4 divide-black/10">
               <button onClick={() => navigate('/bookings')} className="px-4 text-center hover:-translate-y-1 transition-transform">
-                <p className="text-4xl lg:text-5xl font-black font-['Arial_Black'] text-black">{todayBookings.length}</p>
-                <p className="text-[10px] lg:text-xs font-bold uppercase tracking-widest text-black/50 mt-1">Sessions Today</p>
+                <p className="text-4xl lg:text-5xl font-black font-display text-black">{todayBookings.length}</p>
+                <p className="text-[10px] lg:text-xs font-bold uppercase tracking-[0.08em] text-black/50 mt-1">Sessions Today</p>
               </button>
               <button onClick={() => navigate('/checkout/history')} className="px-4 text-center hover:-translate-y-1 transition-transform">
-                <p className={cn("text-4xl lg:text-5xl font-black font-['Arial_Black']", activeCheckouts.length > 0 ? 'text-pink' : 'text-black')}>{activeCheckouts.length}</p>
-                <p className="text-[10px] lg:text-xs font-bold uppercase tracking-widest text-black/50 mt-1">Active Checkouts</p>
+                <p className={cn("text-4xl lg:text-5xl font-black font-display", activeCheckouts.length > 0 ? 'text-pink' : 'text-black')}>{activeCheckouts.length}</p>
+                <p className="text-[10px] lg:text-xs font-bold uppercase tracking-[0.08em] text-black/50 mt-1">Active Checkouts</p>
               </button>
               <button onClick={() => navigate('/projects')} className="px-4 text-center hover:-translate-y-1 transition-transform">
-                <p className="text-4xl lg:text-5xl font-black font-['Arial_Black'] text-black">{userProjects.length}</p>
-                <p className="text-[10px] lg:text-xs font-bold uppercase tracking-widest text-black/50 mt-1">My Projects</p>
+                <p className="text-4xl lg:text-5xl font-black font-display text-black">{userProjects.length}</p>
+                <p className="text-[10px] lg:text-xs font-bold uppercase tracking-[0.08em] text-black/50 mt-1">My Projects</p>
               </button>
             </div>
           </div>
@@ -273,7 +277,7 @@ export default function DashboardPage() {
               <div className="w-12 h-12 bg-black rounded-full flex items-center justify-center text-pink shrink-0">
                 <AlertTriangle className="w-6 h-6" />
               </div>
-              <h2 className="font-['Arial_Black'] uppercase text-2xl tracking-tight leading-none">Attention</h2>
+              <h2 className="font-display uppercase text-2xl font-black leading-none">Attention</h2>
             </div>
             
             <div className="flex-1 flex flex-col gap-3">
@@ -307,7 +311,7 @@ export default function DashboardPage() {
       </div>
 
       {/* ── Live status ticker ── */}
-      <div className="flex flex-wrap gap-6 px-6 py-4 bg-[#101010] text-white rounded-[20px] border-4 border-[#191919] font-bold uppercase tracking-widest text-xs w-fit">
+      <div className="flex flex-wrap gap-6 px-6 py-4 bg-[#101010] text-white rounded-[16px] border border-white/5 font-bold uppercase tracking-[0.08em] text-xs w-fit">
         <div className="flex items-center gap-2"><span className="w-3 h-3 bg-lime rounded-full border-2 border-black"/>{availableCount} Available</div>
         <div className="flex items-center gap-2"><span className="w-3 h-3 bg-orange rounded-full border-2 border-black animate-status-pulse"/>{inUseCount} In Use</div>
         <div className="flex items-center gap-2"><span className="w-3 h-3 bg-white/30 rounded-full border-2 border-black"/>{offlineCount} Offline</div>
@@ -329,7 +333,7 @@ export default function DashboardPage() {
       {/* ── Equipment Grid ── */}
       <div className="space-y-6 pt-4">
         <div className="flex justify-between items-end border-b-4 border-[#191919] pb-4">
-          <h2 className="font-['Arial_Black'] text-3xl md:text-4xl uppercase tracking-tight text-white">
+          <h2 className="font-display text-3xl md:text-4xl uppercase font-black text-white">
             {activeMeta ? activeMeta.label : 'All Machines'}
             <span className="ml-4 text-white/30 font-bold text-xl">{filteredEquipment.length}</span>
           </h2>

@@ -8,11 +8,7 @@ import { registerWithEmail, signInWithGoogle } from '@/services/firebase/auth'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import type { UserType } from '@/types'
 
 // ── Spec 1 Form 1: 4 user types with conditional branching ──────────────────
@@ -199,12 +195,12 @@ export default function RegisterPage() {
             <span className="font-bold text-pink text-xl">✿</span>
           </div>
           <div>
-            <p className="font-black font-['Arial_Black'] text-xl uppercase tracking-tight text-black">TINKERER LAB</p>
+            <p className="font-black font-display text-xl uppercase text-black">TINKERER LAB</p>
             <p className="text-black/60 text-xs font-bold uppercase">Ahmedabad University</p>
           </div>
         </div>
         <div className="relative z-10 mt-12 lg:mt-0">
-          <h2 className="font-['Arial_Black'] font-black uppercase text-4xl xl:text-6xl leading-[0.85] mb-6 tracking-tight text-black">
+          <h2 className="font-display font-black uppercase text-4xl xl:text-6xl leading-[0.85] mb-6 text-black">
             Join the Lab.<br />
             <em className="text-pink not-italic block mt-2">Start building.</em>
           </h2>
@@ -221,7 +217,7 @@ export default function RegisterPage() {
       <div className="flex-1 flex flex-col items-center justify-center p-4 py-8 lg:p-12 relative z-10">
         <div className="w-full max-w-[560px] tl-panel-indigo shadow-2xl border-4 border-black/20">
           <div className="mb-8">
-            <h1 className="font-['Arial_Black'] uppercase text-3xl font-black tracking-tight mb-2">Create an account</h1>
+            <h1 className="font-display uppercase text-3xl font-black mb-2">Create an account</h1>
             <p className="text-white/70 text-sm font-bold">
               Already have an account?{' '}
               <Link to="/login" className="text-pink hover:underline">Sign in</Link>

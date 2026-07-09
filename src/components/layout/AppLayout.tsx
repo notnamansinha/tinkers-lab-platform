@@ -1,10 +1,11 @@
 import React, { useState } from 'react'
-import { Outlet, useNavigate, useLocation } from 'react-router-dom'
-import { Menu, X, LayoutDashboard, Wrench, Calendar, Box, MessageSquare, LogOut } from 'lucide-react'
+import { Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { Box, Calendar, LayoutDashboard, LogOut, Menu, MessageSquare, Wrench, X } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { signOut } from '@/services/firebase/auth'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
+import flowerMark from '@/assets/tinkerer-figjam/flower-mark.svg'
 
 const NAV_LINKS = [
   { name: 'Home', icon: LayoutDashboard, path: '/' },
@@ -32,25 +33,24 @@ export default function AppLayout() {
   const isActive = (path: string) =>
     path === '/' ? location.pathname === '/' : location.pathname.startsWith(path)
 
-  const initials = (profile?.displayName || user?.displayName || user?.email?.split('@')[0] || 'U').slice(0, 2).toUpperCase()
+  const initials = (profile?.displayName || user?.displayName || user?.email?.split('@')[0] || 'U')
+    .slice(0, 2)
+    .toUpperCase()
 
   return (
     <div className="tl-shell">
-      {/* Mobile Top Bar */}
-      <header className="md:hidden h-16 flex items-center justify-between px-4 border-b border-[#191919] bg-black sticky top-0 z-50">
+      <header className="md:hidden h-16 flex items-center justify-between px-4 border-b border-white/5 bg-black sticky top-0 z-50">
         <div className="flex items-center gap-2">
-          {/* Flower Mark (Mobile) */}
-          <div className="w-8 h-8 rounded-full bg-pink flex items-center justify-center cursor-pointer" onClick={() => navigate('/')}>
-            <span className="text-black font-bold text-lg">✿</span>
-          </div>
-          <span className="text-pink font-bold font-['Arial_Black'] uppercase text-lg tracking-tight">tinkerer</span>
+          <button className="w-9 h-9 rounded-[10px] overflow-hidden" onClick={() => navigate('/')} aria-label="Go home">
+            <img src={flowerMark} alt="" className="h-full w-full" />
+          </button>
+          <span className="text-pink font-display font-black lowercase text-xl leading-none">tinkerers lab</span>
         </div>
-        <button className="text-white p-2" onClick={() => setMenuOpen(!menuOpen)}>
+        <button className="text-white p-2" onClick={() => setMenuOpen(!menuOpen)} aria-label="Toggle navigation">
           {menuOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
       </header>
 
-      {/* Mobile Nav Drawer */}
       {menuOpen && (
         <div className="md:hidden fixed inset-x-0 top-16 bottom-0 z-40 bg-black/95 backdrop-blur-xl p-4 flex flex-col gap-4">
           {NAV_LINKS.map(link => (
@@ -79,25 +79,22 @@ export default function AppLayout() {
             </button>
           )}
           <div className="mt-auto flex items-center gap-4 px-6 py-4">
-            <div className="w-10 h-10 rounded-full bg-pink text-black flex items-center justify-center font-bold text-sm">
+            <div className="w-10 h-10 rounded-full bg-pink text-black flex items-center justify-center font-black text-sm">
               {initials}
             </div>
             <div className="flex-1 text-left">
               <p className="text-white font-bold">{profile?.displayName || 'User'}</p>
-              <button onClick={handleSignOut} className="text-pink text-sm font-bold uppercase hover:underline">Log Out</button>
+              <button onClick={handleSignOut} className="text-pink text-sm font-bold uppercase hover:underline">Log out</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Desktop Left Rail */}
       <aside className="tl-rail py-6 items-center flex-shrink-0 relative z-10">
-        {/* Brand Anchor */}
-        <div className="w-12 h-12 rounded-full bg-pink flex items-center justify-center cursor-pointer mb-8 hover:scale-105 transition-transform" onClick={() => navigate('/')}>
-          <span className="text-black font-bold text-2xl">✿</span>
-        </div>
+        <button className="w-12 h-12 rounded-[14px] overflow-hidden mb-8 hover:scale-105 transition-transform" onClick={() => navigate('/')} aria-label="Go home">
+          <img src={flowerMark} alt="" className="h-full w-full" />
+        </button>
 
-        {/* Nav Pills */}
         <nav className="flex flex-col gap-4 w-full px-4">
           {NAV_LINKS.map(link => (
             <button
@@ -105,11 +102,14 @@ export default function AppLayout() {
               onClick={() => navigate(link.path)}
               title={link.name}
               className={cn(
-                'w-12 h-12 mx-auto rounded-full flex items-center justify-center transition-all hover:scale-105',
-                isActive(link.path) ? 'bg-indigo text-white' : 'text-white/50 hover:bg-white/5 hover:text-white'
+                'w-full lg:w-auto lg:justify-start h-12 mx-auto rounded-full flex items-center justify-center gap-3 px-0 lg:px-4 transition-all hover:scale-[1.02]',
+                isActive(link.path)
+                  ? 'bg-indigo text-white shadow-[0_0_0_1px_rgba(255,255,255,0.08)]'
+                  : 'text-white/50 hover:bg-white/5 hover:text-white'
               )}
             >
               <link.icon size={20} />
+              <span className="hidden lg:inline text-xs font-black uppercase tracking-[0.08em]">{link.name}</span>
             </button>
           ))}
           {isStaff && (
@@ -117,39 +117,39 @@ export default function AppLayout() {
               onClick={() => navigate('/admin')}
               title="Admin"
               className={cn(
-                'w-12 h-12 mx-auto rounded-full flex items-center justify-center transition-all hover:scale-105',
-                isActive('/admin') ? 'bg-indigo text-white' : 'text-white/50 hover:bg-white/5 hover:text-white'
+                'w-full lg:w-auto lg:justify-start h-12 mx-auto rounded-full flex items-center justify-center gap-3 px-0 lg:px-4 transition-all hover:scale-[1.02]',
+                isActive('/admin')
+                  ? 'bg-indigo text-white shadow-[0_0_0_1px_rgba(255,255,255,0.08)]'
+                  : 'text-white/50 hover:bg-white/5 hover:text-white'
               )}
             >
               <LayoutDashboard size={20} />
+              <span className="hidden lg:inline text-xs font-black uppercase tracking-[0.08em]">Admin</span>
             </button>
           )}
         </nav>
 
-        {/* User Actions */}
         <div className="mt-auto flex flex-col gap-4 w-full px-4 items-center">
-          <button 
+          <button
             onClick={handleSignOut}
-            title="Log Out"
+            title="Log out"
             className="w-12 h-12 rounded-full text-white/50 hover:bg-white/5 hover:text-pink transition-all flex items-center justify-center"
           >
             <LogOut size={20} />
           </button>
-          <div className="w-12 h-12 rounded-full bg-pink flex items-center justify-center text-black font-bold text-sm cursor-pointer shadow-lg hover:brightness-110 transition-all">
+          <div className="w-12 h-12 rounded-full bg-pink flex items-center justify-center text-black font-black text-sm shadow-lg">
             {initials}
           </div>
         </div>
       </aside>
 
-      {/* Main Content Area */}
       <main className="flex-1 w-full min-w-0 max-w-full relative z-0 flex flex-col">
-        {/* Desktop Header Wordmark */}
         <div className="hidden md:flex h-20 items-center justify-center">
-          <h1 className="text-pink font-bold font-['Arial_Black'] uppercase text-4xl tracking-tight">tinkerer</h1>
+          <h1 className="text-pink font-display font-black lowercase text-[34px] leading-none">tinkerers lab</h1>
         </div>
-        
-        <div className="flex-1 p-4 md:p-8 overflow-y-auto">
-          <div className="max-w-[1200px] mx-auto w-full">
+
+        <div className="flex-1 p-4 pt-0 md:p-8 md:pt-0 overflow-y-auto">
+          <div className="max-w-[1280px] mx-auto w-full">
             <Outlet />
           </div>
         </div>
