@@ -219,25 +219,7 @@ export default function LoginPage() {
         </div>
 
         <aside style={{ width: '100%', maxWidth: 430, justifySelf: 'center' }}>
-          <div
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 8,
-              borderRadius: 999,
-              background: palette.charcoal,
-              color: palette.cream,
-              padding: '8px 13px',
-              fontSize: 12,
-              fontWeight: 800,
-              marginBottom: 18,
-            }}
-          >
-            <span style={{ width: 28, height: 28, borderRadius: 999, background: palette.pink, display: 'grid', placeItems: 'center' }}>
-              <ArrowRight size={15} color={palette.black} />
-            </span>
-            LAB ACCESS
-          </div>
+
 
           <h1
             style={{
