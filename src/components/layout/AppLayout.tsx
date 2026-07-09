@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+﻿import React, { useState } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { Box, Calendar, LayoutDashboard, LogOut, Menu, MessageSquare, Wrench, X } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
@@ -8,12 +8,16 @@ import { toast } from 'sonner'
 import flowerMark from '@/assets/tinkerer-figjam/flower-mark.svg'
 
 const NAV_LINKS = [
-  { name: 'Home', icon: LayoutDashboard, path: '/' },
-  { name: 'Machines', icon: Wrench, path: '/equipment' },
-  { name: 'Bookings', icon: Calendar, path: '/bookings' },
-  { name: 'Inventory', icon: Box, path: '/inventory' },
-  { name: 'Projects', icon: MessageSquare, path: '/projects' },
+  { name: 'Home',      icon: LayoutDashboard, path: '/' },
+  { name: 'Machines',  icon: Wrench,          path: '/equipment' },
+  { name: 'Bookings',  icon: Calendar,        path: '/bookings' },
+  { name: 'Inventory', icon: Box,             path: '/inventory' },
+  { name: 'Projects',  icon: MessageSquare,   path: '/projects' },
 ]
+
+// Routes where the page component manages its own full-screen layout.
+// AppLayout will render a plain full-bleed wrapper for these routes.
+const SELF_MANAGED_ROUTES = ['/']
 
 export default function AppLayout() {
   const { profile, user, isStaff } = useAuth()
@@ -37,8 +41,18 @@ export default function AppLayout() {
     .slice(0, 2)
     .toUpperCase()
 
+  // Dashboard manages its own sidebar + header â€” render full-bleed
+  if (SELF_MANAGED_ROUTES.includes(location.pathname)) {
+    return (
+      <div className="w-full min-h-screen bg-black">
+        <Outlet />
+      </div>
+    )
+  }
+
   return (
     <div className="tl-shell">
+      {/* Mobile header */}
       <header className="md:hidden h-16 flex items-center justify-between px-4 border-b border-white/5 bg-black sticky top-0 z-50">
         <div className="flex items-center gap-2">
           <button className="w-9 h-9 rounded-[10px] overflow-hidden" onClick={() => navigate('/')} aria-label="Go home">
@@ -157,3 +171,4 @@ export default function AppLayout() {
     </div>
   )
 }
+

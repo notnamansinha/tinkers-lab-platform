@@ -17,8 +17,11 @@ const config = {
     },
     extend: {
       fontFamily: {
-        // Local Mathical/Tinkerers Lab typography.
-        sans:    ['PP Mori', 'Arial', 'sans-serif'],
+        // Brand/display: Fredoka ExtraBold for wordmark and large headlines
+        brand:   ['Fredoka', 'PP Mori', 'Arial Black', 'sans-serif'],
+        // Body/labels: Inter for all UI text, inputs, numbers, helper text
+        sans:    ['Inter', 'PP Mori', 'Arial', 'sans-serif'],
+        // Legacy display fallback
         display: ['PP Mori', 'Arial Black', 'Arial', 'sans-serif'],
         mono:    ['ui-monospace', 'SF Mono', 'JetBrains Mono', 'Courier New', 'monospace'],
       },
@@ -99,9 +102,26 @@ const config = {
       borderRadius: {
         tile: '32px',
         card: '24px',
+        panel: '12px',
+        chip:  '999px',
         lg:   'var(--radius)',
         md:   'calc(var(--radius) - 2px)',
         sm:   'calc(var(--radius) - 4px)',
+      },
+
+      // 8px grid spacing tokens: 1u = 8px, 2u = 16px, etc.
+      spacing: {
+        '1u': '8px',
+        '2u': '16px',
+        '3u': '24px',
+        '4u': '32px',
+        '5u': '40px',
+        '6u': '48px',
+        '7u': '56px',
+        '8u': '64px',
+        '10u': '80px',
+        '11u': '88px',
+        '12u': '96px',
       },
 
       keyframes: {
