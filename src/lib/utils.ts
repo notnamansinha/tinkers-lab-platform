@@ -5,61 +5,18 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-/**
- * Format Firestore Timestamp or Date to readable string.
- */
-export function formatDate(date: Date | { seconds: number } | string | null | undefined): string {
-  if (!date) return '—'
-  let d: Date
-  if (typeof date === 'string') {
-    d = new Date(date)
-  } else if ('seconds' in date) {
-    d = new Date(date.seconds * 1000)
-  } else {
-    d = date as Date
-  }
-  return d.toLocaleDateString('en-IN', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  })
-}
+const toDate = (d: any) => d?.seconds ? new Date(d.seconds * 1000) : new Date(d)
 
-export function formatDateTime(date: Date | { seconds: number } | null | undefined): string {
-  if (!date) return '—'
-  let d: Date
-  if ('seconds' in date) {
-    d = new Date((date as { seconds: number }).seconds * 1000)
-  } else {
-    d = date as Date
-  }
-  return d.toLocaleString('en-IN', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-}
+export const formatDate = (d: any) => d ? toDate(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'
+export const formatDateTime = (d: any) => d ? toDate(d).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'
 
-export function formatRelativeTime(date: Date | { seconds: number } | null | undefined): string {
+export function formatRelativeTime(date: any): string {
   if (!date) return '—'
-  let d: Date
-  if ('seconds' in date) {
-    d = new Date((date as { seconds: number }).seconds * 1000)
-  } else {
-    d = date as Date
-  }
-  const now = new Date()
-  const diff = now.getTime() - d.getTime()
-  const minutes = Math.floor(diff / 60000)
-  const hours = Math.floor(minutes / 60)
-  const days = Math.floor(hours / 24)
-
-  if (minutes < 1) return 'just now'
-  if (minutes < 60) return `${minutes}m ago`
-  if (hours < 24) return `${hours}h ago`
-  if (days < 7) return `${days}d ago`
+  const d = toDate(date), mins = Math.floor((Date.now() - d.getTime()) / 60000)
+  if (mins < 1) return 'just now'
+  if (mins < 60) return `${mins}m ago`
+  if (mins < 1440) return `${Math.floor(mins / 60)}h ago`
+  if (mins < 10080) return `${Math.floor(mins / 1440)}d ago`
   return formatDate(d)
 }
 

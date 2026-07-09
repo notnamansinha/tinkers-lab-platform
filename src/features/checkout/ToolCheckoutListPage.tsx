@@ -9,7 +9,7 @@ import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import type { ToolCheckout } from '@/types'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 
 type FilterMode = 'all' | 'active' | 'overdue' | 'returned'
 
@@ -51,7 +51,7 @@ export default function ToolCheckoutListPage() {
       await returnTool(checkoutId, 'good')
       toast.success('Marked as returned.')
       qc.invalidateQueries({ queryKey: ['toolCheckouts'] })
-    } catch (e) {
+    } catch {
       toast.error('Failed to mark as returned')
     } finally {
       setReturningId(null)
