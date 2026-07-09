@@ -1,11 +1,16 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { collection, getDocs } from 'firebase/firestore'
+import { collection, getDocs, query, where } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { COLLECTIONS } from '@/services/firebase/firestore'
-import type { Equipment } from '@/types'
-import { cn } from '@/lib/utils'
+import { useAuth } from '@/contexts/AuthContext'
+import { getActiveUserCheckouts, isCheckoutOverdue } from '@/services/firebase/toolCheckouts'
+import { getUserProjects } from '@/services/firebase/projects'
+import { EQUIPMENT_SEED } from '@/../scripts/seedEquipment'
+import type { Equipment, Booking, ToolCheckout } from '@/types'
+import { cn, todayStr } from '@/lib/utils'
+import { CalendarDays, Package, AlertTriangle, Plus, ArrowRight } from 'lucide-react'
 
 // ─── Category metadata ──────────────────────────────────────────────────────
 const CATEGORY_META = [
@@ -310,11 +315,12 @@ function EquipmentCard({
   )
 }
 
-// ─── Main Dashboard ──────────────────────────────────────────────────────────
 export default function DashboardPage() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [activeCategory, setActiveCategory] = useState<CategoryId | null>(null)
   const [isSeeding, setIsSeeding] = useState(false)
+  const today = todayStr()
 
   const { data: equipment = [], isLoading, refetch } = useQuery({
     queryKey: ['equipment', 'all'],
@@ -325,6 +331,37 @@ export default function DashboardPage() {
     },
     staleTime: 5 * 60 * 1000,
   })
+
+  // Today's bookings for this user
+  const { data: todayBookings = [] } = useQuery({
+    queryKey: ['bookings', 'today', user?.uid],
+    queryFn: async () => {
+      const ref  = collection(db, COLLECTIONS.BOOKINGS)
+      const q    = query(ref, where('userId', '==', user!.uid), where('date', '==', today))
+      const snap = await getDocs(q)
+      return snap.docs.map(d => ({ id: d.id, ...d.data() }) as Booking)
+    },
+    enabled: !!user,
+    staleTime: 2 * 60 * 1000,
+  })
+
+  // Active tool checkouts
+  const { data: activeCheckouts = [] } = useQuery({
+    queryKey: ['toolCheckouts', 'active', user?.uid],
+    queryFn: () => getActiveUserCheckouts(user!.uid),
+    enabled: !!user,
+    staleTime: 2 * 60 * 1000,
+  })
+
+  // User's projects
+  const { data: userProjects = [] } = useQuery({
+    queryKey: ['projects', 'user', user?.uid],
+    queryFn: () => getUserProjects(user!.uid),
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000,
+  })
+
+  const overdueCount = activeCheckouts.filter(isCheckoutOverdue).length
 
   const availableCount = equipment.filter(e => e.status === 'available').length
   const inUseCount     = equipment.filter(e => e.status === 'in_use' || e.status === 'reserved').length
@@ -343,46 +380,27 @@ export default function DashboardPage() {
     ? CATEGORY_META.find(c => c.id === activeCategory)
     : null
 
+  // Full seed handler — uses all items from scripts/seedEquipment.ts
   const handleSeed = async () => {
     setIsSeeding(true)
     try {
       const { addDoc, serverTimestamp } = await import('firebase/firestore')
-      const MACHINES = [
-        { machineId: "bambu-x1c",    name: "Bambu Labs X-1C 3D Printer",      category: "Digital Fabrication", requiresTraining: true,  description: "Multi-colour FDM printer, 256mm build volume." },
-        { machineId: "creality-dual",name: "Creality Dual Nozzle 3D Printer", category: "Digital Fabrication", requiresTraining: true,  description: "Dual-material FDM printing." },
-        { machineId: "laser-cutter", name: "Success Laser Cutter",            category: "Digital Fabrication", requiresTraining: true,  description: "CO₂ laser for acrylic, wood, cardboard." },
-        { machineId: "muffle",       name: "Muffle Furnace S-900",            category: "Heavy Duty",          requiresTraining: true,  description: "High-temperature furnace." },
-        { machineId: "lathe",        name: "Lathe Machine KL-2",              category: "Heavy Duty",          requiresTraining: true,  description: "ESSKAY metal lathe." },
-        { machineId: "sheet-bender", name: "Manual Sheet Bender",             category: "Heavy Duty",          requiresTraining: false, description: "Sheet-metal bending." },
-        { machineId: "pillar-drill", name: "Pillar Drill 2HP",                category: "Heavy Duty",          requiresTraining: true,  description: "Panchavati bench drill press." },
-        { machineId: "table-saw",    name: "Table Saw GTS 10J",               category: "Tabletop Power",      requiresTraining: true,  description: "Bosch table saw." },
-        { machineId: "mitre-saw",    name: "Mitre Saw GCM 254",               category: "Tabletop Power",      requiresTraining: true,  description: "Bosch mitre saw." },
-        { machineId: "cutoff-saw",   name: "Metal Cut-off Saw GCO 220",       category: "Tabletop Power",      requiresTraining: true,  description: "Bosch abrasive cut-off." },
-        { machineId: "esd-station",  name: "ESD Workstation",                 category: "Electronics",         requiresTraining: false, description: "Anti-static electronics bench." },
-        { machineId: "oscilloscope", name: "Digital Oscilloscope SDS1022",    category: "Electronics",         requiresTraining: false, description: "OWON 2-channel scope." },
-        { machineId: "func-gen",     name: "Function Generator SFG1003",      category: "Electronics",         requiresTraining: false, description: "GW Instek signal source." },
-        { machineId: "solder",       name: "Soldering Station WE1010",        category: "Electronics",         requiresTraining: false, description: "Weller temperature-controlled iron." }
-      ];
-      const equipCollection = collection(db, COLLECTIONS.EQUIPMENT);
-      for (const machine of MACHINES) {
+      const equipCollection = collection(db, COLLECTIONS.EQUIPMENT)
+      let seeded = 0
+      for (const item of EQUIPMENT_SEED) {
         await addDoc(equipCollection, {
-          ...machine,
-          status: "available",
-          healthStatus: "good",
-          location: "Main Lab",
-          imageUrls: [],
-          manualUrls: [],
-          safetyDocUrls: [],
+          ...item,
           createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp()
-        });
+          updatedAt: serverTimestamp(),
+        })
+        seeded++
       }
-      alert('14 Machines successfully seeded to Firestore!');
-      refetch();
+      alert(`✅ ${seeded} items seeded to Firestore!`)
+      refetch()
     } catch (err: any) {
-      alert('Error seeding machines: ' + err.message);
+      alert('Error seeding: ' + err.message)
     } finally {
-      setIsSeeding(false);
+      setIsSeeding(false)
     }
   }
 
@@ -422,6 +440,100 @@ export default function DashboardPage() {
         <p style={{ color: '#98989D', fontSize: 15 }}>
           Reserve equipment, manage sessions, and track your projects — all in one place.
         </p>
+      </div>
+
+      {/* ── Today's Activity Panel ──────────────────────────────── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12, marginBottom: 28 }}>
+
+        {/* Bookings Today */}
+        <button
+          onClick={() => navigate('/bookings')}
+          style={{ background: '#141518', borderRadius: 20, border: '1px solid rgba(255,255,255,0.08)', padding: '18px 20px', textAlign: 'left', cursor: 'pointer', transition: 'border-color 200ms ease' }}
+          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(10,132,255,0.35)' }}
+          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)' }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+            <span style={{ width: 32, height: 32, borderRadius: 10, background: 'rgba(10,132,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <CalendarDays size={16} color="#0A84FF" />
+            </span>
+            <span style={{ fontSize: 13, color: '#98989D', fontFamily: '-apple-system,Inter,sans-serif' }}>Today's Bookings</span>
+          </div>
+          <p style={{ fontSize: 32, fontWeight: 700, color: '#F5F5F7', lineHeight: 1, fontFamily: '-apple-system,Inter,sans-serif', marginBottom: 4 }}>{todayBookings.length}</p>
+          <p style={{ fontSize: 12, color: '#98989D' }}>
+            {todayBookings.length === 0 ? 'No sessions today' : todayBookings.map(b => b.machineName).join(', ')}
+          </p>
+        </button>
+
+        {/* Active Tool Checkouts */}
+        <button
+          onClick={() => navigate('/checkout/history')}
+          style={{ background: '#141518', borderRadius: 20, border: `1px solid ${overdueCount > 0 ? 'rgba(255,69,58,0.35)' : 'rgba(255,255,255,0.08)'}`, padding: '18px 20px', textAlign: 'left', cursor: 'pointer', transition: 'border-color 200ms ease' }}
+          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = overdueCount > 0 ? 'rgba(255,69,58,0.6)' : 'rgba(10,132,255,0.35)' }}
+          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = overdueCount > 0 ? 'rgba(255,69,58,0.35)' : 'rgba(255,255,255,0.08)' }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+            <span style={{ width: 32, height: 32, borderRadius: 10, background: overdueCount > 0 ? 'rgba(255,69,58,0.15)' : 'rgba(255,149,0,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {overdueCount > 0 ? <AlertTriangle size={16} color="#FF453A" /> : <Package size={16} color="#FF9500" />}
+            </span>
+            <span style={{ fontSize: 13, color: '#98989D', fontFamily: '-apple-system,Inter,sans-serif' }}>Tool Checkouts</span>
+          </div>
+          <p style={{ fontSize: 32, fontWeight: 700, color: overdueCount > 0 ? '#FF453A' : '#F5F5F7', lineHeight: 1, fontFamily: '-apple-system,Inter,sans-serif', marginBottom: 4 }}>{activeCheckouts.length}</p>
+          <p style={{ fontSize: 12, color: overdueCount > 0 ? '#FF453A' : '#98989D' }}>
+            {overdueCount > 0 ? `${overdueCount} overdue — return immediately` : activeCheckouts.length === 0 ? 'No active checkouts' : 'Active borrowings'}
+          </p>
+        </button>
+
+        {/* Projects */}
+        <button
+          onClick={() => navigate('/projects')}
+          style={{ background: '#141518', borderRadius: 20, border: '1px solid rgba(255,255,255,0.08)', padding: '18px 20px', textAlign: 'left', cursor: 'pointer', transition: 'border-color 200ms ease' }}
+          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(48,209,88,0.35)' }}
+          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)' }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+            <span style={{ width: 32, height: 32, borderRadius: 10, background: 'rgba(48,209,88,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ fontSize: 16 }}>🔬</span>
+            </span>
+            <span style={{ fontSize: 13, color: '#98989D', fontFamily: '-apple-system,Inter,sans-serif' }}>My Projects</span>
+          </div>
+          <p style={{ fontSize: 32, fontWeight: 700, color: '#F5F5F7', lineHeight: 1, fontFamily: '-apple-system,Inter,sans-serif', marginBottom: 4 }}>{userProjects.length}</p>
+          <p style={{ fontSize: 12, color: '#98989D' }}>
+            {userProjects.length === 0 ? 'Register a project first' : userProjects.map(p => p.id).join(', ')}
+          </p>
+        </button>
+
+        {/* Quick Actions */}
+        <div style={{ background: '#141518', borderRadius: 20, border: '1px solid rgba(255,255,255,0.08)', padding: '18px 20px' }}>
+          <p style={{ fontSize: 13, color: '#98989D', marginBottom: 12, fontFamily: '-apple-system,Inter,sans-serif' }}>Quick Actions</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {[
+              { label: 'Book a machine', path: '/bookings/new', color: '#0A84FF' },
+              { label: 'Checkout a tool', path: '/checkout', color: '#FF9500' },
+              { label: 'New project', path: '/projects/new', color: '#30D158' },
+            ].map(a => (
+              <button
+                key={a.path}
+                onClick={() => navigate(a.path)}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '7px 10px', borderRadius: 10,
+                  background: 'rgba(255,255,255,0.04)',
+                  border: '1px solid rgba(255,255,255,0.06)',
+                  cursor: 'pointer', width: '100%',
+                  fontFamily: '-apple-system,Inter,sans-serif',
+                  fontSize: 13, color: a.color,
+                  fontWeight: 500,
+                  transition: 'background 150ms ease',
+                }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)' }}
+              >
+                {a.label}
+                <ArrowRight size={13} color={a.color} />
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* ── Live status ticker ───────────────────────────────────── */}

@@ -6,28 +6,23 @@ service cloud.firestore {
     // HELPER FUNCTIONS — evaluated server-side, no extra reads needed
     // ================================================================
 
-    // Is the user signed in?
     function isAuth() {
       return request.auth != null;
     }
 
-    // Is this the user's own document?
     function isOwner(uid) {
       return isAuth() && request.auth.uid == uid;
     }
 
-    // Get the calling user's role from their profile
-    // NOTE: This costs 1 read per rule that calls it. Minimise usage.
+    // NOTE: costs 1 read per rule call — minimise usage
     function getUserRole() {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
     }
 
-    // Admin roles: can do anything
     function isAdmin() {
       return isAuth() && getUserRole() == 'super_admin';
     }
 
-    // Staff roles: elevated access
     function isStaff() {
       return isAuth() && getUserRole() in ['super_admin', 'faculty', 'lab_assistant'];
     }
@@ -36,14 +31,14 @@ service cloud.firestore {
     // USERS COLLECTION
     // ================================================================
     match /users/{uid} {
-      // Anyone authenticated can read their own profile
       allow read: if isOwner(uid) || isAdmin();
-      // Users can create their own profile on registration
-      allow create: if isOwner(uid) && request.resource.data.keys().hasAll(['email', 'displayName', 'role', 'isActive', 'createdAt']) && request.resource.data.role == 'student';
-      // Users can update only their own non-sensitive fields; admins can update anything
+      // New users self-create with role='student' only
+      allow create: if isOwner(uid)
+                    && request.resource.data.keys().hasAll(['email', 'displayName', 'role', 'userType', 'isActive', 'createdAt'])
+                    && request.resource.data.role == 'student';
+      // Users update their own non-sensitive fields; admins update anything
       allow update: if (isOwner(uid) && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'isActive']))
                     || isAdmin();
-      // Only admins can delete users
       allow delete: if isAdmin();
     }
 
@@ -51,52 +46,58 @@ service cloud.firestore {
     // EQUIPMENT COLLECTION
     // ================================================================
     match /equipment/{equipmentId} {
-      // Any authenticated user can read equipment
       allow read: if isAuth();
-      // Only staff can create/update/delete
       allow create, update, delete: if isStaff();
     }
 
     // ================================================================
-    // BOOKINGS COLLECTION
+    // BOOKINGS COLLECTION  (Form 2A — Tier 1 machines only)
     // ================================================================
     match /bookings/{bookingId} {
-      // Authenticated users can read their own bookings; staff can read all
       allow read: if isAuth() && (resource.data.userId == request.auth.uid || isStaff());
-      // Authenticated users can create bookings for themselves
+      // Auto-confirm model (Spec 2): status must be 'approved' on create, not 'pending'
       allow create: if isAuth()
                     && request.resource.data.userId == request.auth.uid
-                    && request.resource.data.keys().hasAll(['equipmentId', 'date', 'startTime', 'endTime', 'purpose', 'status'])
-                    && request.resource.data.status == 'pending';
-      // Users can cancel their own bookings; staff can approve/reject/update
+                    && request.resource.data.keys().hasAll(['equipmentId', 'machineId', 'date', 'startTime', 'endTime', 'purpose', 'projectId', 'status', 'safetyAgreementAccepted'])
+                    && request.resource.data.status == 'approved'
+                    && request.resource.data.safetyAgreementAccepted == true;
+      // Users can cancel own bookings; staff can fully update
       allow update: if isAuth() && (
         (resource.data.userId == request.auth.uid && request.resource.data.status == 'cancelled')
         || isStaff()
       );
-      // Only admins can delete bookings
       allow delete: if isAdmin();
     }
 
     // ================================================================
-    // INVENTORY COLLECTION
+    // TOOL CHECKOUTS COLLECTION  (Form 2B — Tier 2 tools only)
+    // ================================================================
+    match /toolCheckouts/{checkoutId} {
+      allow read: if isAuth() && (resource.data.userId == request.auth.uid || isStaff());
+      allow create: if isAuth()
+                    && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.keys().hasAll(['toolName', 'toolCategory', 'action', 'projectId', 'locationOfUse', 'conditionAtCheckout']);
+      // Users can update their own checkout (return action); staff can update any
+      allow update: if isAuth() && (resource.data.userId == request.auth.uid || isStaff());
+      allow delete: if isAdmin();
+    }
+
+    // ================================================================
+    // INVENTORY COLLECTION  (admin stock management)
     // ================================================================
     match /inventory/{itemId} {
-      // Any authenticated user can read inventory (needed for checkout)
       allow read: if isAuth();
-      // Only staff can create/update
       allow create, update: if isStaff();
-      // Only admins can delete
       allow delete: if isAdmin();
     }
 
     // ================================================================
-    // INVENTORY TRANSACTIONS COLLECTION
+    // INVENTORY TRANSACTIONS COLLECTION  (admin stock movements only)
     // ================================================================
     match /inventoryTransactions/{txId} {
-      // Any authenticated user can read and write transactions
-      // (Checkout/return is done by any signed-in user)
       allow read: if isAuth();
-      allow create: if isAuth() && request.resource.data.userId == request.auth.uid;
+      // Only staff create transactions (restock/adjustment/damage) — NOT users doing checkouts
+      allow create: if isStaff();
       allow update, delete: if isAdmin();
     }
 
@@ -104,9 +105,7 @@ service cloud.firestore {
     // MAINTENANCE COLLECTION
     // ================================================================
     match /maintenance/{recordId} {
-      // Any authenticated user can read maintenance records
       allow read: if isAuth();
-      // Only staff can create/update/delete
       allow create, update: if isStaff();
       allow delete: if isAdmin();
     }
@@ -115,9 +114,7 @@ service cloud.firestore {
     // WORKSHOPS COLLECTION
     // ================================================================
     match /workshops/{workshopId} {
-      // Any authenticated user can read workshops
       allow read: if isAuth();
-      // Only staff can create/update/delete workshops
       allow create, update: if isStaff();
       allow delete: if isAdmin();
     }
@@ -126,26 +123,24 @@ service cloud.firestore {
     // WORKSHOP REGISTRATIONS COLLECTION
     // ================================================================
     match /workshopRegistrations/{regId} {
-      // Users can read their own registrations; staff can read all
       allow read: if isAuth() && (resource.data.userId == request.auth.uid || isStaff());
-      // Users can register themselves
       allow create: if isAuth() && request.resource.data.userId == request.auth.uid;
-      // Staff can update (attendance, certificate); users can cancel their own
       allow update: if isStaff() || (isAuth() && resource.data.userId == request.auth.uid);
       allow delete: if isAdmin();
     }
 
     // ================================================================
-    // PROJECTS COLLECTION
+    // PROJECTS COLLECTION  (Form 1 — Project Registration)
     // ================================================================
     match /projects/{projectId} {
-      // Any authenticated user can read projects
       allow read: if isAuth();
-      // Users can submit their own projects; auto-status = pending
+      // Users self-register projects; status must start as 'pending'
       allow create: if isAuth()
                     && request.resource.data.userId == request.auth.uid
-                    && request.resource.data.status == 'pending';
-      // Users can edit their own pending/active projects (not status); admins can change anything
+                    && request.resource.data.status == 'pending'
+                    && request.resource.data.safetyAgreementAccepted == true
+                    && request.resource.data.termsAccepted == true;
+      // Users edit own pending/active projects (not status); admins change anything
       allow update: if isAuth() && (
         (resource.data.userId == request.auth.uid && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['status']))
         || isAdmin()
@@ -157,11 +152,10 @@ service cloud.firestore {
     // NOTIFICATIONS COLLECTION
     // ================================================================
     match /notifications/{notifId} {
-      // Users can only read their own notifications
       allow read: if isAuth() && resource.data.userId == request.auth.uid;
-      // Only server/admin creates notifications
-      allow create: if isAdmin();
-      // Users can mark their own as read (update isRead field only)
+      // In-app notifications created by staff/admin only (Phase 9 email deferred)
+      allow create: if isStaff();
+      // Users mark their own as read (isRead field only)
       allow update: if isAuth() && resource.data.userId == request.auth.uid
                     && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isRead']);
       allow delete: if isAdmin();
@@ -171,31 +165,26 @@ service cloud.firestore {
     // ANNOUNCEMENTS COLLECTION
     // ================================================================
     match /announcements/{announcementId} {
-      // Any authenticated user can read active announcements
       allow read: if isAuth();
-      // Only staff can create/update/delete announcements
       allow create, update, delete: if isStaff();
     }
 
     // ================================================================
-    // ISSUES COLLECTION
+    // ISSUES COLLECTION  (Form 4 — Report an Issue / Suggestion)
     // ================================================================
     match /issues/{issueId} {
-      // Users can read their own issues; staff can read all
       allow read: if isAuth() && (resource.data.userId == request.auth.uid || isStaff());
-      // Any authenticated user can report an issue
       allow create: if isAuth() && request.resource.data.userId == request.auth.uid;
-      // Staff can update status; users cannot edit after submission
+      // Staff update status/resolution; users cannot edit after submission
       allow update: if isStaff();
       allow delete: if isAdmin();
     }
 
     // ================================================================
-    // AUDIT LOGS COLLECTION (append-only)
+    // AUDIT LOGS COLLECTION  (append-only, immutable)
     // ================================================================
     match /auditLogs/{logId} {
       allow read: if isAdmin();
-      // Anyone authenticated can create (append-only, no update/delete)
       allow create: if isAuth();
       allow update, delete: if false; // Immutable
     }
@@ -209,7 +198,7 @@ service cloud.firestore {
     }
 
     // ================================================================
-    // DEFAULT DENY — deny everything else
+    // DEFAULT DENY
     // ================================================================
     match /{document=**} {
       allow read, write: if false;

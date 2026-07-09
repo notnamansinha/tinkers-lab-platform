@@ -19,19 +19,59 @@ export const ROLE_LABELS: Record<UserRole, string> = {
 export const ADMIN_ROLES: UserRole[] = ['super_admin']
 export const STAFF_ROLES: UserRole[] = ['super_admin', 'faculty', 'lab_assistant']
 
+/**
+ * userType = identity (who the person is — from Spec 1 Form 1 Section 1)
+ * role     = permissions (what they can do in the platform)
+ * These are two separate dimensions. A Professor has userType='Professor or Faculty'
+ * and role='faculty'. A startup founder has userType='Venture Studio Startup' and role='student'.
+ */
+export type UserType =
+  | 'Student'
+  | 'Professor or Faculty'
+  | 'Venture Studio Startup'
+  | 'External Visitor'
+
 export interface UserProfile {
   uid: string
   email: string
   displayName: string
   role: UserRole
-  department: string
-  batch?: string        // e.g. "2024-25"
-  studentId?: string    // e.g. "AU2440123"
-  contact?: string
-  userType: 'Student' | 'Faculty' | 'Lab Staff' | 'Venture Studio' | 'External Visitor'
+  userType: UserType
   isActive: boolean
   createdAt: Timestamp
   updatedAt: Timestamp
+
+  // ── Common fields ───────────────────────────────────────────
+  contact?: string
+  department?: string
+
+  // ── Student-specific (Spec 1 Form 1 Section 2) ──────────────
+  universityId?: string        // "University ID"
+  courseName?: string          // "Course or Curriculum Name"
+  facultyAdvisor?: string      // "Faculty Advisor"
+  teamName?: string            // "Team Name"
+  teamMembers?: string         // "Team Members — Names and IDs"
+
+  // ── Professor or Faculty-specific (Spec 1 Form 1 Section 3) ─
+  researchArea?: string        // "Research Area or Subject"
+  associatedCourse?: string    // "Associated Course"
+  studentsInvolved?: string    // "Students Involved"
+
+  // ── Venture Studio Startup-specific (Spec 1 Form 1 Section 4)
+  startupName?: string         // "Startup Name"
+  industryDomain?: string      // "Industry / Domain"
+  startupBrief?: string        // "Brief About Your Startup"
+  labTeamMembers?: string      // "Team Members Using the Lab"
+
+  // ── External Visitor-specific (Spec 1 Form 1 Section 5) ─────
+  organization?: string        // "Organization / Institution"
+  designation?: string         // "Designation / Role"
+  purposeOfVisit?: string      // "Purpose of Visit"
+  referral?: string            // "Referral"
+
+  // ── Acknowledgements (Spec 1 Form 1 Section 7) ──────────────
+  safetyAgreementAccepted?: boolean
+  termsAccepted?: boolean
 }
 
 // ============================================================
@@ -52,10 +92,24 @@ export type EquipmentCategory =
   | 'Electronics'
   | 'Other'
 
+/**
+ * Tier system from Spec 1:
+ *   bookable         — Tier 1: calendar-based time-slot booking (single-unit machines)
+ *   checkout         — Tier 2: borrow/return log (multi-unit hand/power tools)
+ *   freely_available — Tier 3: no booking needed, inventory tracking only
+ *
+ * confirmed: true = physically present in the lab (Spec 2's 4 machines).
+ *            false = from original quotation, not yet physically present.
+ *   Only confirmed=true machines appear in the booking dropdown (Form 2A).
+ */
+export type EquipmentTier = 'bookable' | 'checkout' | 'freely_available'
+
 export interface Equipment {
   id: string
-  machineId: string          // e.g. "bambu-x1c"
+  machineId: string          // e.g. "bambu-x1c" — slug used in conflict checks
   name: string
+  tier: EquipmentTier        // Which tier this equipment belongs to
+  confirmed: boolean         // Physically present in the lab?
   category: EquipmentCategory
   description: string
   manufacturer?: string
@@ -68,7 +122,6 @@ export interface Equipment {
   healthStatus: 'good' | 'fair' | 'poor'
   location: string
   requiresTraining: boolean
-  // Storage deferred — see pending_items.md
   imageUrls: string[]
   manualUrls: string[]
   safetyDocUrls: string[]
@@ -77,39 +130,98 @@ export interface Equipment {
 }
 
 // ============================================================
-// BOOKING TYPES
+// BOOKING TYPES  (Form 2A — Tier 1 bookable machines only)
 // ============================================================
 export type BookingStatus =
-  | 'pending'
-  | 'approved'
-  | 'rejected'
+  | 'approved'     // Default on creation — auto-confirm per Spec 2
+  | 'rejected'     // Conflict detected or admin rejection
   | 'cancelled'
   | 'completed'
+
+/**
+ * Consumables tracked per booking (Spec 2):
+ *  - 3D Printers: filament type, color, quantity in grams
+ *  - Laser Cutter: material type and size
+ * "by logging filament/material used per booking, monthly usage data
+ *  feeds directly into procurement decisions"
+ */
+export interface BookingConsumables {
+  // 3D Printer consumables
+  filamentType?: string          // PLA, ABS, PETG, TPU, Other
+  filamentColor?: string
+  filamentQuantityGrams?: number
+  // Laser Cutter consumables
+  materialType?: string          // Acrylic, MDF, Plywood, Other
+  materialSize?: string          // Dimensions or description
+}
 
 export interface Booking {
   id: string
   equipmentId: string         // Firestore document ID
-  machineId: string           // e.g. "laser-cutter"
+  machineId: string           // e.g. "laser-cutter" — for conflict checking
   machineName: string
   userId: string
   userEmail: string
   userName: string
-  projectId?: string
-  projectTitle?: string
+  projectId: string           // Required — Spec 2: "every booking must reference a registered project"
+  projectTitle: string
   date: string                // "YYYY-MM-DD"
   startTime: string           // "HH:MM"
   endTime: string             // "HH:MM"
   purpose: string
-  status: BookingStatus
+  consumables?: BookingConsumables
+  safetyAgreementAccepted: boolean
+  status: BookingStatus       // Default: 'approved' (auto-confirm with conflict-check rejection)
   rejectionReason?: string
-  approvedBy?: string
-  approvedAt?: Timestamp
+  cancelledBy?: string
   createdAt: Timestamp
   updatedAt: Timestamp
 }
 
 // ============================================================
-// INVENTORY TYPES
+// TOOL CHECKOUT TYPES  (Form 2B — Tier 2 checkout items only)
+// ============================================================
+
+/**
+ * Tool checkout is completely separate from machine bookings (Spec 2 core decision):
+ * "Power Tools / Hand Tools → Checkout / Return log. Multiple units per item,
+ *  short usage bursts. Calendar-booking would flood the calendar daily."
+ *
+ * Key fields per Spec 2:
+ *  - locationOfUse: "In Lab / Taking Outside Lab" with optional "where"
+ *  - isOverdue: computed flag for querying — set true when expectedReturnDate < today AND returnedAt is null
+ *  - projectId: required — "every checkout must reference a registered project"
+ */
+export type ToolCategory = 'Power Tools' | 'Hand Tools' | 'Measurement Tools' | 'Safety Equipment' | 'Other'
+export type ToolCondition = 'good' | 'fair' | 'damaged'
+
+export interface ToolCheckout {
+  id: string
+  userId: string
+  userEmail: string
+  userName: string
+  universityId?: string         // For students — from user profile
+  projectId: string             // Required
+  projectTitle: string
+  action: 'checking_out' | 'returning'
+  toolCategory: ToolCategory
+  toolName: string              // Free text — matched against inventory on viewer side
+  quantity: number
+  locationOfUse: 'in_lab' | 'taking_outside'
+  outsideLocation?: string      // Conditional — required if taking_outside
+  expectedReturnDate: string    // "YYYY-MM-DD"
+  expectedReturnTime?: string   // "HH:MM"
+  conditionAtCheckout: ToolCondition
+  conditionAtReturn?: ToolCondition
+  returnedAt?: Timestamp
+  isOverdue: boolean            // Computed: expectedReturnDate < today AND returnedAt is null
+  notes?: string
+  createdAt: Timestamp
+  updatedAt: Timestamp
+}
+
+// ============================================================
+// INVENTORY TYPES  (admin stock management — separate from checkout)
 // ============================================================
 export type InventoryCategory =
   | 'Raw Materials'
@@ -144,7 +256,12 @@ export interface InventoryItem {
   updatedAt: Timestamp
 }
 
-export type TransactionType = 'issue' | 'return' | 'restock' | 'adjustment' | 'damage'
+/**
+ * Inventory transactions are for admin-initiated stock changes only (restock, adjustment, damage).
+ * Per Spec 2: "v1 logs consumables and checkouts WITHOUT automatically adjusting stock counts."
+ * Tool checkouts use the separate ToolCheckout collection, not this one.
+ */
+export type TransactionType = 'restock' | 'adjustment' | 'damage' | 'write_off'
 
 export interface InventoryTransaction {
   id: string
@@ -158,8 +275,6 @@ export interface InventoryTransaction {
   userName: string
   userEmail: string
   notes?: string
-  dueDate?: string              // For tool checkouts
-  returnedAt?: Timestamp
   createdAt: Timestamp
 }
 
@@ -193,7 +308,7 @@ export interface MaintenanceRecord {
   partsCost?: number
   downtimeHours?: number
   notes?: string
-  reportUrls: string[]          // Deferred — see pending_items.md
+  reportUrls: string[]
   createdAt: Timestamp
   updatedAt: Timestamp
 }
@@ -224,7 +339,7 @@ export interface Workshop {
   location: string
   isActive: boolean
   certificateIssued: boolean
-  materialUrls: string[]        // Deferred — see pending_items.md
+  materialUrls: string[]
   createdAt: Timestamp
   updatedAt: Timestamp
 }
@@ -238,36 +353,60 @@ export interface WorkshopRegistration {
   userEmail: string
   status: 'registered' | 'attended' | 'cancelled' | 'no_show'
   feedback?: string
-  rating?: number               // 1-5
+  rating?: number               // 1–5
   certificateIssued: boolean
   createdAt: Timestamp
   updatedAt: Timestamp
 }
 
 // ============================================================
-// PROJECT TYPES
+// PROJECT TYPES  (Form 1 — Project Registration)
 // ============================================================
 export type ProjectStatus = 'pending' | 'active' | 'completed' | 'on_hold' | 'rejected'
 
+/**
+ * Expected equipment needs from Spec 1 Form 1 Section 6 checkbox list.
+ */
+export type ExpectedEquipmentNeed =
+  | '3D Printer'
+  | 'Laser Cutter'
+  | 'Muffle Furnace'
+  | 'Lathe Machine'
+  | 'Sheet Bender'
+  | 'Pillar Drill'
+  | 'Table Saw'
+  | 'Mitre Saw'
+  | 'Cut-off Saw'
+  | 'ESD Workstation'
+  | 'Oscilloscope'
+  | 'Function Generator'
+  | 'Soldering Station'
+  | 'Hand Tools'
+  | 'Power Tools'
+  | 'Other'
+
 export interface Project {
-  id: string                    // e.g. "TL-001"
+  id: string                    // Sequential: "TL-001", "TL-002", etc.
   title: string
   abstract: string
   userId: string
   userName: string
   userEmail: string
+  userType: UserType
   contact: string
-  userType: string
-  department: string
-  studentId?: string
+  department?: string
+  universityId?: string         // Students only
   teamMembers?: string
   facultyMentor?: string
   startDate: string
   endDate?: string
+  expectedEquipmentNeeds: ExpectedEquipmentNeed[]
+  equipmentNeedsOther?: string  // "If Other, please specify"
   resourceLink?: string
+  safetyAgreementAccepted: boolean
+  termsAccepted: boolean
   status: ProjectStatus
   rejectionReason?: string
-  // File uploads deferred — see pending_items.md
   imageUrls: string[]
   documentUrls: string[]
   createdAt: Timestamp
@@ -278,10 +417,12 @@ export interface Project {
 // NOTIFICATION TYPES
 // ============================================================
 export type NotificationType =
-  | 'booking_pending'
   | 'booking_approved'
   | 'booking_rejected'
-  | 'booking_reminder'
+  | 'booking_reminder'          // 24-hour reminder (future — Phase 9)
+  | 'booking_conflict'          // Conflict rejection
+  | 'checkout_confirmed'
+  | 'checkout_overdue'          // Overdue alert (future — Phase 9)
   | 'workshop_reminder'
   | 'inventory_low'
   | 'maintenance_scheduled'
@@ -303,14 +444,14 @@ export interface Notification {
 }
 
 // ============================================================
-// ISSUE / REPORT TYPES
+// ISSUE / REPORT TYPES  (Form 4 — Report an Issue / Suggestion)
 // ============================================================
 export type IssueType =
-  | 'machine_malfunction'
-  | 'safety_concern'
-  | 'missing_damaged'
-  | 'suggestion'
-  | 'other'
+  | 'machine_malfunction'   // "Machine Malfunction"
+  | 'safety_concern'        // "Safety Concern"
+  | 'missing_damaged'       // "Missing or Damaged Item"
+  | 'suggestion'            // "Suggestion"
+  | 'other'                 // "Other"
 
 export type IssueSeverity = 'low' | 'medium' | 'high' | 'urgent'
 export type IssueStatus = 'open' | 'in_progress' | 'resolved' | 'closed'
@@ -325,6 +466,7 @@ export interface Issue {
   status: IssueStatus
   relatedMachine?: string
   description: string
+  dateNoticed?: string          // "When did you notice this?"
   resolution?: string
   resolvedBy?: string
   resolvedAt?: Timestamp
@@ -341,7 +483,6 @@ export interface Announcement {
   body: string
   priority: 'normal' | 'high' | 'urgent'
   isActive: boolean
-  createdBy?: string        // legacy field
   authorId: string
   authorName: string
   expiresAt?: Timestamp

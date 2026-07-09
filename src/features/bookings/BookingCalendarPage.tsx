@@ -83,9 +83,9 @@ export default function BookingCalendarPage() {
     setWeekStart(d)
   }
 
-  const handleApprove = async (bookingId: string, approverName: string) => {
+  const handleApprove = async (bookingId: string) => {
     try {
-      await updateBookingStatus(bookingId, 'approved', approverName)
+      await updateBookingStatus(bookingId, 'approved')
       toast.success('Booking approved')
       refetch()
     } catch { toast.error('Failed to approve') }
@@ -94,7 +94,7 @@ export default function BookingCalendarPage() {
   const handleReject = async (bookingId: string) => {
     const reason = window.prompt('Rejection reason (optional):') ?? ''
     try {
-      await updateBookingStatus(bookingId, 'rejected', undefined, reason)
+      await updateBookingStatus(bookingId, 'rejected', { rejectionReason: reason })
       toast.success('Booking rejected')
       refetch()
     } catch { toast.error('Failed to reject') }
@@ -132,16 +132,16 @@ export default function BookingCalendarPage() {
       </Card>
 
       {/* Pending approvals (staff) */}
-      {isStaff && bookings.filter(b => b.status === 'pending').length > 0 && (
+      {isStaff && bookings.filter(b => b.status === 'rejected').length > 0 && (
         <Card className="border-orange-200 dark:border-orange-900/50">
           <CardHeader className="flex flex-row items-center justify-between pb-2 bg-orange-50/50 dark:bg-orange-950/20 rounded-t-lg">
             <CardTitle className="text-orange-800 dark:text-orange-500 text-sm flex items-center gap-2">
-              <Clock className="h-4 w-4" /> Pending Approvals ({bookings.filter(b => b.status === 'pending').length})
+              <Clock className="h-4 w-4" /> Recent Rejections ({bookings.filter(b => b.status === 'rejected').length})
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             <div className="divide-y divide-orange-100 dark:divide-orange-900/30">
-              {bookings.filter(b => b.status === 'pending').map(b => (
+              {bookings.filter(b => b.status === 'rejected').map(b => (
                 <div key={b.id} className="p-4 flex flex-col sm:flex-row sm:items-center gap-4">
                   <div className="flex-1 space-y-1">
                     <p className="text-sm font-medium">{b.machineName}</p>
@@ -149,8 +149,7 @@ export default function BookingCalendarPage() {
                     <p className="text-xs text-muted-foreground">{b.userName || b.userEmail} · {b.purpose}</p>
                   </div>
                   <div className="flex gap-2">
-                    <Button size="sm" onClick={() => handleApprove(b.id, 'Staff')} className="bg-green-600 hover:bg-green-700 text-white">Approve</Button>
-                    <Button size="sm" variant="destructive" onClick={() => handleReject(b.id)}>Reject</Button>
+                    <Button size="sm" onClick={() => handleReject(b.id)} variant="destructive">Dismiss</Button>
                   </div>
                 </div>
               ))}
@@ -193,7 +192,7 @@ export default function BookingCalendarPage() {
                     </TableCell>
                     <TableCell className="hidden md:table-cell text-muted-foreground max-w-[200px] truncate">{b.purpose}</TableCell>
                     <TableCell>
-                      <Badge variant={b.status === 'approved' ? 'default' : b.status === 'pending' ? 'secondary' : b.status === 'rejected' ? 'destructive' : 'outline'} className="capitalize">
+                      <Badge variant={b.status === 'approved' ? 'default' : b.status === 'rejected' ? 'destructive' : b.status === 'cancelled' ? 'outline' : 'secondary'} className="capitalize">
                         {b.status}
                       </Badge>
                     </TableCell>

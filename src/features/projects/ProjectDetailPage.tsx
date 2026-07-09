@@ -40,7 +40,7 @@ export default function ProjectDetailPage() {
 
       <div className="rounded-lg border bg-card p-5 grid grid-cols-2 gap-3">
         <h2 className="col-span-full font-display font-semibold text-sm text-muted-foreground uppercase tracking-wide">Details</h2>
-        {[['Registered by', project.userName], ['Email', project.userEmail], ['Contact', project.contact], ['Department', project.department], ['Student ID', project.studentId || '—'], ['User Type', project.userType], ['Team Members', project.teamMembers || '—'], ['Faculty Mentor', project.facultyMentor || '—'], ['Start Date', project.startDate], ['End Date', project.endDate || '—'], ['Resource Link', project.resourceLink || '—']].map(([k,v]) => (
+        {[['Registered by', project.userName], ['Email', project.userEmail], ['Contact', project.contact], ['Department', project.department], ['University ID', project.universityId || '—'], ['User Type', project.userType], ['Team Members', project.teamMembers || '—'], ['Faculty Mentor', project.facultyMentor || '—'], ['Start Date', project.startDate], ['End Date', project.endDate || '—'], ['Resource Link', project.resourceLink || '—']].map(([k,v]) => (
           <div key={k}><p className="text-xs text-muted-foreground font-mono">{k}</p><p className="text-sm font-medium mt-0.5">{String(v)}</p></div>
         ))}
         {project.rejectionReason && <div className="col-span-2"><p className="text-xs text-destructive font-mono">Rejection Reason</p><p className="text-sm text-destructive">{project.rejectionReason}</p></div>}

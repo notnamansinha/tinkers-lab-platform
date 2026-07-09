@@ -29,6 +29,7 @@ export const COLLECTIONS = {
   USERS: 'users',
   EQUIPMENT: 'equipment',
   BOOKINGS: 'bookings',
+  TOOL_CHECKOUTS: 'toolCheckouts',
   INVENTORY: 'inventory',
   INVENTORY_TRANSACTIONS: 'inventoryTransactions',
   MAINTENANCE: 'maintenance',

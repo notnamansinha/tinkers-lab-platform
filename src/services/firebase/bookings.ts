@@ -9,15 +9,19 @@ import {
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { COLLECTIONS, addDocument } from './firestore'
-import type { Booking, BookingStatus } from '@/types'
+import type { Booking, BookingStatus, BookingConsumables } from '@/types'
 
 // ============================================================
-// BOOKING SERVICE — optimized for Firestore free tier
+// BOOKING SERVICE
+// Free-tier optimised — narrow queries, minimal reads.
+// Auto-confirm model (Spec 2): bookings go straight to 'approved'
+// with conflict-check rejection as the safety net.
 // ============================================================
 
 /**
- * Check if a time slot conflicts with existing bookings.
- * Only queries for the specific machine + date (narrow index).
+ * Check if a time slot conflicts with existing approved bookings for a machine.
+ * Query is narrowed by equipmentId + date to minimise reads.
+ * Two time intervals [a,b] and [c,d] overlap if a < d && c < b.
  */
 export async function checkBookingConflict(
   equipmentId: string,
@@ -27,18 +31,16 @@ export async function checkBookingConflict(
   excludeBookingId?: string
 ): Promise<Booking | null> {
   const ref = collection(db, COLLECTIONS.BOOKINGS)
-  // Query only active bookings for this machine/date
   const q = query(
     ref,
     where('equipmentId', '==', equipmentId),
     where('date', '==', date),
-    where('status', 'in', ['pending', 'approved'])
+    where('status', 'in', ['approved'])  // Only approved bookings block slots
   )
   const snap = await getDocs(q)
   for (const d of snap.docs) {
     if (d.id === excludeBookingId) continue
     const b = { id: d.id, ...d.data() } as Booking
-    // Check time overlap: two intervals [a,b] and [c,d] overlap if a < d && c < b
     if (startTime < b.endTime && b.startTime < endTime) {
       return b
     }
@@ -47,12 +49,14 @@ export async function checkBookingConflict(
 }
 
 /**
- * Create a new booking after conflict check.
+ * Create a new booking.
+ * - Runs conflict check first; throws if overlap found (Spec 2: "rejects + emails if conflict found")
+ * - Sets status to 'approved' immediately (Spec 2 auto-confirm model)
+ * - Accepts optional consumables for 3D printers and laser cutter (Spec 2)
  */
 export async function createBooking(
   data: Omit<Booking, 'id' | 'createdAt' | 'updatedAt' | 'status'>
 ): Promise<string> {
-  // Server-side conflict check
   const conflict = await checkBookingConflict(
     data.equipmentId,
     data.date,
@@ -61,18 +65,20 @@ export async function createBooking(
   )
   if (conflict) {
     throw new Error(
-      `Time slot conflicts with existing booking (${conflict.startTime}–${conflict.endTime})`
+      `Time slot conflicts with an existing booking (${conflict.startTime}–${conflict.endTime}). Please choose a different time.`
     )
   }
+  // Auto-confirm: status = 'approved' on creation (Spec 2 decision)
   return addDocument<Booking>(COLLECTIONS.BOOKINGS, {
     ...data,
-    status: 'pending',
+    status: 'approved',
   })
 }
 
 /**
- * Get bookings for a specific machine and date.
- * Used for the slot picker — narrow query.
+ * Get all approved bookings for a machine on a specific date.
+ * Used by the slot picker UI to show booked times.
+ * Narrow query: equipmentId + date — minimal reads.
  */
 export async function getBookingsForSlot(
   equipmentId: string,
@@ -83,32 +89,47 @@ export async function getBookingsForSlot(
     ref,
     where('equipmentId', '==', equipmentId),
     where('date', '==', date),
-    where('status', 'in', ['pending', 'approved'])
+    where('status', '==', 'approved')
   )
   const snap = await getDocs(q)
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Booking)
 }
 
 /**
- * Update booking status (approve/reject/cancel).
+ * Update booking status (cancel / reject / complete).
  */
 export async function updateBookingStatus(
   bookingId: string,
   status: BookingStatus,
-  approvedBy?: string,
-  rejectionReason?: string
+  options?: { rejectionReason?: string; cancelledBy?: string }
 ): Promise<void> {
   const ref = doc(db, COLLECTIONS.BOOKINGS, bookingId)
   const updates: Record<string, unknown> = {
     status,
     updatedAt: serverTimestamp(),
   }
-  if (status === 'approved' && approvedBy) {
-    updates.approvedBy = approvedBy
-    updates.approvedAt = serverTimestamp()
+  if (status === 'rejected' && options?.rejectionReason) {
+    updates.rejectionReason = options.rejectionReason
   }
-  if (status === 'rejected' && rejectionReason) {
-    updates.rejectionReason = rejectionReason
+  if (status === 'cancelled' && options?.cancelledBy) {
+    updates.cancelledBy = options.cancelledBy
   }
   await updateDoc(ref, updates)
+}
+
+/**
+ * Get all bookings for a specific user (their own history).
+ * Ordered by date descending.
+ */
+export async function getUserBookings(userId: string): Promise<Booking[]> {
+  const ref = collection(db, COLLECTIONS.BOOKINGS)
+  const q = query(
+    ref,
+    where('userId', '==', userId),
+    where('status', 'in', ['approved', 'completed', 'cancelled', 'rejected'])
+  )
+  const snap = await getDocs(q)
+  return snap.docs
+    .map((d) => ({ id: d.id, ...d.data() }) as Booking)
+    .sort((a, b) => b.date.localeCompare(a.date))
 }
