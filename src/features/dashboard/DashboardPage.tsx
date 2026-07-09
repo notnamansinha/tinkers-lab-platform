@@ -20,9 +20,9 @@ import {
   Search,
   Bell,
 } from 'lucide-react'
-import flowerMark from '@/assets/tinkerer-figjam/flower-mark.svg'
+import logoMark from '@/assets/tinkerer-figjam/tinkerer-lab-board.webp'
 import dashboardClusters from '@/assets/tinkerer-figjam/dashboard-clusters.svg'
-import { NetWorthChart, CashflowChart, InvestmentsChart, MathicalLogo } from '@/components/ui/svgs'
+import { NetWorthChart, CashflowChart, InvestmentsChart } from '@/components/ui/svgs'
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 const NAV_ITEMS = [
@@ -59,7 +59,7 @@ function Sidebar({ activeId }: { activeId: string }) {
         className="w-10 h-10 rounded-[10px] overflow-hidden mb-8 hover:opacity-80 transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-[#EC68D8]"
         aria-label="Dashboard home"
       >
-        <img src={flowerMark} alt="" className="w-full h-full" />
+        <img src={logoMark} alt="" className="w-full h-full" />
       </button>
 
       <nav className="flex flex-col gap-1 w-full px-2">
@@ -111,7 +111,7 @@ function Header() {
 
   return (
     <header className="flex items-center justify-between px-6 bg-black border-b border-white/5 flex-shrink-0" style={{ height: 56 }}>
-      <MathicalLogo className="h-8 text-[#EC68D8]" />
+      <span className="font-brand uppercase text-[#EC68D8] text-[28px] tracking-tighter font-black" style={{ WebkitTextStroke: '1px currentColor' }}>TINKERERS LAB</span>
       <div className="flex items-center gap-3">
         <button className="hidden sm:flex items-center gap-2 bg-[#191919] rounded-[8px] px-3 h-9 text-white/40 text-sm hover:bg-[#222] transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-[#EC68D8]">
           <Search size={14} />
@@ -434,9 +434,9 @@ function MobileHeader() {
     <header className="lg:hidden flex items-center justify-between px-4 bg-black border-b border-white/5 sticky top-0 z-40" style={{ height: 56 }}>
       <div className="flex items-center gap-2">
         <button onClick={() => navigate('/')} className="w-8 h-8 rounded-[8px] overflow-hidden">
-          <img src={flowerMark} alt="" className="w-full h-full" />
+          <img src={logoMark} alt="" className="w-full h-full" />
         </button>
-        <MathicalLogo className="h-6 text-[#EC68D8]" />
+        <span className="font-brand uppercase text-[#EC68D8] text-xl tracking-tighter font-black" style={{ WebkitTextStroke: '1px currentColor' }}>TINKERERS LAB</span>
       </div>
       <button
         onClick={() => navigate('/bookings/new')}

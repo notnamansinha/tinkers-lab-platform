@@ -6,7 +6,7 @@ import { z } from 'zod'
 import { AlertCircle, ArrowRight } from 'lucide-react'
 import { signInWithGoogle, signInWithEmail } from '@/services/firebase/auth'
 import { toast } from 'sonner'
-import flowerMark from '@/assets/tinkerer-figjam/flower-mark.svg'
+import logoMark from '@/assets/tinkerer-figjam/tinkerer-lab-board.webp'
 import dashboardArt from '@/assets/tinkerer-figjam/dashboard-clusters.svg'
 
 const loginSchema = z.object({
@@ -47,17 +47,19 @@ const inputStyle: React.CSSProperties = {
 function BrandWordmark() {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-      <img src={flowerMark} alt="" style={{ width: 28, height: 28 }} />
+      <img src={logoMark} alt="" style={{ width: 80, height: 80 }} />
       <span
         style={{
           color: palette.pink,
           fontFamily: displayFont,
-          fontWeight: 800,
-          fontSize: 24,
+          fontWeight: 900,
+          fontSize: 32,
           lineHeight: 1,
+          WebkitTextStroke: '1.5px currentColor',
+          letterSpacing: '-0.02em',
         }}
       >
-        tinkerer lab
+        TINKERERS LAB
       </span>
     </div>
   )
@@ -159,7 +161,7 @@ export default function LoginPage() {
       >
         <div style={{ minWidth: 0 }}>
           <div
-            className="max-md:!min-h-0 max-md:!justify-start max-md:!gap-4 max-md:!py-6 max-md:!px-6"
+            className="max-[768px]:!min-h-0 max-[768px]:!justify-start max-[768px]:!gap-3 max-[768px]:!py-5 max-[768px]:!px-6"
             style={{
               background: palette.beige,
               borderRadius: 14,
@@ -168,18 +170,19 @@ export default function LoginPage() {
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'space-between',
+              gap: 'clamp(24px, 4vh, 48px)',
               position: 'relative',
               overflow: 'hidden',
               boxShadow: '0 26px 70px rgba(0,0,0,0.45)',
             }}
           >
-            <p style={{ maxWidth: 230, color: palette.black, fontSize: 20, lineHeight: 1.1, fontWeight: 800, fontFamily: displayFont }}>
+            <p className="max-[768px]:!-mt-2" style={{ maxWidth: 280, color: palette.black, fontSize: 24, lineHeight: 1.1, fontWeight: 900, fontFamily: displayFont, WebkitTextStroke: '1px currentColor' }}>
               Make smarter reservations and keep the lab moving
             </p>
 
             <img
               src={dashboardArt}
-              className="max-md:!w-[108%] max-md:!max-w-none"
+              className="max-[768px]:!w-[115%] max-[768px]:!max-w-none"
               alt="Dashboard preview with rounded charts and bright planning blocks"
               style={{
                 width: 'min(760px, 92%)',
@@ -193,6 +196,7 @@ export default function LoginPage() {
             {/* Decorative overlap removed for better responsiveness */}
 
             <div
+              className="-mt-3"
               style={{
                 display: 'flex',
                 flexWrap: 'wrap',
