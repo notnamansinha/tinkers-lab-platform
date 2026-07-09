@@ -8,8 +8,6 @@ import { signInWithGoogle, signInWithEmail } from '@/services/firebase/auth'
 import { toast } from 'sonner'
 import flowerMark from '@/assets/tinkerer-figjam/flower-mark.svg'
 import dashboardArt from '@/assets/tinkerer-figjam/dashboard-clusters.svg'
-import futurePlansArt from '@/assets/tinkerer-figjam/future-plans-screen.svg'
-import strategyModalArt from '@/assets/tinkerer-figjam/strategy-modal.svg'
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -31,7 +29,7 @@ const palette = {
 }
 
 const displayFont = "'PP Mori', 'Arial Black', Arial, sans-serif"
-const bodyFont = "'PP Mori', Inter, system-ui, sans-serif"
+const bodyFont = "'PP Mori', Arial, sans-serif"
 
 const inputStyle: React.CSSProperties = {
   width: '100%',
@@ -86,6 +84,7 @@ export default function LoginPage() {
       navigate(from, { replace: true })
       toast.success('Signed in successfully')
     } catch (e) {
+      console.error('GOOGLE SIGN IN ERROR:', e)
       setError(e instanceof Error ? e.message : 'Google sign-in failed')
     } finally {
       setGoogleLoading(false)

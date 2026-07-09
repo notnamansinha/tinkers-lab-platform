@@ -10,12 +10,12 @@ import type { Equipment, EquipmentCategory } from '@/types'
 import { cn } from '@/lib/utils'
 
 const STATUS_CONFIG = {
-  available:         { label: 'Available',    color: '#34C759' },
-  reserved:          { label: 'Reserved',     color: '#FF9500' },
-  in_use:            { label: 'In Use',       color: '#FF9500' },
-  under_maintenance: { label: 'Maintenance',  color: '#8E8E93' },
-  out_of_service:    { label: 'Out of Service', color: '#FF3B30' },
-  retired:           { label: 'Retired',      color: '#8E8E93' },
+  available:         { label: 'Available',      chip: 'bg-lime text-black' },
+  reserved:          { label: 'Reserved',       chip: 'bg-orange text-black' },
+  in_use:            { label: 'In Use',         chip: 'bg-orange text-black' },
+  under_maintenance: { label: 'Maintenance',    chip: 'bg-cream/30 text-white' },
+  out_of_service:    { label: 'Out of Service', chip: 'bg-pink text-black' },
+  retired:           { label: 'Retired',        chip: 'bg-white/20 text-white' },
 } as const
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -39,7 +39,6 @@ export default function EquipmentListPage() {
   const [search,       setSearch]       = useState('')
   const [filterCat,    setFilterCat]    = useState('all')
   const [filterStatus, setFilterStatus] = useState('all')
-  const [viewMode, setViewMode]         = useState<'grid' | 'list'>('grid')
 
   const { data: equipment = [], isLoading } = useQuery({
     queryKey: ['equipment'],
@@ -68,7 +67,7 @@ export default function EquipmentListPage() {
         onClick={onClick}
         className={cn(
           "px-4 py-2 rounded-full font-bold uppercase tracking-widest text-xs transition-colors border-2",
-          active ? "bg-indigo text-white border-indigo" : "bg-transparent text-black/50 border-black/20 hover:border-black/50 hover:text-black"
+          active ? "bg-indigo text-white border-indigo" : "bg-black/5 text-black/55 border-black/10 hover:border-black/35 hover:text-black"
         )}
       >
         {label}
@@ -83,7 +82,7 @@ export default function EquipmentListPage() {
       <div className="tl-panel-cream p-6 lg:p-8 rounded-[32px] mb-8">
         <div className="flex flex-col lg:flex-row justify-between lg:items-end gap-6 mb-8 border-b-4 border-black/10 pb-6">
           <div>
-            <h1 className="font-['Arial_Black'] uppercase text-4xl lg:text-5xl font-black text-black tracking-tight leading-[0.95] mb-2">
+            <h1 className="font-display uppercase text-4xl lg:text-5xl font-black text-black leading-[0.95] mb-2">
               Machines & Equipment
             </h1>
             <p className="text-black/60 font-bold max-w-md">
@@ -110,7 +109,7 @@ export default function EquipmentListPage() {
               placeholder="Search by name or ID..."
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="tl-input pl-11 w-full"
+              className="w-full rounded-[8px] border border-black/10 bg-white/45 py-3 pl-11 pr-4 text-black placeholder:text-black/40 font-bold outline-none transition focus:border-indigo focus:ring-2 focus:ring-indigo/20"
             />
           </div>
 
@@ -153,10 +152,10 @@ export default function EquipmentListPage() {
               <button
                 key={e.id}
                 onClick={() => navigate(`/equipment/${e.id}`)}
-                className="group text-left w-full bg-[#101010] rounded-[24px] border-4 border-[#191919] hover:border-pink transition-colors overflow-hidden flex flex-col shadow-[4px_4px_0_0_#000]"
+                className="group text-left w-full bg-[#101010] rounded-[16px] border border-white/5 hover:border-pink/80 transition-colors overflow-hidden flex flex-col shadow-[0_16px_36px_rgba(0,0,0,0.28)]"
               >
                 {/* Photo */}
-                <div className="aspect-[16/10] relative bg-black border-b-4 border-[#191919] overflow-hidden flex-shrink-0">
+                <div className="aspect-[16/10] relative bg-black border-b border-white/5 overflow-hidden flex-shrink-0">
                   {e.imageUrls?.[0] ? (
                     <img src={e.imageUrls[0]} alt={e.name} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
                   ) : (
@@ -177,7 +176,7 @@ export default function EquipmentListPage() {
                   
                   <div className="mt-auto flex items-center gap-3">
                     <span className={cn("w-3 h-3 rounded-full border-2 border-black flex-shrink-0", dotColorClass)} />
-                    <span className="text-white/60 font-bold text-xs uppercase tracking-widest">
+                    <span className="text-white/60 font-bold text-xs uppercase tracking-[0.08em]">
                       {cfg.label}
                     </span>
                     {e.status === 'available' && (

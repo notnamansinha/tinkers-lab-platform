@@ -17,9 +17,9 @@ const config = {
     },
     extend: {
       fontFamily: {
-        // Apple HIG system stack — SF Pro on Apple, Inter elsewhere
-        sans:    ['-apple-system', 'SF Pro Text', 'SF Pro Display', 'Inter', 'Segoe UI', 'sans-serif'],
-        display: ['-apple-system', 'SF Pro Display', 'Inter', 'Segoe UI', 'sans-serif'],
+        // Local Mathical/Tinkerers Lab typography.
+        sans:    ['PP Mori', 'Arial', 'sans-serif'],
+        display: ['PP Mori', 'Arial Black', 'Arial', 'sans-serif'],
         mono:    ['ui-monospace', 'SF Mono', 'JetBrains Mono', 'Courier New', 'monospace'],
       },
 

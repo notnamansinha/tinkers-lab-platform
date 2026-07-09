@@ -6,6 +6,11 @@ import path from 'path'
 export default defineConfig({
   base: '/',
   plugins: [react()],
+  server: {
+    headers: {
+      'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
+    },
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
