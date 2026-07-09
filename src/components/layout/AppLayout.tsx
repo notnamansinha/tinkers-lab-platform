@@ -5,8 +5,8 @@ import { useAuth } from '@/contexts/AuthContext'
 import { signOut } from '@/services/firebase/auth'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
-import flowerMark from '@/assets/tinkerer-figjam/flower-mark.svg'
-import { MathicalLogo } from '@/components/ui/svgs'
+import logoMark from '@/assets/tinkerer-figjam/tinkerer-lab-board.webp'
+
 
 const NAV_LINKS = [
   { name: 'Home',      icon: LayoutDashboard, path: '/' },
@@ -160,7 +160,7 @@ export default function AppLayout() {
 
       <main className="flex-1 w-full min-w-0 max-w-full relative z-0 flex flex-col">
         <div className="hidden md:flex h-20 items-center justify-center">
-          <MathicalLogo className="h-10 text-[#EC68D8]" />
+          <span className="font-brand uppercase text-[#EC68D8] text-[32px] tracking-tighter font-black" style={{ WebkitTextStroke: '1.5px currentColor' }}>TINKERERS LAB</span>
         </div>
 
         <div className="flex-1 p-4 pt-0 md:p-8 md:pt-0 overflow-y-auto">
@@ -172,4 +172,5 @@ export default function AppLayout() {
     </div>
   )
 }
+
 
