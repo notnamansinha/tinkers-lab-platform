@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 640" role="img" aria-labelledby="title">
+  <title id="title">Strategy modal over dashboard</title>
+  <rect width="960" height="640" fill="#000"/>
+  <g opacity=".34">
+    <rect x="54" y="74" width="142" height="492" rx="10" fill="#171717"/>
+    <rect x="228" y="74" width="650" height="82" rx="12" fill="#514AF1"/>
+    <rect x="228" y="174" width="318" height="330" rx="12" fill="#FFF4BE"/>
+    <rect x="568" y="174" width="310" height="330" rx="12" fill="#EC68D8"/>
+    <g transform="translate(260 250)" fill="#FFB13F">
+      <rect x="0" y="176" width="38" height="58" rx="19"/>
+      <rect x="58" y="150" width="38" height="84" rx="19"/>
+      <rect x="116" y="112" width="38" height="122" rx="19"/>
+      <rect x="174" y="52" width="38" height="182" rx="19"/>
+    </g>
+  </g>
+  <rect width="960" height="640" fill="#000" opacity=".55"/>
+  <rect x="330" y="164" width="300" height="350" rx="10" fill="#5A53F4"/>
+  <text x="360" y="208" fill="#fff" font-family="Arial Black, Arial, sans-serif" font-size="18">CUSTOM FUTURE PLANNING STRATEGY</text>
+  <text x="360" y="244" fill="#DEDDFE" font-family="Arial, sans-serif" font-size="13" font-weight="700">Adjust your planning horizon and risk comfort.</text>
+  <g fill="#746EF8">
+    <rect x="360" y="282" width="240" height="8" rx="4"/>
+    <rect x="360" y="332" width="240" height="8" rx="4"/>
+    <rect x="360" y="382" width="240" height="8" rx="4"/>
+    <rect x="360" y="432" width="240" height="8" rx="4"/>
+  </g>
+  <g fill="#fff">
+    <circle cx="392" cy="286" r="13"/>
+    <circle cx="560" cy="336" r="13"/>
+    <circle cx="420" cy="386" r="13"/>
+    <circle cx="538" cy="436" r="13"/>
+  </g>
+  <rect x="360" y="470" width="112" height="22" rx="11" fill="#EC68D8"/>
+  <rect x="488" y="470" width="112" height="22" rx="11" fill="#191919"/>
+  <text x="416" y="485" fill="#000" font-family="Arial Black, Arial, sans-serif" font-size="11" text-anchor="middle">APPLY STRATEGY</text>
+  <text x="544" y="485" fill="#fff" font-family="Arial Black, Arial, sans-serif" font-size="11" text-anchor="middle">CANCEL</text>
+</svg>

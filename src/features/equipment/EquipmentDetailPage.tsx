@@ -163,237 +163,171 @@ export default function EquipmentDetailPage() {
   }
 
   return (
-    <div style={{ maxWidth: 680, paddingBottom: 64 }} className="animate-fade-in">
-
-      {/* ── Back ─────────────────────────────────────────────────── */}
+    <div className="w-full max-w-5xl mx-auto pb-20 animate-in fade-in duration-300">
+      
+      {/* ── Back ── */}
       <button
         onClick={() => navigate(-1)}
-        style={{
-          display: 'inline-flex', alignItems: 'center', gap: 6,
-          color: '#98989D', background: 'none', border: 'none',
-          cursor: 'pointer', fontSize: 14, marginBottom: 28,
-          fontFamily: '-apple-system, SF Pro Text, Inter, sans-serif',
-          transition: 'color 200ms ease',
-        }}
-        onMouseEnter={el => { ;(el.currentTarget as HTMLElement).style.color = '#F5F5F7' }}
-        onMouseLeave={el => { ;(el.currentTarget as HTMLElement).style.color = '#98989D' }}
+        className="flex items-center gap-2 text-white/50 hover:text-white font-bold mb-6 transition-colors uppercase tracking-widest text-xs"
       >
-        <ArrowLeft size={15} /> Back
+        <ArrowLeft size={16} /> Back
       </button>
 
-      {/* ── Photo ────────────────────────────────────────────────── */}
-      <div
-        style={{
-          width: '100%', aspectRatio: '16/8',
-          borderRadius: 20,
-          overflow: 'hidden',
-          background: '#0D0E10',
-          marginBottom: 28,
-          border: '1px solid rgba(255,255,255,0.07)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}
-      >
-        {equipment.imageUrls?.[0] ? (
-          <img
-            src={equipment.imageUrls[0]}
-            alt={equipment.name}
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-          />
-        ) : (
-          <span style={{
-            fontFamily: 'ui-monospace, SF Mono, monospace',
-            fontSize: 11, color: 'rgba(255,255,255,0.12)', letterSpacing: '0.08em',
-          }}>
-            NO IMAGE
-          </span>
-        )}
-      </div>
-
-      {/* ── Title + status dot ───────────────────────────────────── */}
-      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 16, marginBottom: 20 }}>
-        <h1
-          style={{
-            fontFamily: '-apple-system, SF Pro Display, Inter, sans-serif',
-            fontWeight: 600, fontSize: 26, letterSpacing: '-0.01em', lineHeight: 1.2,
-            color: '#F5F5F7',
-          }}
-        >
-          {equipment.name}
-        </h1>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexShrink: 0 }}>
-          <span
-            className={cn('inline-block rounded-full', si.pulse && 'animate-status-pulse')}
-            style={{ width: 9, height: 9, background: si.color }}
-          />
-          <span
-            style={{
-              fontFamily: '-apple-system, SF Pro Text, Inter, sans-serif',
-              fontSize: 14, color: '#F5F5F7',
-            }}
-          >
-            {si.label}
-          </span>
-        </div>
-      </div>
-
-      {/* ── Info rows group ──────────────────────────────────────── */}
-      <div
-        style={{
-          background: '#141518',
-          borderRadius: 16,
-          border: '1px solid rgba(255,255,255,0.08)',
-          overflow: 'hidden',
-          marginBottom: 32,
-        }}
-      >
-        <InfoRow label="Location" value={equipment.location || 'Unknown'} />
-        <InfoRow
-          label="Induction"
-          value={
-            equipment.requiresTraining
-              ? <span>Required <span style={{ color: '#34C759' }}>· Cleared</span></span>
-              : 'No training required'
-          }
-        />
-        <InfoRow label="Max session" value="3 hrs" />
-        <InfoRow
-          label="Your bookings"
-          value={`${myBookingsCount} session${myBookingsCount !== 1 ? 's' : ''} this month`}
-        />
-        {equipment.description && (
-          <InfoRow label="About" value={equipment.description} />
-        )}
-      </div>
-
-      {/* ── Slot picker ─────────────────────────────────────────── */}
-      {isAvailableForBooking && (
-        <>
-          {/* Day tabs */}
-          <div style={{ display: 'flex', gap: 6, marginBottom: 20, overflowX: 'auto', paddingBottom: 2 }}>
-            {days.slice(0, 5).map(d => {
-              const isActiveD = activeDay === d.date
-              return (
-                <button
-                  key={d.date}
-                  onClick={() => { setSelectedDay(d.date); setSelectedSlot(null) }}
-                  style={{
-                    padding: '5px 14px',
-                    borderRadius: 999,
-                    fontSize: 13, fontWeight: 500,
-                    border: isActiveD ? 'none' : '1px solid rgba(255,255,255,0.14)',
-                    background: isActiveD ? '#0A84FF' : 'transparent',
-                    color: isActiveD ? '#fff' : '#98989D',
-                    cursor: 'pointer',
-                    transition: 'background 200ms ease, color 200ms ease',
-                    fontFamily: '-apple-system, SF Pro Text, Inter, sans-serif',
-                    whiteSpace: 'nowrap',
-                    flexShrink: 0,
-                  }}
-                >
-                  {d.label}
-                </button>
-              )
-            })}
-          </div>
-
-          {/* Hour slots */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 28 }}>
-            {LAB_HOURS.map(hour => {
-              const taken    = isSlotTaken(hour)
-              const mine     = isMySlot(hour)
-              const selected = selectedSlot === hour
-              const endHour  = String(parseInt(hour) + 1).padStart(2, '0')
-
-              return (
-                <button
-                  key={hour}
-                  disabled={taken && !mine}
-                  onClick={() => !taken && setSelectedSlot(selected ? null : hour)}
-                  title={mine ? 'Your booking' : taken ? 'Slot taken' : ''}
-                  style={{
-                    padding: '7px 16px',
-                    borderRadius: 999,
-                    fontSize: 13,
-                    fontFamily: 'ui-monospace, SF Mono, monospace',
-                    border: selected
-                      ? 'none'
-                      : mine
-                        ? '1px solid rgba(52,199,89,0.45)'
-                        : '1px solid rgba(255,255,255,0.14)',
-                    background: selected
-                      ? '#0A84FF'
-                      : mine
-                        ? 'rgba(52,199,89,0.12)'
-                        : 'transparent',
-                    color: selected
-                      ? '#fff'
-                      : mine
-                        ? '#34C759'
-                        : taken
-                          ? 'rgba(255,255,255,0.2)'
-                          : '#F5F5F7',
-                    cursor: taken && !mine ? 'not-allowed' : 'pointer',
-                    opacity: taken && !mine ? 0.4 : 1,
-                    transition: 'background 200ms ease, border-color 200ms ease',
-                    display: 'inline-flex', alignItems: 'center', gap: 5,
-                  }}
-                >
-                  {taken && !mine && <Lock size={10} />}
-                  {hour}:00 – {endHour}:00
-                </button>
-              )
-            })}
-          </div>
-
-          {/* CTA */}
-          <div style={{ display: 'flex', justifyContent: 'center' }}>
-            {selectedSlot ? (
-              <button
-                onClick={handleBook}
-                disabled={isBooking}
-                className="animate-press"
-                style={{
-                  borderRadius: 999,
-                  background: '#0A84FF',
-                  color: '#fff',
-                  fontWeight: 600, fontSize: 15,
-                  padding: '11px 36px',
-                  border: 'none', cursor: isBooking ? 'not-allowed' : 'pointer',
-                  fontFamily: '-apple-system, SF Pro Display, Inter, sans-serif',
-                  transition: 'background 200ms ease, transform 300ms cubic-bezier(0.32,0.72,0,1)',
-                  opacity: isBooking ? 0.6 : 1,
-                }}
-              >
-                {isBooking
-                  ? 'Booking…'
-                  : `Book ${selectedSlot}:00 – ${String(parseInt(selectedSlot)+1).padStart(2,'0')}:00`
-                }
-              </button>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        
+        {/* Left Col: Photo & Details */}
+        <div className="space-y-8">
+          {/* Photo */}
+          <div className="aspect-[4/3] rounded-[32px] border-4 border-black bg-black overflow-hidden shadow-[4px_4px_0_0_#000]">
+            {equipment.imageUrls?.[0] ? (
+              <img
+                src={equipment.imageUrls[0]}
+                alt={equipment.name}
+                className="w-full h-full object-cover"
+              />
             ) : (
-              <p style={{ color: '#98989D', fontSize: 14, fontFamily: '-apple-system, SF Pro Text, Inter, sans-serif' }}>
-                Select a slot above to book
-              </p>
+              <div className="w-full h-full flex items-center justify-center font-bold text-white/20 text-xs tracking-widest uppercase">
+                NO IMAGE
+              </div>
             )}
           </div>
-        </>
-      )}
 
-      {/* Blocked — not bookable */}
-      {!isAvailableForBooking && (
-        <div
-          style={{
-            padding: '20px 20px', borderRadius: 14,
-            background: 'rgba(255,59,48,0.08)',
-            border: '1px solid rgba(255,59,48,0.20)',
-            color: '#FF3B30',
-            fontSize: 14,
-            fontFamily: '-apple-system, SF Pro Text, Inter, sans-serif',
-          }}
-        >
-          This machine is currently unavailable — {si.label.toLowerCase()}.
-          Contact the lab to request access or report an issue.
+          {/* Details Panel */}
+          <div className="tl-panel-cream p-6 lg:p-8 rounded-[32px]">
+            <div className="space-y-4">
+              <div className="grid grid-cols-[100px_1fr] gap-4 py-3 border-b-2 border-black/10">
+                <span className="font-bold text-black/50 uppercase tracking-widest text-xs">Location</span>
+                <span className="font-bold text-black">{equipment.location || 'Unknown'}</span>
+              </div>
+              <div className="grid grid-cols-[100px_1fr] gap-4 py-3 border-b-2 border-black/10">
+                <span className="font-bold text-black/50 uppercase tracking-widest text-xs">Induction</span>
+                <span className="font-bold text-black">
+                  {equipment.requiresTraining ? (
+                    <span className="flex items-center gap-2">Required <span className="text-lime">●</span> Cleared</span>
+                  ) : 'No training required'}
+                </span>
+              </div>
+              <div className="grid grid-cols-[100px_1fr] gap-4 py-3 border-b-2 border-black/10">
+                <span className="font-bold text-black/50 uppercase tracking-widest text-xs">Max session</span>
+                <span className="font-bold text-black">3 hrs</span>
+              </div>
+              <div className="grid grid-cols-[100px_1fr] gap-4 py-3 border-b-2 border-black/10">
+                <span className="font-bold text-black/50 uppercase tracking-widest text-xs">My bookings</span>
+                <span className="font-bold text-black">{myBookingsCount} session{myBookingsCount !== 1 ? 's' : ''} this month</span>
+              </div>
+              {equipment.description && (
+                <div className="grid grid-cols-[100px_1fr] gap-4 py-3">
+                  <span className="font-bold text-black/50 uppercase tracking-widest text-xs">About</span>
+                  <span className="font-bold text-black leading-relaxed">{equipment.description}</span>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
-      )}
+
+        {/* Right Col: Booking Flow */}
+        <div className="space-y-8">
+          {/* Title & Status */}
+          <div className="tl-panel-indigo p-6 lg:p-8 rounded-[32px]">
+            <div className="flex items-center gap-3 mb-4">
+              <span className={cn('w-4 h-4 rounded-full border-2 border-black', si.pulse && 'animate-status-pulse')} style={{ background: si.color }} />
+              <span className="font-bold text-white uppercase tracking-widest text-sm">{si.label}</span>
+            </div>
+            <h1 className="font-['Arial_Black'] uppercase text-4xl lg:text-5xl font-black text-white tracking-tight leading-[0.95]">
+              {equipment.name}
+            </h1>
+          </div>
+
+          {/* Slot picker */}
+          {isAvailableForBooking && (
+            <div className="bg-[#101010] border-4 border-[#191919] p-6 lg:p-8 rounded-[32px] shadow-2xl">
+              <h3 className="font-['Arial_Black'] uppercase text-xl text-white mb-6">Select a Slot</h3>
+              
+              {/* Day tabs */}
+              <div className="flex gap-3 mb-8 overflow-x-auto pb-2 scrollbar-hide">
+                {days.slice(0, 5).map(d => {
+                  const isActiveD = activeDay === d.date
+                  return (
+                    <button
+                      key={d.date}
+                      onClick={() => { setSelectedDay(d.date); setSelectedSlot(null) }}
+                      className={cn(
+                        "px-5 py-2 rounded-full font-bold uppercase tracking-widest text-xs whitespace-nowrap transition-colors border-2",
+                        isActiveD ? "bg-lime text-black border-lime" : "bg-transparent text-white/50 border-white/20 hover:border-white/50 hover:text-white"
+                      )}
+                    >
+                      {d.label}
+                    </button>
+                  )
+                })}
+              </div>
+
+              {/* Hour slots */}
+              <div className="flex flex-wrap gap-3 mb-8">
+                {LAB_HOURS.map(hour => {
+                  const taken    = isSlotTaken(hour)
+                  const mine     = isMySlot(hour)
+                  const selected = selectedSlot === hour
+                  const endHour  = String(parseInt(hour) + 1).padStart(2, '0')
+
+                  return (
+                    <button
+                      key={hour}
+                      disabled={taken && !mine}
+                      onClick={() => !taken && setSelectedSlot(selected ? null : hour)}
+                      title={mine ? 'Your booking' : taken ? 'Slot taken' : ''}
+                      className={cn(
+                        "flex items-center gap-2 px-4 py-3 rounded-[16px] font-bold text-sm transition-all border-2",
+                        selected
+                          ? "bg-pink text-black border-black shadow-[2px_2px_0_0_#000] -translate-y-0.5"
+                          : mine
+                            ? "bg-lime/20 text-lime border-lime/40"
+                            : taken
+                              ? "bg-white/5 text-white/20 border-white/5 cursor-not-allowed"
+                              : "bg-[#1a1a1a] text-white border-[#333] hover:border-pink hover:text-pink"
+                      )}
+                    >
+                      {taken && !mine && <Lock size={14} className="opacity-50" />}
+                      {hour}:00 – {endHour}:00
+                    </button>
+                  )
+                })}
+              </div>
+
+              {/* CTA */}
+              <div className="pt-6 border-t-4 border-[#191919]">
+                {selectedSlot ? (
+                  <button
+                    onClick={handleBook}
+                    disabled={isBooking}
+                    className="w-full tl-pill-button flex justify-center items-center py-4 text-lg"
+                  >
+                    {isBooking
+                      ? 'Booking…'
+                      : `Book ${selectedSlot}:00 – ${String(parseInt(selectedSlot)+1).padStart(2,'0')}:00`
+                    }
+                  </button>
+                ) : (
+                  <div className="w-full text-center py-4 rounded-[20px] bg-white/5 border-2 border-dashed border-white/20 text-white/50 font-bold uppercase tracking-widest text-xs">
+                    Select a slot above to book
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Blocked — not bookable */}
+          {!isAvailableForBooking && (
+            <div className="bg-orange/20 border-4 border-orange p-6 lg:p-8 rounded-[32px] text-orange">
+              <h3 className="font-['Arial_Black'] uppercase text-xl mb-2">Unavailable</h3>
+              <p className="font-bold">
+                This machine is currently {si.label.toLowerCase()}.
+                Contact the lab to request access or report an issue.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   )
 }

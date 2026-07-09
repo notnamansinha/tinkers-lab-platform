@@ -14,89 +14,16 @@ import { CalendarDays, Package, AlertTriangle, Plus, ArrowRight } from 'lucide-r
 
 // ─── Category metadata ──────────────────────────────────────────────────────
 const CATEGORY_META = [
-  {
-    id: 'Digital Fabrication' as const,
-    label: '3D Printing & Additive',
-    icon: '⬡',
-    gradient: `
-      radial-gradient(circle at center,  rgba(5,8,2,0.92) 0%, rgba(12,18,6,0.80) 28%, rgba(35,55,20,0.22) 58%, transparent 100%),
-      radial-gradient(circle at top left, rgba(212,245,190,0.48) 0%, rgba(212,245,190,0.20) 36%, transparent 66%),
-      radial-gradient(circle at bottom right, rgba(166,227,128,0.38) 0%, rgba(166,227,128,0.14) 32%, transparent 62%),
-      linear-gradient(135deg, #1f2c14 0%, #84B860 100%)
-    `,
-    accent: '#A3D97A',
-  },
-  {
-    id: 'Electronics' as const,
-    label: 'Electronics & PCB Lab',
-    icon: '⚡',
-    gradient: `
-      radial-gradient(circle at center,  rgba(5,5,18,0.92) 0%, rgba(12,12,30,0.80) 30%, rgba(40,40,70,0.20) 60%, transparent 100%),
-      radial-gradient(circle at top left, rgba(200,204,227,0.42) 0%, rgba(200,204,227,0.18) 36%, transparent 66%),
-      radial-gradient(circle at bottom right, rgba(144,149,192,0.34) 0%, rgba(144,149,192,0.14) 32%, transparent 62%),
-      linear-gradient(135deg, #1d2038 0%, #6D729C 100%)
-    `,
-    accent: '#9598C0',
-  },
-  {
-    id: 'Heavy Duty' as const,
-    label: 'Metal Shop & CNC',
-    icon: '⚙',
-    gradient: `
-      radial-gradient(circle at center,  rgba(0,5,8,0.94) 0%, rgba(0,12,14,0.82) 30%, rgba(10,40,42,0.20) 60%, transparent 100%),
-      radial-gradient(circle at top left, rgba(83,126,114,0.40) 0%, rgba(83,126,114,0.18) 36%, transparent 66%),
-      radial-gradient(circle at bottom right, rgba(43,106,109,0.36) 0%, rgba(43,106,109,0.14) 32%, transparent 62%),
-      linear-gradient(135deg, #0d2028 0%, #17506A 100%)
-    `,
-    accent: '#4A8E80',
-  },
-  {
-    id: 'Tabletop Power' as const,
-    label: 'Woodshop & Power Tools',
-    icon: '🪚',
-    gradient: `
-      radial-gradient(circle at center,  rgba(10,6,3,0.92) 0%, rgba(20,13,6,0.80) 28%, rgba(80,45,15,0.22) 58%, transparent 100%),
-      radial-gradient(circle at top left, rgba(245,200,140,0.46) 0%, rgba(245,200,140,0.20) 36%, transparent 66%),
-      radial-gradient(circle at bottom right, rgba(196,120,60,0.36) 0%, rgba(196,120,60,0.14) 32%, transparent 62%),
-      linear-gradient(135deg, #2c1c10 0%, #B87333 100%)
-    `,
-    accent: '#C08050',
-  },
-  {
-    id: 'Other' as const,
-    label: 'Test & Measurement',
-    icon: '◎',
-    gradient: `
-      radial-gradient(circle at center,  rgba(3,5,8,0.92) 0%, rgba(8,12,16,0.80) 28%, rgba(30,45,58,0.22) 58%, transparent 100%),
-      radial-gradient(circle at top left, rgba(190,205,224,0.44) 0%, rgba(190,205,224,0.18) 36%, transparent 66%),
-      radial-gradient(circle at bottom right, rgba(120,140,168,0.36) 0%, rgba(120,140,168,0.14) 32%, transparent 62%),
-      linear-gradient(135deg, #10161d 0%, #5C7A99 100%)
-    `,
-    accent: '#7A9AB8',
-  },
+  { id: 'Digital Fabrication', label: '3D Printing', icon: '⬡', colorClass: 'bg-lime text-black' },
+  { id: 'Electronics', label: 'Electronics', icon: '⚡', colorClass: 'bg-blue text-black' },
+  { id: 'Heavy Duty', label: 'Metal & CNC', icon: '⚙', colorClass: 'bg-indigo text-white' },
+  { id: 'Tabletop Power', label: 'Woodshop', icon: '🪚', colorClass: 'bg-orange text-black' },
+  { id: 'Other', label: 'Test & Measure', icon: '◎', colorClass: 'bg-cream text-black' },
 ] as const
 
 type CategoryId = typeof CATEGORY_META[number]['id']
 
 // ─── Status helpers ──────────────────────────────────────────────────────────
-function StatusDot({ status }: { status: Equipment['status'] }) {
-  const isDown     = status === 'under_maintenance' || status === 'out_of_service' || status === 'retired'
-  const isOccupied = status === 'in_use' || status === 'reserved'
-
-  let color = '#34C759'
-  let pulse = false
-
-  if (isDown)     { color = '#8E8E93' }
-  else if (isOccupied) { color = '#FF9500'; pulse = true }
-
-  return (
-    <span
-      className={cn('inline-block w-2 h-2 rounded-full shrink-0', pulse && 'animate-status-pulse')}
-      style={{ background: color }}
-    />
-  )
-}
-
 function statusLabel(status: Equipment['status']): string {
   switch (status) {
     case 'available':         return 'Available'
@@ -109,7 +36,7 @@ function statusLabel(status: Equipment['status']): string {
   }
 }
 
-// ─── Atmospheric Gradient Category Tile ─────────────────────────────────────
+// ─── Category Tile ─────────────────────────────────────
 function CategoryTile({
   meta,
   count,
@@ -124,66 +51,16 @@ function CategoryTile({
   return (
     <button
       onClick={onClick}
-      className="relative text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A84FF]"
-      style={{
-        borderRadius: 32,
-        border: isActive ? '1.5px solid rgba(10,132,255,0.55)' : '1px solid rgba(255,255,255,0.10)',
-        background: meta.gradient,
-        boxShadow: isActive
-          ? '0 20px 50px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.08), 0 0 0 1px rgba(10,132,255,0.25)'
-          : '0 20px 50px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.06)',
-        backdropFilter: 'blur(30px) saturate(135%)',
-        WebkitBackdropFilter: 'blur(30px) saturate(135%)',
-        overflow: 'hidden',
-        transition: 'transform 400ms cubic-bezier(0.32,0.72,0,1), box-shadow 300ms ease, border-color 200ms ease',
-        transform: isActive ? 'scale(0.98)' : 'scale(1)',
-        padding: '20px 20px 18px',
-        minHeight: 130,
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'space-between',
-        cursor: 'pointer',
-      }}
+      className={cn(
+        "relative text-left p-5 md:p-6 rounded-[24px] border-4 border-black transition-all overflow-hidden flex flex-col justify-between min-h-[140px]",
+        meta.colorClass,
+        isActive ? "shadow-[0_0_0_4px_#fff] -translate-y-1" : "shadow-[4px_4px_0_0_#000] hover:-translate-y-1"
+      )}
     >
-      {/* Grain overlay */}
-      <div
-        aria-hidden
-        style={{
-          position: 'absolute', inset: 0, borderRadius: 'inherit', pointerEvents: 'none',
-          backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E\")",
-          opacity: 1, zIndex: 1,
-        }}
-      />
-
-      {/* Content — sits above grain (z-index: 2) */}
-      <div style={{ position: 'relative', zIndex: 2 }}>
-        <span style={{ fontSize: 22, lineHeight: 1 }}>{meta.icon}</span>
-      </div>
-
-      <div style={{ position: 'relative', zIndex: 2 }}>
-        <p
-          style={{
-            fontFamily: '-apple-system, SF Pro Display, Inter, sans-serif',
-            fontWeight: 600,
-            fontSize: 15,
-            letterSpacing: '0',
-            lineHeight: 1.2,
-            color: '#F5F5F7',
-            marginBottom: 4,
-          }}
-        >
-          {meta.label}
-        </p>
-        <p
-          style={{
-            fontFamily: 'ui-monospace, SF Mono, JetBrains Mono, monospace',
-            fontSize: 12,
-            color: meta.accent,
-            opacity: 0.85,
-          }}
-        >
-          {count} {count === 1 ? 'machine' : 'machines'}
-        </p>
+      <span className="text-3xl mb-4 block">{meta.icon}</span>
+      <div>
+        <p className="font-bold text-lg md:text-xl leading-tight uppercase font-['Arial_Black'] tracking-tight">{meta.label}</p>
+        <p className="font-bold opacity-70 text-xs mt-1 uppercase tracking-widest">{count} {count === 1 ? 'machine' : 'machines'}</p>
       </div>
     </button>
   )
@@ -192,120 +69,50 @@ function CategoryTile({
 // ─── Flat Equipment Card ─────────────────────────────────────────────────────
 function EquipmentCard({
   eq,
-  categoryAccent,
   onClick,
 }: {
   eq: Equipment
-  categoryAccent: string
   onClick: () => void
 }) {
   const isDown     = eq.status === 'under_maintenance' || eq.status === 'out_of_service' || eq.status === 'retired'
   const isOccupied = eq.status === 'in_use' || eq.status === 'reserved'
 
-  const dotColor = isDown ? '#8E8E93' : isOccupied ? '#FF9500' : '#34C759'
+  const dotColorClass = isDown ? 'bg-white/40' : isOccupied ? 'bg-orange animate-pulse' : 'bg-lime'
   const label    = statusLabel(eq.status)
 
   return (
     <button
       onClick={onClick}
-      className="group text-left w-full"
-      style={{
-        background: '#141518',
-        borderRadius: 24,
-        border: '1px solid rgba(255,255,255,0.08)',
-        boxShadow: '0 4px 24px rgba(0,0,0,0.30)',
-        overflow: 'hidden',
-        transition: 'transform 300ms cubic-bezier(0.32,0.72,0,1), border-color 300ms ease, box-shadow 300ms ease',
-        display: 'flex',
-        flexDirection: 'column',
-        cursor: 'pointer',
-      }}
-      onMouseEnter={e => {
-        ;(e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'
-        ;(e.currentTarget as HTMLElement).style.borderColor = 'rgba(10,132,255,0.28)'
-        ;(e.currentTarget as HTMLElement).style.boxShadow = '0 8px 32px rgba(0,0,0,0.45)'
-      }}
-      onMouseLeave={e => {
-        ;(e.currentTarget as HTMLElement).style.transform = 'translateY(0)'
-        ;(e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)'
-        ;(e.currentTarget as HTMLElement).style.boxShadow = '0 4px 24px rgba(0,0,0,0.30)'
-      }}
+      className="group text-left w-full bg-[#101010] rounded-[24px] border-4 border-[#191919] hover:border-pink transition-colors overflow-hidden flex flex-col shadow-2xl"
     >
       {/* Photo / Placeholder */}
-      <div
-        style={{
-          aspectRatio: '16/9',
-          overflow: 'hidden',
-          flexShrink: 0,
-          position: 'relative',
-          background: `radial-gradient(circle at 30% 30%, ${categoryAccent}22 0%, transparent 70%), #0D0E10`,
-        }}
-      >
+      <div className="aspect-[16/10] relative bg-black border-b-4 border-[#191919] overflow-hidden flex-shrink-0">
         {eq.imageUrls?.[0] ? (
           <img
             src={eq.imageUrls[0]}
             alt={eq.name}
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
           />
         ) : (
-          <div
-            style={{
-              width: '100%', height: '100%',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontFamily: 'ui-monospace, SF Mono, monospace',
-              fontSize: 11, color: 'rgba(255,255,255,0.18)',
-              letterSpacing: '0.08em',
-            }}
-          >
+          <div className="w-full h-full flex items-center justify-center font-bold text-white/20 text-xs tracking-widest uppercase">
             NO IMAGE
           </div>
         )}
       </div>
 
       {/* Info */}
-      <div style={{ padding: '14px 16px 16px', flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-          <p
-            style={{
-              fontFamily: '-apple-system, SF Pro Display, Inter, sans-serif',
-              fontWeight: 600, fontSize: 15, lineHeight: 1.25,
-              color: '#F5F5F7',
-              flex: 1,
-              overflow: 'hidden', display: '-webkit-box',
-              WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
-            }}
-          >
-            {eq.name}
-          </p>
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 'auto', paddingTop: 4 }}>
-          <span
-            className={cn(
-              'inline-block w-2 h-2 rounded-full shrink-0',
-              (eq.status === 'in_use' || eq.status === 'reserved') && 'animate-status-pulse'
-            )}
-            style={{ background: dotColor }}
-          />
-          <span
-            style={{
-              fontFamily: '-apple-system, SF Pro Text, Inter, sans-serif',
-              fontSize: 12, color: '#98989D',
-            }}
-          >
+      <div className="p-5 flex-1 flex flex-col">
+        <h3 className="font-bold text-white text-lg leading-tight mb-4 group-hover:text-pink transition-colors">
+          {eq.name}
+        </h3>
+        
+        <div className="mt-auto flex items-center gap-3">
+          <span className={cn("w-3 h-3 rounded-full border-2 border-black flex-shrink-0", dotColorClass)} />
+          <span className="text-white/60 font-bold text-xs uppercase tracking-widest">
             {label}
           </span>
           {eq.requiresTraining && (
-            <span
-              style={{
-                marginLeft: 'auto',
-                fontFamily: 'ui-monospace, SF Mono, monospace',
-                fontSize: 10, color: '#98989D',
-                background: 'rgba(255,255,255,0.06)',
-                borderRadius: 999, padding: '2px 7px',
-                letterSpacing: '0.04em', textTransform: 'uppercase',
-              }}
-            >
+            <span className="ml-auto bg-pink text-black px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-widest">
               Induction
             </span>
           )}
@@ -380,7 +187,7 @@ export default function DashboardPage() {
     ? CATEGORY_META.find(c => c.id === activeCategory)
     : null
 
-  // Full seed handler — uses all items from scripts/seedEquipment.ts
+  // Full seed handler
   const handleSeed = async () => {
     setIsSeeding(true)
     try {
@@ -405,171 +212,109 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="flex flex-col w-full animate-fade-in">
+    <div className="w-full max-w-7xl mx-auto space-y-8 animate-in fade-in duration-300 pb-12">
       {/* ── Temporary Seed Button ── */}
-      {equipment.length === 0 && (
-        <div style={{ marginBottom: 20, padding: 16, background: 'rgba(10, 132, 255, 0.1)', borderRadius: 12, border: '1px solid rgba(10, 132, 255, 0.3)' }}>
-          <p style={{ color: '#F5F5F7', marginBottom: 12, fontSize: 14 }}>
-            <strong>Action Required:</strong> The equipment database is empty. Click below to seed the 14 machines from the Phase 2 migration plan.
-          </p>
+      {equipment.length === 0 && !isLoading && (
+        <div className="bg-blue/20 border-2 border-blue text-white p-4 rounded-xl flex items-center justify-between font-bold">
+          <p>The equipment database is empty.</p>
           <button 
             onClick={handleSeed}
             disabled={isSeeding}
-            style={{ padding: '8px 16px', background: '#0A84FF', color: 'white', borderRadius: 8, border: 'none', cursor: 'pointer' }}
+            className="tl-pill-button py-2 px-4 text-xs"
           >
             {isSeeding ? 'Seeding...' : 'Seed Machines'}
           </button>
         </div>
       )}
 
-      {/* ── Hero tagline ─────────────────────────────────────────── */}
-      <div style={{ marginBottom: 28 }}>
-        <h1
-          style={{
-            fontFamily: '-apple-system, SF Pro Display, Inter, sans-serif',
-            fontWeight: 600,
-            fontSize: 'clamp(36px, 5vw, 64px)',
-            letterSpacing: '-0.02em',
-            lineHeight: 1.05,
-            color: '#F5F5F7',
-            marginBottom: 10,
-          }}
-        >
-          Book time on real machines.
-        </h1>
-        <p style={{ color: '#98989D', fontSize: 15 }}>
-          Reserve equipment, manage sessions, and track your projects — all in one place.
-        </p>
-      </div>
-
-      {/* ── Today's Activity Panel ──────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12, marginBottom: 28 }}>
-
-        {/* Bookings Today */}
-        <button
-          onClick={() => navigate('/bookings')}
-          style={{ background: '#141518', borderRadius: 20, border: '1px solid rgba(255,255,255,0.08)', padding: '18px 20px', textAlign: 'left', cursor: 'pointer', transition: 'border-color 200ms ease' }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(10,132,255,0.35)' }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)' }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-            <span style={{ width: 32, height: 32, borderRadius: 10, background: 'rgba(10,132,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <CalendarDays size={16} color="#0A84FF" />
-            </span>
-            <span style={{ fontSize: 13, color: '#98989D', fontFamily: '-apple-system,Inter,sans-serif' }}>Today's Bookings</span>
+      {/* ── Top Section: Hero + Stats + Attention ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* Left Col: Hero + Stats */}
+        <div className="lg:col-span-2 flex flex-col gap-6">
+          {/* Indigo Action Strip */}
+          <div className="tl-panel-indigo p-8 flex flex-col justify-center flex-1 rounded-[32px] min-h-[260px]">
+            <h1 className="font-['Arial_Black'] uppercase text-4xl lg:text-5xl font-black text-white tracking-tight leading-[0.95]">
+              Book time.<br />Build things.
+            </h1>
+            <p className="text-white/80 font-bold mt-4 mb-8 max-w-md">
+              Reserve equipment, manage sessions, and track your projects — all in one place.
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <button onClick={() => navigate('/bookings/new')} className="tl-pill-button px-6 text-sm">Book Machine</button>
+              <button onClick={() => navigate('/checkout')} className="tl-pill-button-secondary bg-white/10 hover:bg-white/20 border-transparent text-white px-6 text-sm">Checkout Tool</button>
+              <button onClick={() => navigate('/projects/new')} className="tl-pill-button-secondary bg-white/10 hover:bg-white/20 border-transparent text-white px-6 text-sm">New Project</button>
+            </div>
           </div>
-          <p style={{ fontSize: 32, fontWeight: 700, color: '#F5F5F7', lineHeight: 1, fontFamily: '-apple-system,Inter,sans-serif', marginBottom: 4 }}>{todayBookings.length}</p>
-          <p style={{ fontSize: 12, color: '#98989D' }}>
-            {todayBookings.length === 0 ? 'No sessions today' : todayBookings.map(b => b.machineName).join(', ')}
-          </p>
-        </button>
 
-        {/* Active Tool Checkouts */}
-        <button
-          onClick={() => navigate('/checkout/history')}
-          style={{ background: '#141518', borderRadius: 20, border: `1px solid ${overdueCount > 0 ? 'rgba(255,69,58,0.35)' : 'rgba(255,255,255,0.08)'}`, padding: '18px 20px', textAlign: 'left', cursor: 'pointer', transition: 'border-color 200ms ease' }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = overdueCount > 0 ? 'rgba(255,69,58,0.6)' : 'rgba(10,132,255,0.35)' }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = overdueCount > 0 ? 'rgba(255,69,58,0.35)' : 'rgba(255,255,255,0.08)' }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-            <span style={{ width: 32, height: 32, borderRadius: 10, background: overdueCount > 0 ? 'rgba(255,69,58,0.15)' : 'rgba(255,149,0,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              {overdueCount > 0 ? <AlertTriangle size={16} color="#FF453A" /> : <Package size={16} color="#FF9500" />}
-            </span>
-            <span style={{ fontSize: 13, color: '#98989D', fontFamily: '-apple-system,Inter,sans-serif' }}>Tool Checkouts</span>
-          </div>
-          <p style={{ fontSize: 32, fontWeight: 700, color: overdueCount > 0 ? '#FF453A' : '#F5F5F7', lineHeight: 1, fontFamily: '-apple-system,Inter,sans-serif', marginBottom: 4 }}>{activeCheckouts.length}</p>
-          <p style={{ fontSize: 12, color: overdueCount > 0 ? '#FF453A' : '#98989D' }}>
-            {overdueCount > 0 ? `${overdueCount} overdue — return immediately` : activeCheckouts.length === 0 ? 'No active checkouts' : 'Active borrowings'}
-          </p>
-        </button>
-
-        {/* Projects */}
-        <button
-          onClick={() => navigate('/projects')}
-          style={{ background: '#141518', borderRadius: 20, border: '1px solid rgba(255,255,255,0.08)', padding: '18px 20px', textAlign: 'left', cursor: 'pointer', transition: 'border-color 200ms ease' }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(48,209,88,0.35)' }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)' }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-            <span style={{ width: 32, height: 32, borderRadius: 10, background: 'rgba(48,209,88,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <span style={{ fontSize: 16 }}>🔬</span>
-            </span>
-            <span style={{ fontSize: 13, color: '#98989D', fontFamily: '-apple-system,Inter,sans-serif' }}>My Projects</span>
-          </div>
-          <p style={{ fontSize: 32, fontWeight: 700, color: '#F5F5F7', lineHeight: 1, fontFamily: '-apple-system,Inter,sans-serif', marginBottom: 4 }}>{userProjects.length}</p>
-          <p style={{ fontSize: 12, color: '#98989D' }}>
-            {userProjects.length === 0 ? 'Register a project first' : userProjects.map(p => p.id).join(', ')}
-          </p>
-        </button>
-
-        {/* Quick Actions */}
-        <div style={{ background: '#141518', borderRadius: 20, border: '1px solid rgba(255,255,255,0.08)', padding: '18px 20px' }}>
-          <p style={{ fontSize: 13, color: '#98989D', marginBottom: 12, fontFamily: '-apple-system,Inter,sans-serif' }}>Quick Actions</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {[
-              { label: 'Book a machine', path: '/bookings/new', color: '#0A84FF' },
-              { label: 'Checkout a tool', path: '/checkout', color: '#FF9500' },
-              { label: 'New project', path: '/projects/new', color: '#30D158' },
-            ].map(a => (
-              <button
-                key={a.path}
-                onClick={() => navigate(a.path)}
-                style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  padding: '7px 10px', borderRadius: 10,
-                  background: 'rgba(255,255,255,0.04)',
-                  border: '1px solid rgba(255,255,255,0.06)',
-                  cursor: 'pointer', width: '100%',
-                  fontFamily: '-apple-system,Inter,sans-serif',
-                  fontSize: 13, color: a.color,
-                  fontWeight: 500,
-                  transition: 'background 150ms ease',
-                }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)' }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)' }}
-              >
-                {a.label}
-                <ArrowRight size={13} color={a.color} />
+          {/* Cream Stat Strip */}
+          <div className="tl-panel-cream p-8 rounded-[32px]">
+            <div className="grid grid-cols-3 gap-4 divide-x-4 divide-black/10">
+              <button onClick={() => navigate('/bookings')} className="px-4 text-center hover:-translate-y-1 transition-transform">
+                <p className="text-4xl lg:text-5xl font-black font-['Arial_Black'] text-black">{todayBookings.length}</p>
+                <p className="text-[10px] lg:text-xs font-bold uppercase tracking-widest text-black/50 mt-1">Sessions Today</p>
               </button>
-            ))}
+              <button onClick={() => navigate('/checkout/history')} className="px-4 text-center hover:-translate-y-1 transition-transform">
+                <p className={cn("text-4xl lg:text-5xl font-black font-['Arial_Black']", activeCheckouts.length > 0 ? 'text-pink' : 'text-black')}>{activeCheckouts.length}</p>
+                <p className="text-[10px] lg:text-xs font-bold uppercase tracking-widest text-black/50 mt-1">Active Checkouts</p>
+              </button>
+              <button onClick={() => navigate('/projects')} className="px-4 text-center hover:-translate-y-1 transition-transform">
+                <p className="text-4xl lg:text-5xl font-black font-['Arial_Black'] text-black">{userProjects.length}</p>
+                <p className="text-[10px] lg:text-xs font-bold uppercase tracking-widest text-black/50 mt-1">My Projects</p>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Col: Attention Panel */}
+        <div className="lg:col-span-1">
+          <div className="bg-pink rounded-[32px] p-8 h-full border-4 border-black text-black shadow-[4px_4px_0_0_#000] flex flex-col">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-12 h-12 bg-black rounded-full flex items-center justify-center text-pink shrink-0">
+                <AlertTriangle className="w-6 h-6" />
+              </div>
+              <h2 className="font-['Arial_Black'] uppercase text-2xl tracking-tight leading-none">Attention</h2>
+            </div>
+            
+            <div className="flex-1 flex flex-col gap-3">
+              {overdueCount > 0 ? (
+                <div className="bg-black text-white p-5 rounded-[20px] border-2 border-black font-bold text-sm">
+                  <p className="text-pink font-black text-lg mb-1">{overdueCount} tools overdue.</p>
+                  Return immediately.
+                </div>
+              ) : activeCheckouts.length > 0 ? (
+                <div className="bg-white/40 text-black p-5 rounded-[20px] border-2 border-black font-bold text-sm">
+                  You have <span className="font-black text-lg">{activeCheckouts.length}</span> tools checked out. Make sure to return them on time.
+                </div>
+              ) : (
+                 <div className="bg-white/40 text-black p-5 rounded-[20px] border-2 border-black font-bold text-sm opacity-60">
+                  No active tool checkouts.
+                 </div>
+              )}
+              
+              {todayBookings.length > 0 && (
+                <div className="bg-white text-black p-5 rounded-[20px] border-2 border-black font-bold text-sm">
+                  You have <span className="font-black text-lg">{todayBookings.length}</span> bookings today. Don't be late!
+                </div>
+              )}
+            </div>
+
+            <button onClick={() => navigate('/bookings')} className="w-full tl-pill-button mt-6 bg-black text-white hover:bg-black/80 border-black shadow-none flex justify-center items-center gap-2">
+              View Schedule <ArrowRight size={16} />
+            </button>
           </div>
         </div>
       </div>
 
-      {/* ── Live status ticker ───────────────────────────────────── */}
-      <div
-        style={{
-          display: 'flex', gap: 20, marginBottom: 32,
-          padding: '10px 16px',
-          borderRadius: 12,
-          border: '1px solid rgba(255,255,255,0.06)',
-          background: 'rgba(255,255,255,0.03)',
-          width: 'fit-content',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 13, color: '#F5F5F7', fontFamily: 'ui-monospace, SF Mono, monospace' }}>
-          <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#34C759', display: 'inline-block', flexShrink: 0 }} />
-          {availableCount} available
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 13, color: '#F5F5F7', fontFamily: 'ui-monospace, SF Mono, monospace' }}>
-          <span className="animate-status-pulse" style={{ width: 8, height: 8, borderRadius: '50%', background: '#FF9500', display: 'inline-block', flexShrink: 0 }} />
-          {inUseCount} in use
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 13, color: '#98989D', fontFamily: 'ui-monospace, SF Mono, monospace' }}>
-          <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#8E8E93', display: 'inline-block', flexShrink: 0 }} />
-          {offlineCount} offline
-        </div>
+      {/* ── Live status ticker ── */}
+      <div className="flex flex-wrap gap-6 px-6 py-4 bg-[#101010] text-white rounded-[20px] border-4 border-[#191919] font-bold uppercase tracking-widest text-xs w-fit">
+        <div className="flex items-center gap-2"><span className="w-3 h-3 bg-lime rounded-full border-2 border-black"/>{availableCount} Available</div>
+        <div className="flex items-center gap-2"><span className="w-3 h-3 bg-orange rounded-full border-2 border-black animate-status-pulse"/>{inUseCount} In Use</div>
+        <div className="flex items-center gap-2"><span className="w-3 h-3 bg-white/30 rounded-full border-2 border-black"/>{offlineCount} Offline</div>
       </div>
 
-      {/* ── Category Tiles ───────────────────────────────────────── */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
-          gap: 12,
-          marginBottom: 40,
-        }}
-      >
+      {/* ── Category Tiles ── */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
         {CATEGORY_META.map(cat => (
           <CategoryTile
             key={cat.id}
@@ -581,86 +326,42 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      {/* ── Section header ──────────────────────────────────────── */}
-      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 20 }}>
-        <h2
-          style={{
-            fontFamily: '-apple-system, SF Pro Display, Inter, sans-serif',
-            fontWeight: 600, fontSize: 22, letterSpacing: '-0.01em',
-            color: '#F5F5F7',
-          }}
-        >
-          {activeMeta ? activeMeta.label : 'All Machines'}
-          <span style={{ fontWeight: 400, fontSize: 16, color: '#98989D', marginLeft: 10 }}>
-            {filteredEquipment.length}
-          </span>
-        </h2>
-        {activeCategory && (
-          <button
-            onClick={() => setActiveCategory(null)}
-            style={{
-              fontSize: 13, color: '#0A84FF',
-              background: 'none', border: 'none', cursor: 'pointer',
-              fontFamily: '-apple-system, SF Pro Text, Inter, sans-serif',
-            }}
-          >
-            Show all →
-          </button>
-        )}
-      </div>
+      {/* ── Equipment Grid ── */}
+      <div className="space-y-6 pt-4">
+        <div className="flex justify-between items-end border-b-4 border-[#191919] pb-4">
+          <h2 className="font-['Arial_Black'] text-3xl md:text-4xl uppercase tracking-tight text-white">
+            {activeMeta ? activeMeta.label : 'All Machines'}
+            <span className="ml-4 text-white/30 font-bold text-xl">{filteredEquipment.length}</span>
+          </h2>
+          {activeCategory && (
+            <button onClick={() => setActiveCategory(null)} className="text-pink font-bold hover:underline uppercase tracking-widest text-xs mb-1">
+              Show All
+            </button>
+          )}
+        </div>
 
-      {/* ── Equipment Grid ──────────────────────────────────────── */}
-      {isLoading ? (
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
-            gap: 16,
-          }}
-        >
-          {Array.from({ length: 8 }).map((_, i) => (
-            <div
-              key={i}
-              style={{
-                height: 240, borderRadius: 24,
-                background: '#141518',
-                border: '1px solid rgba(255,255,255,0.06)',
-                animation: 'pulse 2s cubic-bezier(0.4,0,0.6,1) infinite',
-              }}
-            />
-          ))}
-        </div>
-      ) : filteredEquipment.length === 0 ? (
-        <div
-          style={{
-            padding: '64px 0', textAlign: 'center',
-            color: '#98989D', fontSize: 15,
-            fontFamily: '-apple-system, SF Pro Text, Inter, sans-serif',
-          }}
-        >
-          No sessions booked yet. Find a machine and grab a slot.
-        </div>
-      ) : (
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
-            gap: 16,
-          }}
-        >
-          {filteredEquipment.map(eq => {
-            const meta = CATEGORY_META.find(c => c.id === eq.category)
-            return (
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="h-[280px] rounded-[24px] bg-[#101010] border-4 border-[#191919] animate-pulse" />
+            ))}
+          </div>
+        ) : filteredEquipment.length === 0 ? (
+          <div className="py-20 text-center text-white/40 font-bold uppercase tracking-widest">
+            No machines found in this category.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {filteredEquipment.map(eq => (
               <EquipmentCard
                 key={eq.id}
                 eq={eq}
-                categoryAccent={meta?.accent ?? '#98989D'}
                 onClick={() => navigate(`/equipment/${eq.id}`)}
               />
-            )
-          })}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

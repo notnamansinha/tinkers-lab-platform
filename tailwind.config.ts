@@ -24,29 +24,41 @@ const config = {
       },
 
       colors: {
-        // ── New design-system tokens ──────────────────────────────
-        canvas:  '#08090B',   // app background
-        surface: '#141518',   // flat card container
+        // ── FigJam Palette Tokens ──────────────────────────────
+        black: '#000000',
+        'near-black': '#101010',
+        charcoal: '#191919',
+        pink: '#EC68D8',
+        indigo: '#514AF1',
+        'electric-blue': '#4C48F2',
+        lime: '#DDF237',
+        orange: '#FFB13F',
+        cream: '#FFF4BE',
+        sand: '#A9957A',
+        beige: '#E1D7A8',
+        'modal-blue': '#5A53F4',
+        'track-purple': '#746EF8',
+        white: '#FFFFFF',
 
-        'accent-blue': '#0A84FF', // Apple dark-mode blue — flat Accent
-
-        // Status dots (flat, functional only — no gradient)
-        'status-green':  '#34C759',
-        'status-orange': '#FF9500',
-        'status-red':    '#FF3B30',
-        'status-grey':   '#8E8E93',
-
-        // Legacy tokens kept so existing components don't break
+        // Legacy compatibility
+        canvas:  '#08090B',
+        surface: '#141518',
+        'accent-blue': '#0A84FF',
         graphite: '#08090B',
         steel:    '#141518',
         hairline: 'rgba(255,255,255,0.10)',
         chalk:    '#F5F5F7',
         hazard:   '#FF9500',
-
         'signal-green': '#34C759',
         'signal-amber': '#FF9500',
         'signal-red':   '#FF3B30',
         'signal-grey':  '#8E8E93',
+
+        // Status dots
+        'status-green':  '#DDF237', // lime for available/success
+        'status-orange': '#FFB13F', // orange for pending/warning
+        'status-red':    '#EC68D8', // pink for destructive/attention
+        'status-grey':   '#191919', // charcoal for disabled
 
         // ── shadcn/ui CSS-var tokens ──────────────────────────────
         border:     'hsl(var(--border))',

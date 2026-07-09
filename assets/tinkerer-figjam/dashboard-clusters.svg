@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 640" role="img" aria-labelledby="title">
+  <title id="title">Tinkerer dashboard illustration</title>
+  <rect width="960" height="640" rx="20" fill="#000"/>
+  <rect x="44" y="58" width="132" height="520" rx="12" fill="#171717"/>
+  <rect x="208" y="58" width="700" height="86" rx="14" fill="#514AF1"/>
+  <rect x="220" y="78" width="260" height="16" rx="8" fill="#6E68F6"/>
+  <rect x="220" y="108" width="394" height="22" rx="6" fill="#746EF8"/>
+  <circle cx="858" cy="101" r="27" fill="#EC68D8"/>
+  <g fill="#DDF237" transform="translate(846 89)">
+    <ellipse cx="12" cy="0" rx="5" ry="11"/>
+    <ellipse cx="12" cy="24" rx="5" ry="11"/>
+    <ellipse cx="0" cy="12" rx="11" ry="5"/>
+    <ellipse cx="24" cy="12" rx="11" ry="5"/>
+  </g>
+  <g font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="16">
+    <text x="80" y="110" fill="#fff">DASHBOARD</text>
+    <text x="80" y="166" fill="#fff">BOOKINGS</text>
+    <text x="80" y="222" fill="#fff">TOOLS</text>
+    <text x="80" y="278" fill="#fff">PROJECTS</text>
+  </g>
+  <rect x="208" y="160" width="700" height="72" rx="12" fill="#FFF4BE"/>
+  <g fill="#E1D7A8">
+    <rect x="228" y="178" width="120" height="38" rx="6"/>
+    <rect x="364" y="178" width="120" height="38" rx="6"/>
+    <rect x="500" y="178" width="120" height="38" rx="6"/>
+    <rect x="636" y="178" width="120" height="38" rx="6"/>
+    <rect x="772" y="178" width="112" height="38" rx="6"/>
+  </g>
+  <rect x="208" y="252" width="324" height="326" rx="14" fill="#FFF4BE"/>
+  <rect x="556" y="252" width="352" height="326" rx="14" fill="#FFF4BE"/>
+  <g transform="translate(245 315)" fill="#E1D7A8">
+    <rect x="0" y="58" width="38" height="150" rx="19"/>
+    <rect x="52" y="38" width="38" height="170" rx="19"/>
+    <rect x="104" y="80" width="38" height="128" rx="19"/>
+    <rect x="156" y="18" width="38" height="190" rx="19"/>
+  </g>
+  <g transform="translate(453 315)" fill="#FFB13F">
+    <rect x="0" y="142" width="38" height="66" rx="19"/>
+    <rect x="52" y="76" width="38" height="132" rx="19"/>
+  </g>
+  <g transform="translate(590 296)">
+    <rect x="0" y="0" width="282" height="74" rx="37" fill="#DDF237"/>
+    <rect x="0" y="92" width="166" height="132" rx="54" fill="#FFB13F"/>
+    <rect x="0" y="236" width="94" height="76" rx="38" fill="#FFC05B"/>
+    <rect x="108" y="236" width="90" height="76" rx="38" fill="#FFC05B"/>
+    <rect x="182" y="92" width="72" height="220" rx="36" fill="#EC68D8"/>
+    <rect x="266" y="92" width="44" height="132" rx="22" fill="#514AF1"/>
+    <rect x="266" y="236" width="44" height="76" rx="22" fill="#5E58E8"/>
+  </g>
+</svg>

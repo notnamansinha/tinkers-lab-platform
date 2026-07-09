@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 640" role="img" aria-labelledby="title">
+  <title id="title">Blue questionnaire screen</title>
+  <rect width="960" height="640" fill="#000"/>
+  <rect x="42" y="40" width="876" height="560" rx="10" fill="#050505"/>
+  <text x="455" y="76" fill="#EC68D8" font-family="Arial Black, Arial, sans-serif" font-size="22" font-weight="900">tinkerer</text>
+  <circle cx="76" cy="74" r="18" fill="#EC68D8"/>
+  <rect x="88" y="92" width="760" height="18" rx="9" fill="#DDF237"/>
+  <rect x="88" y="132" width="760" height="400" rx="8" fill="#514AF1"/>
+  <text x="118" y="215" fill="#fff" font-family="Arial Black, Arial, sans-serif" font-size="42" font-weight="900">How much do you expect</text>
+  <text x="118" y="266" fill="#fff" font-family="Arial Black, Arial, sans-serif" font-size="42" font-weight="900">it to fluctuate?</text>
+  <text x="118" y="296" fill="#D9D4FF" font-family="Arial, sans-serif" font-size="15" font-weight="700">It might matter for planning your next booking window.</text>
+  <rect x="118" y="420" width="290" height="50" rx="6" fill="#746EF8"/>
+  <rect x="520" y="420" width="290" height="50" rx="6" fill="#746EF8"/>
+  <text x="252" y="453" fill="#C9C6FF" font-family="Arial Black, Arial, sans-serif" font-size="18" text-anchor="middle">/month</text>
+  <text x="654" y="453" fill="#C9C6FF" font-family="Arial Black, Arial, sans-serif" font-size="18" text-anchor="middle">/month</text>
+  <text x="464" y="453" fill="#fff" font-family="Arial Black, Arial, sans-serif" font-size="18">to</text>
+  <rect x="88" y="554" width="70" height="24" rx="12" fill="#191919"/>
+  <circle cx="104" cy="566" r="8" fill="#EC68D8"/>
+</svg>
