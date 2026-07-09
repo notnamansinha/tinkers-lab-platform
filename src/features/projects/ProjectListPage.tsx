@@ -7,13 +7,7 @@ import { COLLECTIONS } from '@/services/firebase/firestore'
 import { useAuth } from '@/contexts/AuthContext'
 import { Search, Plus } from 'lucide-react'
 import type { Project } from '@/types'
-
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Badge } from '@/components/ui/badge'
+import { cn } from '@/lib/utils'
 
 export default function ProjectListPage() {
   const { isStaff } = useAuth()
@@ -38,94 +32,111 @@ export default function ProjectListPage() {
     return matchSearch && matchStatus
   })
 
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active': return 'bg-lime text-black border-black'
+      case 'completed': return 'bg-blue text-black border-black'
+      case 'rejected': return 'bg-pink text-black border-black'
+      default: return 'bg-white/10 text-white border-white/20'
+    }
+  }
+
   return (
-    <div className="space-y-6 container py-6 mx-auto animate-fade-in">
-      <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Projects</h1>
-          <p className="text-muted-foreground mt-1">Register and track lab projects from ideation to completion.</p>
+    <div className="w-full max-w-7xl mx-auto pb-20 animate-in fade-in duration-300">
+      {/* ── Header & Filters ── */}
+      <div className="tl-panel-indigo p-6 lg:p-8 rounded-[32px] mb-8">
+        <div className="flex flex-col lg:flex-row justify-between lg:items-end gap-6 mb-8 border-b-4 border-black/10 pb-6">
+          <div>
+            <h1 className="font-['Arial_Black'] uppercase text-4xl lg:text-5xl font-black text-white tracking-tight leading-[0.95] mb-2">
+              Projects
+            </h1>
+            <p className="text-white/80 font-bold max-w-md">
+              Register and track lab projects from ideation to completion.
+            </p>
+          </div>
+          <button
+            onClick={() => navigate('/projects/new')}
+            className="tl-pill-button flex items-center gap-2 px-6 shadow-none border-black hover:border-black"
+          >
+            <Plus size={18} /> Register Project
+          </button>
         </div>
-        <Button className="shrink-0 gap-2" onClick={() => navigate('/projects/new')}>
-          <Plus className="h-4 w-4" /> Register Project
-        </Button>
-      </div>
 
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input 
-            value={search} 
-            onChange={e => setSearch(e.target.value)} 
-            placeholder="Search projects by title or member..." 
-            className="pl-9 max-w-sm" 
-          />
-        </div>
-        
-        <Select value={filterStatus} onValueChange={(val) => setFilterStatus(val || '')}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="All statuses" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All statuses</SelectItem>
-            {['pending','active','completed','on_hold','rejected'].map(s => (
-              <SelectItem key={s} value={s} className="capitalize">{s.replace('_',' ')}</SelectItem>
+        <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center">
+          {/* Search */}
+          <div className="relative w-full lg:w-96 flex-shrink-0">
+            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-black/40" />
+            <input
+              type="text"
+              placeholder="Search by title or member..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="tl-input pl-11 w-full"
+            />
+          </div>
+
+          {/* Status Filter */}
+          <div className="flex flex-wrap gap-2">
+            {['all', 'pending', 'active', 'completed', 'on_hold', 'rejected'].map(s => (
+              <button
+                key={s}
+                onClick={() => setFilterStatus(s)}
+                className={cn(
+                  "px-4 py-2 rounded-full font-bold uppercase tracking-widest text-xs transition-colors border-2",
+                  filterStatus === s ? "bg-pink text-black border-black shadow-[2px_2px_0_0_#000]" : "bg-transparent text-white/50 border-white/20 hover:border-white/50 hover:text-white"
+                )}
+              >
+                {s === 'all' ? 'All Statuses' : s.replace('_', ' ')}
+              </button>
             ))}
-          </SelectContent>
-        </Select>
+          </div>
+        </div>
       </div>
 
-      <Card>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[100px]">ID</TableHead>
-              <TableHead>Title</TableHead>
-              <TableHead>Member</TableHead>
-              <TableHead>Department</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Start Date</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
-                  Loading projects...
-                </TableCell>
-              </TableRow>
-            ) : filtered.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
-                  No projects found.
-                </TableCell>
-              </TableRow>
-            ) : (
-              filtered.map(p => (
-                <TableRow key={p.id} className="cursor-pointer" onClick={() => navigate(`/projects/${p.id}`)}>
-                  <TableCell className="font-mono text-muted-foreground">{p.id.slice(0, 6)}</TableCell>
-                  <TableCell className="font-medium max-w-[200px] truncate">{p.title}</TableCell>
-                  <TableCell>{p.userName}</TableCell>
-                  <TableCell className="text-muted-foreground uppercase text-xs">{p.department}</TableCell>
-                  <TableCell className="capitalize">{p.userType}</TableCell>
-                  <TableCell className="font-mono text-xs">{p.startDate}</TableCell>
-                  <TableCell>
-                    <Badge variant={p.status === 'active' || p.status === 'completed' ? 'default' : p.status === 'rejected' ? 'destructive' : 'secondary'} className="capitalize font-mono text-[10px]">
-                      {p.status.replace('_', ' ')}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); navigate(`/projects/${p.id}`); }}>
-                      View
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </Card>
+      {/* ── Project Grid ── */}
+      {isLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="h-[200px] rounded-[24px] bg-[#101010] border-4 border-[#191919] animate-pulse" />
+          ))}
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="py-20 text-center text-white/40 font-bold uppercase tracking-widest bg-[#101010] rounded-[32px] border-4 border-[#191919]">
+          No projects found.
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filtered.map(p => (
+            <div
+              key={p.id}
+              onClick={() => navigate(`/projects/${p.id}`)}
+              className="group cursor-pointer bg-[#101010] rounded-[24px] border-4 border-[#191919] hover:border-lime transition-all hover:-translate-y-1 p-6 flex flex-col shadow-[4px_4px_0_0_#000]"
+            >
+              <div className="flex justify-between items-start mb-4">
+                <span className="font-bold text-white/30 uppercase tracking-widest text-xs">
+                  ID: {p.id.slice(0, 6)}
+                </span>
+                <span className={cn("px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border-2", getStatusColor(p.status))}>
+                  {p.status.replace('_', ' ')}
+                </span>
+              </div>
+              
+              <h3 className="font-['Arial_Black'] text-xl text-white uppercase tracking-tight mb-2 group-hover:text-lime transition-colors line-clamp-2">
+                {p.title}
+              </h3>
+              
+              <p className="text-white/60 font-bold text-sm mb-4">
+                {p.userName}
+              </p>
+
+              <div className="mt-auto pt-4 border-t-2 border-[#191919] flex justify-between items-center text-xs font-bold uppercase tracking-widest text-white/40">
+                <span>{p.department}</span>
+                <span>{p.startDate}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
