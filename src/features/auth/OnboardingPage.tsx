@@ -8,6 +8,7 @@ import { createUserProfile } from '@/services/firebase/auth'
 import { useAuth } from '@/contexts/AuthContext'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import logoMark from '@/assets/tinkerer-figjam/tinkerer-lab-board.webp'
 
 import { Label } from '@/components/ui/label'
 import type { UserType, UserProfile } from '@/types'
@@ -198,8 +199,8 @@ export default function OnboardingPage() {
       {/* Visual / Brand Sidebar */}
       <div className="lg:w-[42%] flex flex-col justify-between p-8 md:p-12 m-4 lg:m-6 shadow-2xl relative overflow-hidden shrink-0" style={{ background: '#A3937C', borderRadius: 24 }}>
         <div className="flex items-center gap-3 relative z-10">
-          <div className="w-10 h-10 bg-black flex items-center justify-center rounded-full shadow-sm">
-            <span className="font-bold text-pink text-xl">✿</span>
+          <div className="w-10 h-10 bg-white flex items-center justify-center rounded-[10px] shadow-sm overflow-hidden">
+            <img src={logoMark} alt="Logo" className="w-full h-full object-contain" />
           </div>
           <div>
             <p className="font-black font-display text-xl uppercase text-black">TINKERERS LAB</p>
