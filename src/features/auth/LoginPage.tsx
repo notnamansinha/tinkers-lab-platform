@@ -139,7 +139,7 @@ export default function LoginPage() {
               Welcome to<br/>the Lab
             </h1>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 36, marginBottom: 56 }}>
+            <div className="max-lg:mx-auto" style={{ display: 'flex', flexDirection: 'column', gap: 36, marginBottom: 56, width: 'fit-content' }}>
               <div style={{ display: 'flex', gap: 18, alignItems: 'flex-start' }}>
                 <div style={{ color: palette.white, marginTop: 2 }}>
                   <Wrench size={24} strokeWidth={1.5} />
@@ -230,7 +230,7 @@ export default function LoginPage() {
         </aside>
       </section>
 
-      <div style={{
+      <div className="max-lg:text-center" style={{
         padding: '24px clamp(18px, 4vw, 56px)',
         color: palette.white,
         opacity: 0.4,
