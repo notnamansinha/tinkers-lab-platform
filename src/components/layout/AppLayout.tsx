@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { Box, Calendar, LayoutDashboard, LogOut, Menu, MessageSquare, Wrench, X, Users, AlertTriangle, ShieldCheck } from 'lucide-react'
+import { Box, Calendar, LayoutDashboard, LogOut, MessageSquare, Wrench, Users, AlertTriangle, ShieldCheck } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { signOut } from '@/services/firebase/auth'
 import { cn } from '@/lib/utils'
@@ -25,7 +25,7 @@ export default function AppLayout() {
   const { profile, user, role, isStaff } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-  const [menuOpen, setMenuOpen] = useState(false)
+  const location = useLocation()
 
   const handleSignOut = async () => {
     try {
@@ -46,7 +46,6 @@ export default function AppLayout() {
 
   return (
     <div className="tl-shell">
-      {/* Mobile header */}
       <header className="md:hidden h-16 flex items-center justify-between px-4 border-b border-white/5 bg-black sticky top-0 z-50">
         <div className="flex items-center gap-2">
           <button className="w-9 h-9 rounded-[10px] overflow-hidden" onClick={() => navigate('/')} aria-label="Go home">
@@ -54,64 +53,14 @@ export default function AppLayout() {
           </button>
           <span className="font-brand uppercase text-white text-[20px] tracking-wider font-black" style={{ WebkitTextStroke: '0.8px currentColor' }}>TINKERERS LAB</span>
         </div>
-        <button className="text-white p-2" onClick={() => setMenuOpen(!menuOpen)} aria-label="Toggle navigation">
-          {menuOpen ? <X size={24} /> : <Menu size={24} />}
+        <button 
+          className="w-8 h-8 rounded-full bg-pink flex items-center justify-center text-black font-bold text-[11px] shrink-0" 
+          onClick={() => navigate('/onboarding')} 
+          aria-label="View Profile"
+        >
+          {initials}
         </button>
       </header>
-
-      {menuOpen && (
-        <div className="md:hidden fixed inset-x-0 top-16 bottom-0 z-40 bg-black/95 backdrop-blur-xl p-4 flex flex-col gap-4">
-          {NAV_LINKS.map(link => (
-            <button
-              key={link.path}
-              onClick={() => { navigate(link.path); setMenuOpen(false) }}
-              className={cn(
-                'flex items-center gap-4 px-6 py-4 rounded-full transition-all',
-                isActive(link.path) ? 'bg-indigo text-white text-sidebar-active' : 'text-white/60 hover:text-white hover:bg-white/5 text-sidebar-normal'
-              )}
-            >
-              <link.icon size={24} />
-              {link.name}
-            </button>
-          ))}
-          {isStaff && (
-            <>
-              <div className="my-2 border-t border-white/10" />
-              {ADMIN_LINKS.map(link => (
-                <button
-                  key={link.path}
-                  onClick={() => { navigate(link.path); setMenuOpen(false) }}
-                  className={cn(
-                    'flex items-center gap-4 px-6 py-4 rounded-full transition-all',
-                    isActive(link.path) && link.path !== '/admin' || (link.path === '/admin' && location.pathname === '/admin') ? 'bg-indigo text-white text-sidebar-active' : 'text-white/60 hover:text-white hover:bg-white/5 text-sidebar-normal'
-                  )}
-                >
-                  <link.icon size={24} />
-                  {link.name}
-                </button>
-              ))}
-            </>
-          )}
-          <div className="mt-auto flex items-center gap-4 px-6 py-4">
-            <button
-              onClick={() => { navigate('/onboarding'); setMenuOpen(false) }}
-              title="View Profile"
-              className="w-10 h-10 rounded-full bg-pink text-black flex items-center justify-center font-bold text-[14px] hover:scale-105 transition-transform"
-            >
-              {initials}
-            </button>
-            <div className="flex-1 text-left">
-              <button
-                onClick={() => { navigate('/onboarding'); setMenuOpen(false) }}
-                className="text-white text-sidebar-normal hover:underline font-bold text-left block"
-              >
-                {profile?.displayName || 'User'}
-              </button>
-              <button onClick={handleSignOut} className="text-pink text-badge hover:underline">Log out</button>
-            </div>
-          </div>
-        </div>
-      )}
 
       <aside className="tl-rail py-6 items-center flex-shrink-0 relative z-10">
         <button className="w-12 h-12 rounded-[14px] overflow-hidden mb-8 hover:scale-105 transition-transform" onClick={() => navigate('/')} aria-label="Go home">
@@ -158,25 +107,36 @@ export default function AppLayout() {
           )}
         </nav>
 
-        <div className="mt-auto flex flex-col gap-4 w-full px-4 items-center">
-          <button
-            onClick={handleSignOut}
-            title="Log out"
-            className="w-12 h-12 rounded-full text-white/50 hover:bg-white/5 hover:text-pink transition-all flex items-center justify-center"
-          >
-            <LogOut size={20} />
-          </button>
+        <div className="mt-auto flex flex-col gap-2 w-full px-4 border-t border-white/5 pt-4">
           <button
             onClick={() => navigate('/onboarding')}
             title="View Profile"
-            className="w-12 h-12 rounded-full bg-pink flex items-center justify-center text-black font-bold text-[16px] shadow-lg hover:scale-105 transition-all focus:outline-none"
+            className={cn(
+              'w-full lg:w-auto lg:justify-start h-12 mx-auto rounded-full flex items-center justify-center gap-3 px-0 lg:px-4 transition-all hover:scale-[1.02]',
+              'text-white/50 hover:bg-white/5 hover:text-white'
+            )}
           >
-            {initials}
+            <div className="w-6 h-6 rounded-full bg-pink flex items-center justify-center text-black font-bold text-[10px] shrink-0">
+              {initials}
+            </div>
+            <span className="hidden lg:inline text-sidebar-normal font-medium truncate max-w-[120px]">Profile</span>
+          </button>
+          
+          <button
+            onClick={handleSignOut}
+            title="Log out"
+            className={cn(
+              'w-full lg:w-auto lg:justify-start h-12 mx-auto rounded-full flex items-center justify-center gap-3 px-0 lg:px-4 transition-all hover:scale-[1.02]',
+              'text-white/50 hover:bg-white/5 hover:text-pink'
+            )}
+          >
+            <LogOut size={20} className="shrink-0" />
+            <span className="hidden lg:inline text-sidebar-normal font-medium">Log out</span>
           </button>
         </div>
       </aside>
 
-      <main className="flex-1 w-full min-w-0 max-w-full relative z-0 flex flex-col">
+      <main className="flex-1 w-full min-w-0 max-w-full relative z-0 flex flex-col pb-16 md:pb-0">
         <div className="hidden md:flex h-20 items-center justify-center">
           <span className="font-brand uppercase text-white text-[32px] tracking-wider font-black" style={{ WebkitTextStroke: '1.5px currentColor' }}>TINKERERS LAB</span>
         </div>
@@ -187,6 +147,35 @@ export default function AppLayout() {
           </div>
         </div>
       </main>
+
+      {/* Mobile Bottom Tab Bar */}
+      <nav className="md:hidden fixed bottom-0 left-0 w-full h-16 bg-[#151515] border-t border-white/5 z-50 flex items-center justify-around px-1">
+        {NAV_LINKS.map(link => (
+          <button
+            key={link.path}
+            onClick={() => navigate(link.path)}
+            className={cn(
+              "flex flex-col items-center justify-center w-full h-full gap-1",
+              isActive(link.path) ? "text-[#DDF237]" : "text-white/40"
+            )}
+          >
+            <link.icon size={20} />
+            <span className="text-[10px] font-medium leading-none">{link.name}</span>
+          </button>
+        ))}
+        {isStaff && (
+          <button
+            onClick={() => navigate('/admin')}
+            className={cn(
+              "flex flex-col items-center justify-center w-full h-full gap-1",
+              location.pathname.startsWith('/admin') ? "text-[#DDF237]" : "text-white/40"
+            )}
+          >
+            <ShieldCheck size={20} />
+            <span className="text-[10px] font-medium leading-none">Admin</span>
+          </button>
+        )}
+      </nav>
     </div>
   )
 }
