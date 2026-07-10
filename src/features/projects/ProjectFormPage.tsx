@@ -208,9 +208,15 @@ export default function ProjectFormPage() {
               <Input {...register('contact')} placeholder="+91 XXXXXXXXXX or your email" className={cn(errors.contact && 'border-destructive')} />
             </Field>
 
-            <Field label="Project Resource Link" hint="GitHub, Google Drive, Notion, or any public link (optional)">
-              <Input type="url" {...register('resourceLink')} placeholder="https://github.com/your-project" />
-            </Field>
+            <div className="space-y-3 pt-2">
+              <Field label="Project Resource Link" hint="GitHub, Google Drive, Notion, or any public link (optional)">
+                <Input type="url" {...register('resourceLink')} placeholder="https://github.com/your-project" />
+              </Field>
+              <div className="p-3 border-2 border-dashed rounded-lg bg-muted/30 text-sm text-muted-foreground flex items-center justify-between">
+                <span className="font-medium">Project Documentation / File Upload</span>
+                <span className="px-2 py-1 bg-primary/10 text-primary rounded-md text-[10px] font-bold uppercase tracking-wider">Coming Soon</span>
+              </div>
+            </div>
 
           </CardContent>
         </Card>
