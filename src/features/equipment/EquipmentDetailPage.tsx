@@ -1,12 +1,12 @@
 import React, { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { getDocument, getDocumentsWhere, COLLECTIONS } from '@/services/firebase/firestore'
+import { COLLECTIONS } from '@/services/firebase/firestore'
+import { doc, getDoc, collection, query, where, getDocs, limit, addDoc, serverTimestamp } from 'firebase/firestore'
+import { db } from '@/lib/firebase'
 import { useAuth } from '@/contexts/AuthContext'
 import type { Equipment, Booking } from '@/types'
 import { toast } from 'sonner'
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore'
-import { db } from '@/lib/firebase'
 import { ArrowLeft, Lock } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -66,13 +66,25 @@ export default function EquipmentDetailPage() {
 
   const { data: equipment, isLoading } = useQuery({
     queryKey: ['equipment', id],
-    queryFn: () => getDocument<Equipment>(COLLECTIONS.EQUIPMENT, id!),
+    queryFn: async () => {
+      const snap = await getDoc(doc(db, COLLECTIONS.EQUIPMENT, id!))
+      if (!snap.exists()) return null
+      return { id: snap.id, ...snap.data() } as Equipment
+    },
     enabled: !!id,
   })
 
   const { data: recentBookings = [], refetch } = useQuery({
     queryKey: ['bookings', 'equipment', id],
-    queryFn: () => getDocumentsWhere<Booking>(COLLECTIONS.BOOKINGS, 'equipmentId', '==', id!, 50),
+    queryFn: async () => {
+      const q = query(
+        collection(db, COLLECTIONS.BOOKINGS),
+        where('equipmentId', '==', id!),
+        limit(50)
+      )
+      const snap = await getDocs(q)
+      return snap.docs.map(d => ({ id: d.id, ...d.data() }) as Booking)
+    },
     enabled: !!id,
     staleTime: 0,
   })

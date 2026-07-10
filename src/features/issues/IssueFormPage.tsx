@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { addDocument, COLLECTIONS } from '@/services/firebase/firestore'
+import { COLLECTIONS } from '@/services/firebase/firestore'
+import { doc, getDoc, collection, addDoc, updateDoc } from 'firebase/firestore'
+import { db } from '@/lib/firebase'
 import { useAuth } from '@/contexts/AuthContext'
 import { ArrowLeft, AlertTriangle, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -35,7 +37,7 @@ export default function IssueFormPage() {
   const onSubmit = async (data: FormData) => {
     if (!user || !profile) { toast.error('Sign in required'); return }
     try {
-      await addDocument<Issue>(COLLECTIONS.ISSUES, {
+      await addDoc(collection(db, COLLECTIONS.ISSUES), {
         ...data, userId: user.uid, userName: profile.displayName, userEmail: user.email!,
         status: 'open',
       } as Omit<Issue,'id'|'createdAt'|'updatedAt'>)

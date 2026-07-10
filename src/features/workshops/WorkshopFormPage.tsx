@@ -4,7 +4,9 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { getDocument, addDocument, updateDocument, COLLECTIONS } from '@/services/firebase/firestore'
+import { COLLECTIONS } from '@/services/firebase/firestore'
+import { doc, getDoc, collection, addDoc, updateDoc } from 'firebase/firestore'
+import { db } from '@/lib/firebase'
 import { useAuth } from '@/contexts/AuthContext'
 import { ArrowLeft, Save, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -33,7 +35,11 @@ export default function WorkshopFormPage() {
   const navigate = useNavigate()
   const { isStaff } = useAuth()
   const qc = useQueryClient()
-  const { data: existing, isLoading } = useQuery({ queryKey: ['workshops', id], queryFn: () => getDocument<Workshop>(COLLECTIONS.WORKSHOPS, id!), enabled: isEdit })
+  const { data: existing, isLoading } = useQuery({ queryKey: ['workshops', id], queryFn: async () => {
+      const snap = await getDoc(doc(db, COLLECTIONS.WORKSHOPS, id!))
+      if (!snap.exists()) return null
+      return { id: snap.id, ...snap.data() } as Workshop
+    }, enabled: isEdit })
   
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema) as any,
@@ -56,8 +62,8 @@ export default function WorkshopFormPage() {
   const onSubmit = async (data: FormData) => {
     if (!isStaff) return
     try {
-      if (isEdit) { await updateDocument(COLLECTIONS.WORKSHOPS, id!, { ...data, materialUrls: existing?.materialUrls ?? [] }); toast.success('Updated') }
-      else { const nId = await addDocument<Workshop>(COLLECTIONS.WORKSHOPS, { ...data, registeredCount: 0, materialUrls: [] } as Omit<Workshop,'id'|'createdAt'|'updatedAt'>); toast.success('Created'); navigate(`/workshops/${nId}`); return }
+      if (isEdit) { await updateDoc(doc(db, COLLECTIONS.WORKSHOPS, id!), { ...data, materialUrls: existing?.materialUrls ?? [] }); toast.success('Updated') }
+      else { const nId = await addDoc(collection(db, COLLECTIONS.WORKSHOPS), { ...data, registeredCount: 0, materialUrls: [] } as Omit<Workshop,'id'|'createdAt'|'updatedAt'>); toast.success('Created'); navigate(`/workshops/${nId}`); return }
       qc.invalidateQueries({ queryKey: ['workshops'] }); navigate(`/workshops/${id}`)
     } catch (e) { toast.error(e instanceof Error ? e.message : 'Failed') }
   }

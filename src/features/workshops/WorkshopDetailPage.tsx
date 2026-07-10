@@ -2,7 +2,9 @@ import { Button } from '@/components/ui/button'
 import React from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { getDocument, COLLECTIONS } from '@/services/firebase/firestore'
+import { COLLECTIONS } from '@/services/firebase/firestore'
+import { doc, getDoc, collection, addDoc, updateDoc } from 'firebase/firestore'
+import { db } from '@/lib/firebase'
 import { ArrowLeft, Edit, Users, Calendar } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import type { Workshop } from '@/types'
@@ -12,7 +14,11 @@ export default function WorkshopDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { isStaff } = useAuth()
-  const { data: workshop, isLoading } = useQuery({ queryKey: ['workshops', id], queryFn: () => getDocument<Workshop>(COLLECTIONS.WORKSHOPS, id!), enabled: !!id })
+  const { data: workshop, isLoading } = useQuery({ queryKey: ['workshops', id], queryFn: async () => {
+      const snap = await getDoc(doc(db, COLLECTIONS.WORKSHOPS, id!))
+      if (!snap.exists()) return null
+      return { id: snap.id, ...snap.data() } as Workshop
+    }, enabled: !!id })
 
   if (isLoading) return <LoadingSpinner text="Loading…" />
   if (!workshop) return <div className="py-16 text-center text-muted-foreground">Not found. <Link to="/workshops" className="text-primary hover:underline">← Back</Link></div>

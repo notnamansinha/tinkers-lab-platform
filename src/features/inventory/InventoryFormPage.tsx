@@ -4,7 +4,9 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { getDocument, addDocument, updateDocument, COLLECTIONS } from '@/services/firebase/firestore'
+import { COLLECTIONS } from '@/services/firebase/firestore'
+import { doc, getDoc, collection, addDoc, updateDoc } from 'firebase/firestore'
+import { db } from '@/lib/firebase'
 import { useAuth } from '@/contexts/AuthContext'
 import { ArrowLeft, Save, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -42,7 +44,11 @@ export default function InventoryFormPage() {
 
   const { data: existing, isLoading } = useQuery({
     queryKey: ['inventory', id],
-    queryFn: () => getDocument<InventoryItem>(COLLECTIONS.INVENTORY, id!),
+    queryFn: async () => {
+      const snap = await getDoc(doc(db, COLLECTIONS.INVENTORY, id!))
+      if (!snap.exists()) return null
+      return { id: snap.id, ...snap.data() } as InventoryItem
+    },
     enabled: isEdit,
   })
 
@@ -67,8 +73,8 @@ export default function InventoryFormPage() {
     if (!isStaff) return
     const status = data.quantity === 0 ? 'out_of_stock' : data.quantity <= data.minQuantity ? 'low_stock' : 'in_stock'
     try {
-      if (isEdit) { await updateDocument(COLLECTIONS.INVENTORY, id!, { ...data, status }); toast.success('Updated') }
-      else { const nId = await addDocument<InventoryItem>(COLLECTIONS.INVENTORY, { ...data, status } as Omit<InventoryItem, 'id'|'createdAt'|'updatedAt'>); toast.success('Added'); navigate(`/inventory/${nId}`); return }
+      if (isEdit) { await updateDoc(doc(db, COLLECTIONS.INVENTORY, id!), { ...data, status }); toast.success('Updated') }
+      else { const nId = await addDoc(collection(db, COLLECTIONS.INVENTORY), { ...data, status } as Omit<InventoryItem, 'id'|'createdAt'|'updatedAt'>); toast.success('Added'); navigate(`/inventory/${nId}`); return }
       qc.invalidateQueries({ queryKey: ['inventory'] })
       navigate(`/inventory/${id}`)
     } catch (e) { toast.error(e instanceof Error ? e.message : 'Failed') }

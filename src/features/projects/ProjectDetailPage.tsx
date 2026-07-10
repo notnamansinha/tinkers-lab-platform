@@ -2,7 +2,9 @@ import { Button } from '@/components/ui/button'
 import React from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { getDocument, COLLECTIONS } from '@/services/firebase/firestore'
+import { COLLECTIONS } from '@/services/firebase/firestore'
+import { doc, getDoc, collection, addDoc, updateDoc } from 'firebase/firestore'
+import { db } from '@/lib/firebase'
 import { ArrowLeft, Edit } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import type { Project } from '@/types'
@@ -14,7 +16,11 @@ export default function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { isAdmin, user } = useAuth()
-  const { data: project, isLoading } = useQuery({ queryKey: ['projects', id], queryFn: () => getDocument<Project>(COLLECTIONS.PROJECTS, id!), enabled: !!id })
+  const { data: project, isLoading } = useQuery({ queryKey: ['projects', id], queryFn: async () => {
+      const snap = await getDoc(doc(db, COLLECTIONS.PROJECTS, id!))
+      if (!snap.exists()) return null
+      return { id: snap.id, ...snap.data() } as Project
+    }, enabled: !!id })
 
   if (isLoading) return <LoadingSpinner text="Loading…" />
   if (!project) return <div className="py-16 text-center text-muted-foreground">Not found. <Link to="/projects" className="text-primary hover:underline">← Back</Link></div>

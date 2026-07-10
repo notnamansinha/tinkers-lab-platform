@@ -6,9 +6,10 @@ import {
   serverTimestamp,
   doc,
   updateDoc,
+  addDoc,
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
-import { COLLECTIONS, addDocument } from './firestore'
+import { COLLECTIONS } from './firestore'
 import type { Booking, BookingStatus, BookingConsumables } from '@/types'
 
 // ============================================================
@@ -69,10 +70,14 @@ export async function createBooking(
     )
   }
   // Auto-confirm: status = 'approved' on creation (Spec 2 decision)
-  return addDocument<Booking>(COLLECTIONS.BOOKINGS, {
+  const ref = collection(db, COLLECTIONS.BOOKINGS)
+  const docRef = await addDoc(ref, {
     ...data,
     status: 'approved',
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
   })
+  return docRef.id
 }
 
 /**

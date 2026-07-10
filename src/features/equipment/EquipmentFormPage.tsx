@@ -5,7 +5,8 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { db } from '@/lib/firebase'
-import { getDocument, addDocument, updateDocument, COLLECTIONS } from '@/services/firebase/firestore'
+import { COLLECTIONS } from '@/services/firebase/firestore'
+import { doc, getDoc, addDoc, updateDoc, collection } from 'firebase/firestore'
 import { useAuth } from '@/contexts/AuthContext'
 import { ArrowLeft, Save, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -16,6 +17,7 @@ import LoadingSpinner from '@/components/common/LoadingSpinner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { FormField } from '@/components/common/FormField'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 
@@ -48,7 +50,11 @@ export default function EquipmentFormPage() {
 
   const { data: existing, isLoading } = useQuery({
     queryKey: ['equipment', id],
-    queryFn: () => getDocument<Equipment>(COLLECTIONS.EQUIPMENT, id!),
+    queryFn: async () => {
+      const snap = await getDoc(doc(db, COLLECTIONS.EQUIPMENT, id!))
+      if (!snap.exists()) return null
+      return { id: snap.id, ...snap.data() } as Equipment
+    },
     enabled: isEdit,
   })
 
@@ -87,12 +93,12 @@ export default function EquipmentFormPage() {
   const onSubmit = async (data: EquipmentFormData) => {
     try {
       if (isEdit) {
-        await updateDocument(COLLECTIONS.EQUIPMENT, id!, { ...data, imageUrls: existing?.imageUrls ?? [], manualUrls: existing?.manualUrls ?? [], safetyDocUrls: existing?.safetyDocUrls ?? [] })
+        await updateDoc(doc(db, COLLECTIONS.EQUIPMENT, id!), { ...data, imageUrls: existing?.imageUrls ?? [], manualUrls: existing?.manualUrls ?? [], safetyDocUrls: existing?.safetyDocUrls ?? [] })
         toast.success('Equipment updated')
       } else {
-        const newId = await addDocument<Equipment>(COLLECTIONS.EQUIPMENT, { ...data, imageUrls: [], manualUrls: [], safetyDocUrls: [] })
+        const docRef = await addDoc(collection(db, COLLECTIONS.EQUIPMENT), { ...data, imageUrls: [], manualUrls: [], safetyDocUrls: [] })
         toast.success('Equipment added')
-        navigate(`/equipment/${newId}`)
+        navigate(`/equipment/${docRef.id}`)
         return
       }
       queryClient.invalidateQueries({ queryKey: ['equipment'] })
@@ -126,36 +132,27 @@ export default function EquipmentFormPage() {
             <CardDescription>Core identifiers and descriptions for the machine.</CardDescription>
           </CardHeader>
           <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label>Machine ID <span className="text-destructive">*</span></Label>
+            <FormField label="Machine ID" required error={errors.machineId?.message}>
               <Input placeholder="e.g. bambu-x1c" {...register('machineId')} className={errors.machineId ? 'border-destructive' : ''} />
-              {errors.machineId && <p className="text-[0.8rem] text-destructive">{errors.machineId.message}</p>}
-            </div>
+            </FormField>
             
-            <div className="space-y-2">
-              <Label>Name <span className="text-destructive">*</span></Label>
+            <FormField label="Name" required error={errors.name?.message}>
               <Input placeholder="Bambu X1 Carbon" {...register('name')} className={errors.name ? 'border-destructive' : ''} />
-              {errors.name && <p className="text-[0.8rem] text-destructive">{errors.name.message}</p>}
-            </div>
+            </FormField>
 
-            <div className="space-y-2">
-              <Label>Category <span className="text-destructive">*</span></Label>
+            <FormField label="Category" required>
               <select className={selectClasses} {...register('category')}>
                 {['Digital Fabrication', 'Heavy Duty', 'Tabletop Power', 'Electronics', 'Other'].map(c => <option key={c} value={c}>{c}</option>)}
               </select>
-            </div>
+            </FormField>
 
-            <div className="space-y-2">
-              <Label>Location <span className="text-destructive">*</span></Label>
+            <FormField label="Location" required error={errors.location?.message}>
               <Input placeholder="Bay 1, Lab 2" {...register('location')} className={errors.location ? 'border-destructive' : ''} />
-              {errors.location && <p className="text-[0.8rem] text-destructive">{errors.location.message}</p>}
-            </div>
+            </FormField>
 
-            <div className="col-span-full space-y-2">
-              <Label>Description <span className="text-destructive">*</span></Label>
+            <FormField label="Description" required error={errors.description?.message} className="col-span-full">
               <Textarea rows={3} placeholder="Brief description of the machine and what it does..." className={cn('resize-none', errors.description ? 'border-destructive' : '')} {...register('description')} />
-              {errors.description && <p className="text-[0.8rem] text-destructive">{errors.description.message}</p>}
-            </div>
+            </FormField>
           </CardContent>
         </Card>
 
@@ -165,19 +162,17 @@ export default function EquipmentFormPage() {
             <CardDescription>Current operational status and safety requirements.</CardDescription>
           </CardHeader>
           <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label>Status <span className="text-destructive">*</span></Label>
+            <FormField label="Status" required>
               <select className={selectClasses} {...register('status')}>
                 {['available','reserved','in_use','under_maintenance','out_of_service','retired'].map(s => <option key={s} value={s}>{s.replace('_',' ')}</option>)}
               </select>
-            </div>
+            </FormField>
 
-            <div className="space-y-2">
-              <Label>Health Status <span className="text-destructive">*</span></Label>
+            <FormField label="Health Status" required>
               <select className={selectClasses} {...register('healthStatus')}>
                 {['good','fair','poor'].map(s => <option key={s} value={s}>{s}</option>)}
               </select>
-            </div>
+            </FormField>
 
             <div className="col-span-full flex items-center gap-3 border rounded-md p-4 bg-muted/20">
               <input type="checkbox" id="requiresTraining" {...register('requiresTraining')} className="w-4 h-4 accent-primary" />
@@ -195,12 +190,12 @@ export default function EquipmentFormPage() {
             <CardDescription>Warranty and tracking information.</CardDescription>
           </CardHeader>
           <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2"><Label>Manufacturer</Label><Input placeholder="e.g. Bambu Lab" {...register('manufacturer')} /></div>
-            <div className="space-y-2"><Label>Model Number</Label><Input placeholder="X1C-PRO" {...register('modelNumber')} /></div>
-            <div className="space-y-2"><Label>Serial Number</Label><Input placeholder="SN-12345" {...register('serialNumber')} /></div>
-            <div className="space-y-2"><Label>Purchase Date</Label><Input type="date" {...register('purchaseDate')} /></div>
-            <div className="space-y-2"><Label>Installation Date</Label><Input type="date" {...register('installationDate')} /></div>
-            <div className="space-y-2"><Label>Warranty Info</Label><Input placeholder="3 years - expires Jan 2027" {...register('warrantyInfo')} /></div>
+            <FormField label="Manufacturer"><Input placeholder="e.g. Bambu Lab" {...register('manufacturer')} /></FormField>
+            <FormField label="Model Number"><Input placeholder="X1C-PRO" {...register('modelNumber')} /></FormField>
+            <FormField label="Serial Number"><Input placeholder="SN-12345" {...register('serialNumber')} /></FormField>
+            <FormField label="Purchase Date"><Input type="date" {...register('purchaseDate')} /></FormField>
+            <FormField label="Installation Date"><Input type="date" {...register('installationDate')} /></FormField>
+            <FormField label="Warranty Info"><Input placeholder="3 years - expires Jan 2027" {...register('warrantyInfo')} /></FormField>
           </CardContent>
         </Card>
 
