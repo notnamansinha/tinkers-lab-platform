@@ -158,6 +158,28 @@ export default function AppLayout() {
           )}
         </nav>
 
+        {import.meta.env.DEV && (
+          <div className="mt-4 px-4 w-full text-center">
+            <select 
+              className="w-full bg-white/10 text-white text-xs rounded px-2 py-1 outline-none border border-white/20 appearance-none text-center cursor-pointer"
+              value={localStorage.getItem('dev_role') || profile?.role || 'student'}
+              onChange={(e) => {
+                if (e.target.value === 'default') {
+                  localStorage.removeItem('dev_role');
+                } else {
+                  localStorage.setItem('dev_role', e.target.value);
+                }
+                window.location.reload();
+              }}
+              title="Dev Mode: Override Role"
+            >
+              <option value="default" className="bg-black">Real DB Role</option>
+              <option value="student" className="bg-black">Force: Student</option>
+              <option value="super_admin" className="bg-black">Force: Super Admin</option>
+            </select>
+          </div>
+        )}
+
         <div className="mt-auto flex flex-col gap-4 w-full px-4 items-center">
           <button
             onClick={handleSignOut}
