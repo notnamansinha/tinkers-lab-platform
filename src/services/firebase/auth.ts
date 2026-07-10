@@ -28,8 +28,6 @@ import { signInWithRedirect } from 'firebase/auth'
 export async function signInWithGoogle(): Promise<User> {
   try {
     const result = await signInWithPopup(auth, googleProvider)
-    // Create user profile if first time
-    await ensureUserProfile(result.user)
     return result.user
   } catch (error: any) {
     if (

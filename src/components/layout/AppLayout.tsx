@@ -57,9 +57,9 @@ export default function AppLayout() {
       <header className="md:hidden h-16 flex items-center justify-between px-4 border-b border-white/5 bg-black sticky top-0 z-50">
         <div className="flex items-center gap-2">
           <button className="w-9 h-9 rounded-[10px] overflow-hidden" onClick={() => navigate('/')} aria-label="Go home">
-            <img src={flowerMark} alt="" className="h-full w-full" />
+            <img src={logoMark} alt="" className="h-full w-full" />
           </button>
-          <MathicalLogo className="h-6 text-[#EC68D8]" />
+          <span className="font-brand uppercase text-white text-[20px] tracking-wider font-black" style={{ WebkitTextStroke: '0.8px currentColor' }}>TINKERERS LAB</span>
         </div>
         <button className="text-white p-2" onClick={() => setMenuOpen(!menuOpen)} aria-label="Toggle navigation">
           {menuOpen ? <X size={24} /> : <Menu size={24} />}
@@ -107,7 +107,7 @@ export default function AppLayout() {
 
       <aside className="tl-rail py-6 items-center flex-shrink-0 relative z-10">
         <button className="w-12 h-12 rounded-[14px] overflow-hidden mb-8 hover:scale-105 transition-transform" onClick={() => navigate('/')} aria-label="Go home">
-          <img src={flowerMark} alt="" className="h-full w-full" />
+          <img src={logoMark} alt="" className="h-full w-full" />
         </button>
 
         <nav className="flex flex-col gap-4 w-full px-4">

@@ -6,7 +6,7 @@ import LoadingSpinner from '@/components/common/LoadingSpinner'
 
 // Lazy-load all pages for code splitting (reduces initial bundle)
 const LoginPage = React.lazy(() => import('@/features/auth/LoginPage'))
-const RegisterPage = React.lazy(() => import('@/features/auth/RegisterPage'))
+const OnboardingPage = React.lazy(() => import('@/features/auth/OnboardingPage'))
 const DashboardPage = React.lazy(() => import('@/features/dashboard/DashboardPage'))
 const EquipmentListPage = React.lazy(() => import('@/features/equipment/EquipmentListPage'))
 const EquipmentDetailPage = React.lazy(() => import('@/features/equipment/EquipmentDetailPage'))
@@ -45,28 +45,41 @@ const AdminAnnouncementsPage = React.lazy(() => import('@/features/admin/AdminAn
 // ROUTE GUARDS
 // ============================================================
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth()
+  const { user, profile, loading } = useAuth()
   const location = useLocation()
 
   if (loading) return <LoadingSpinner fullScreen />
   if (!user) return <Navigate to="/login" state={{ from: location }} replace />
+  if (!profile) return <Navigate to="/onboarding" replace />
   return <>{children}</>
 }
 
 function AdminRoute({ children }: { children: React.ReactNode }) {
-  const { user, isAdmin, loading } = useAuth()
+  const { user, profile, isAdmin, loading } = useAuth()
   const location = useLocation()
 
   if (loading) return <LoadingSpinner fullScreen />
   if (!user) return <Navigate to="/login" state={{ from: location }} replace />
+  if (!profile) return <Navigate to="/onboarding" replace />
   if (!isAdmin) return <Navigate to="/" replace />
   return <>{children}</>
 }
 
-function PublicRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth()
+function OnboardingRoute({ children }: { children: React.ReactNode }) {
+  const { user, profile, loading } = useAuth()
   if (loading) return <LoadingSpinner fullScreen />
-  if (user) return <Navigate to="/" replace />
+  if (!user) return <Navigate to="/login" replace />
+  if (profile) return <Navigate to="/" replace />
+  return <>{children}</>
+}
+
+function PublicRoute({ children }: { children: React.ReactNode }) {
+  const { user, profile, loading } = useAuth()
+  if (loading) return <LoadingSpinner fullScreen />
+  if (user) {
+    if (!profile) return <Navigate to="/onboarding" replace />
+    return <Navigate to="/" replace />
+  }
   return <>{children}</>
 }
 
@@ -79,7 +92,8 @@ export default function AppRoutes() {
       <Routes>
         {/* Public */}
         <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
-        <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
+        <Route path="/register" element={<Navigate to="/login" replace />} />
+        <Route path="/onboarding" element={<OnboardingRoute><OnboardingPage /></OnboardingRoute>} />
 
         {/* Protected — inside AppLayout */}
         <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>

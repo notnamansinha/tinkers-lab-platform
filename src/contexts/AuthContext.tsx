@@ -37,12 +37,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Handle redirect result for environments where popup is blocked
     import('firebase/auth').then(({ getRedirectResult }) => {
-      getRedirectResult(auth).then(async (result) => {
-        if (result?.user) {
-          const { ensureUserProfile } = await import('@/services/firebase/auth')
-          await ensureUserProfile(result.user)
-        }
-      }).catch(console.error)
+      getRedirectResult(auth).catch(console.error)
     })
 
     const unsubscribe = onAuthStateChanged(auth, async (u) => {
