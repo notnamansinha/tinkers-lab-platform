@@ -28,17 +28,3 @@ export function generateId(prefix: string, count: number): string {
   return `${prefix}-${String(count + 1).padStart(3, '0')}`
 }
 
-/**
- * Truncate a string to maxLength, adding ellipsis if needed.
- */
-export function truncate(str: string, maxLength: number): string {
-  if (str.length <= maxLength) return str
-  return str.slice(0, maxLength) + '…'
-}
-
-/**
- * Capitalize first letter of each word.
- */
-export function titleCase(str: string): string {
-  return str.replace(/\b\w/g, (c) => c.toUpperCase())
-}
