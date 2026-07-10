@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import https from 'https';
 
-const TOKEN = 'figd_PXnDTuAv-go7DXQfB1gwOnZWPjDPhJ06G57Noq78';
+const TOKEN = process.env.FIGMA_TOKEN || '';
 const FILE_KEY = 'HStb8snmR7asH2KhP8bJUF';
 const NODE_IDS_DASH = [
   '47-77', '47-125', '47-78', '47-82', '47-86', '47-117',
