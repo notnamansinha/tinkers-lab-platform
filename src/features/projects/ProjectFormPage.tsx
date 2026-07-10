@@ -199,7 +199,7 @@ export default function ProjectFormPage() {
               <Field label="Start Date" required error={errors.startDate?.message}>
                 <Input type="date" {...register('startDate')} className={cn(errors.startDate && 'border-destructive')} />
               </Field>
-              <Field label="Estimated End Date">
+              <Field label="End Date" hint="Update this if your project timeline changes.">
                 <Input type="date" {...register('endDate')} />
               </Field>
             </div>
