@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { AlertCircle, Wrench, Calendar, Rocket } from 'lucide-react'
+import { AlertCircle, Cpu, CalendarCheck, ClipboardList } from 'lucide-react'
 import { signInWithGoogle } from '@/services/firebase/auth'
 import { toast } from 'sonner'
 import logoMark from '@/assets/tinkerer-figjam/tinkerer-lab-board.webp'
@@ -142,7 +142,7 @@ export default function LoginPage() {
             <div className="max-lg:mx-auto" style={{ display: 'flex', flexDirection: 'column', gap: 36, marginBottom: 56, width: 'fit-content' }}>
               <div style={{ display: 'flex', gap: 18, alignItems: 'flex-start' }}>
                 <div style={{ color: palette.white, marginTop: 2 }}>
-                  <Wrench size={24} strokeWidth={1.5} />
+                  <Cpu size={24} strokeWidth={1.5} />
                 </div>
                 <div>
                   <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 6, color: palette.white }}>Reserve Equipment</div>
@@ -152,7 +152,7 @@ export default function LoginPage() {
 
               <div style={{ display: 'flex', gap: 18, alignItems: 'flex-start' }}>
                 <div style={{ color: palette.white, marginTop: 2 }}>
-                  <Calendar size={24} strokeWidth={1.5} />
+                  <CalendarCheck size={24} strokeWidth={1.5} />
                 </div>
                 <div>
                   <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 6, color: palette.white }}>Book Workspaces</div>
@@ -162,7 +162,7 @@ export default function LoginPage() {
 
               <div style={{ display: 'flex', gap: 18, alignItems: 'flex-start' }}>
                 <div style={{ color: palette.white, marginTop: 2 }}>
-                  <Rocket size={24} strokeWidth={1.5} />
+                  <ClipboardList size={24} strokeWidth={1.5} />
                 </div>
                 <div>
                   <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 6, color: palette.white }}>Manage Projects</div>
