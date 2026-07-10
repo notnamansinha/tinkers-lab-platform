@@ -50,8 +50,8 @@ export default function LoginPage() {
         background: palette.black,
         color: palette.white,
         fontFamily: bodyFont,
-        overflow: 'hidden',
-        position: 'relative',
+        display: 'flex',
+        flexDirection: 'column',
       }}
     >
       <header
@@ -93,6 +93,7 @@ export default function LoginPage() {
           alignItems: 'center',
           padding: 'clamp(18px, 4vw, 56px)',
           paddingTop: 10,
+          flex: 1,
         }}
         className="max-lg:!grid-cols-1"
       >
@@ -127,7 +128,7 @@ export default function LoginPage() {
               className="max-lg:text-center max-lg:w-full"
               style={{
                 fontFamily: displayFont,
-                fontSize: 'clamp(44px, 6vw, 56px)',
+                fontSize: 'clamp(48px, 7vw, 64px)',
                 fontWeight: 900,
                 lineHeight: 1,
                 letterSpacing: '-0.02em',
@@ -138,34 +139,34 @@ export default function LoginPage() {
               Welcome to<br/>the Lab
             </h1>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 32, marginBottom: 56 }}>
-              <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
-                <div style={{ padding: 10, background: 'rgba(255, 255, 255, 0.06)', borderRadius: 12, color: palette.white }}>
-                  <Wrench size={20} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 36, marginBottom: 56 }}>
+              <div style={{ display: 'flex', gap: 18, alignItems: 'flex-start' }}>
+                <div style={{ color: palette.white, marginTop: 2 }}>
+                  <Wrench size={24} strokeWidth={1.5} />
                 </div>
                 <div>
-                  <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4, color: palette.white }}>Reserve Equipment</div>
-                  <div style={{ color: palette.white, opacity: 0.6, fontSize: 14, lineHeight: 1.4 }}>Fast access to hardware checkouts.</div>
+                  <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 6, color: palette.white }}>Reserve Equipment</div>
+                  <div style={{ color: palette.white, opacity: 0.6, fontSize: 15, lineHeight: 1.4 }}>Fast access to hardware checkouts.</div>
                 </div>
               </div>
 
-              <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
-                <div style={{ padding: 10, background: 'rgba(255, 255, 255, 0.06)', borderRadius: 12, color: palette.white }}>
-                  <Calendar size={20} />
+              <div style={{ display: 'flex', gap: 18, alignItems: 'flex-start' }}>
+                <div style={{ color: palette.white, marginTop: 2 }}>
+                  <Calendar size={24} strokeWidth={1.5} />
                 </div>
                 <div>
-                  <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4, color: palette.white }}>Book Workspaces</div>
-                  <div style={{ color: palette.white, opacity: 0.6, fontSize: 14, lineHeight: 1.4 }}>Secure your spot in the lab.</div>
+                  <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 6, color: palette.white }}>Book Workspaces</div>
+                  <div style={{ color: palette.white, opacity: 0.6, fontSize: 15, lineHeight: 1.4 }}>Secure your spot in the lab.</div>
                 </div>
               </div>
 
-              <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
-                <div style={{ padding: 10, background: 'rgba(255, 255, 255, 0.06)', borderRadius: 12, color: palette.white }}>
-                  <Rocket size={20} />
+              <div style={{ display: 'flex', gap: 18, alignItems: 'flex-start' }}>
+                <div style={{ color: palette.white, marginTop: 2 }}>
+                  <Rocket size={24} strokeWidth={1.5} />
                 </div>
                 <div>
-                  <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4, color: palette.white }}>Manage Projects</div>
-                  <div style={{ color: palette.white, opacity: 0.6, fontSize: 14, lineHeight: 1.4 }}>Track your builds from start to finish.</div>
+                  <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 6, color: palette.white }}>Manage Projects</div>
+                  <div style={{ color: palette.white, opacity: 0.6, fontSize: 15, lineHeight: 1.4 }}>Track your builds from start to finish.</div>
                 </div>
               </div>
             </div>
@@ -230,9 +231,7 @@ export default function LoginPage() {
       </section>
 
       <div style={{
-        position: 'absolute',
-        bottom: 24,
-        left: 'clamp(18px, 4vw, 56px)',
+        padding: '24px clamp(18px, 4vw, 56px)',
         color: palette.white,
         opacity: 0.4,
         fontSize: 12,
