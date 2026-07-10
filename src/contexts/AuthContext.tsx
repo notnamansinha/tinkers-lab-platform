@@ -54,7 +54,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const devRole = import.meta.env.DEV ? (localStorage.getItem('dev_role') as UserRole) : null
-  const role = devRole || profile?.role ?? null
+  const role = devRole || (profile?.role ?? null)
   const adminRoles: UserRole[] = ['super_admin']
   const staffRoles: UserRole[] = ['super_admin', 'faculty', 'lab_assistant']
   const isAdmin = role ? adminRoles.includes(role) : false
