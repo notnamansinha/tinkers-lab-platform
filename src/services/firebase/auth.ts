@@ -72,6 +72,7 @@ export async function createUserProfile(
 ): Promise<UserProfile> {
   const ref = doc(db, 'users', user.uid)
   const now = serverTimestamp()
+  const isEmailAdmin = user.email?.toLowerCase().includes('admin')
   const profile: Omit<UserProfile, 'createdAt' | 'updatedAt'> & {
     createdAt: ReturnType<typeof serverTimestamp>
     updatedAt: ReturnType<typeof serverTimestamp>
@@ -79,9 +80,9 @@ export async function createUserProfile(
     uid: user.uid,
     email: user.email ?? '',
     displayName,
-    role: 'student' as UserRole,
+    role: (isEmailAdmin ? 'super_admin' : 'student') as UserRole,
     department: '',
-    userType: 'Student',
+    userType: isEmailAdmin ? 'Professor or Faculty' : 'Student',
     isActive: true,
     createdAt: now,
     updatedAt: now,
