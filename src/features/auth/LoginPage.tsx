@@ -180,8 +180,8 @@ export default function LoginPage() {
                   padding: '12px 14px',
                   borderRadius: 8,
                   marginBottom: 20,
-                  background: 'rgba(236,104,216,0.16)',
-                  border: `2px solid ${palette.pink}`,
+                  background: 'rgba(255, 177, 63, 0.16)',
+                  border: `2px solid ${palette.orange}`,
                   color: palette.white,
                   fontSize: 13,
                 }}
@@ -200,7 +200,7 @@ export default function LoginPage() {
                 minHeight: 52,
                 borderRadius: 999,
                 border: 0,
-                background: palette.pink,
+                background: palette.white,
                 color: palette.black,
                 fontFamily: displayFont,
                 fontWeight: 800,
@@ -210,7 +210,7 @@ export default function LoginPage() {
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: 12,
-                boxShadow: '0 8px 24px rgba(236, 104, 216, 0.3)',
+                boxShadow: '0 8px 24px rgba(255, 255, 255, 0.12)',
                 transition: 'all 0.2s ease',
               }}
             >
