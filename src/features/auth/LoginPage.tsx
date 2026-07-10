@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { AlertCircle, Cpu, CalendarCheck, ClipboardList } from 'lucide-react'
+import { AlertCircle, Cpu, CalendarCheck } from 'lucide-react'
 import { signInWithGoogle } from '@/services/firebase/auth'
 import { toast } from 'sonner'
 import logoMark from '@/assets/tinkerer-figjam/tinkerer-lab-board.webp'
@@ -160,15 +160,7 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              <div style={{ display: 'flex', gap: 18, alignItems: 'flex-start' }}>
-                <div style={{ color: palette.white, marginTop: 2 }}>
-                  <ClipboardList size={24} strokeWidth={1.5} />
-                </div>
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 6, color: palette.white }}>Manage Projects</div>
-                  <div style={{ color: palette.white, opacity: 0.6, fontSize: 15, lineHeight: 1.4 }}>Track your builds from start to finish.</div>
-                </div>
-              </div>
+
             </div>
 
             {error && (
