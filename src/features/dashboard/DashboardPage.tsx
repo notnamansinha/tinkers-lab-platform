@@ -111,7 +111,7 @@ function Header() {
 
   return (
     <header className="flex items-center justify-between px-6 bg-black border-b border-white/5 flex-shrink-0" style={{ height: 56 }}>
-      <span className="font-brand uppercase text-[#EC68D8] text-[28px] tracking-tighter font-black" style={{ WebkitTextStroke: '1px currentColor' }}>TINKERERS LAB</span>
+      <span className="font-brand uppercase text-white text-[28px] tracking-wider font-black" style={{ WebkitTextStroke: '1px currentColor' }}>TINKERERS LAB</span>
       <div className="flex items-center gap-3">
         <button className="hidden sm:flex items-center gap-2 bg-[#191919] rounded-[8px] px-3 h-9 text-white/40 text-sm hover:bg-[#222] transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-[#EC68D8]">
           <Search size={14} />
@@ -436,7 +436,7 @@ function MobileHeader() {
         <button onClick={() => navigate('/')} className="w-8 h-8 rounded-[8px] overflow-hidden">
           <img src={logoMark} alt="" className="w-full h-full" />
         </button>
-        <span className="font-brand uppercase text-[#EC68D8] text-xl tracking-tighter font-black" style={{ WebkitTextStroke: '1px currentColor' }}>TINKERERS LAB</span>
+        <span className="font-brand uppercase text-white text-xl tracking-wider font-black" style={{ WebkitTextStroke: '1px currentColor' }}>TINKERERS LAB</span>
       </div>
       <button
         onClick={() => navigate('/bookings/new')}

@@ -160,7 +160,7 @@ export default function AppLayout() {
 
       <main className="flex-1 w-full min-w-0 max-w-full relative z-0 flex flex-col">
         <div className="hidden md:flex h-20 items-center justify-center">
-          <span className="font-brand uppercase text-[#EC68D8] text-[32px] tracking-tighter font-black" style={{ WebkitTextStroke: '1.5px currentColor' }}>TINKERERS LAB</span>
+          <span className="font-brand uppercase text-white text-[32px] tracking-wider font-black" style={{ WebkitTextStroke: '1.5px currentColor' }}>TINKERERS LAB</span>
         </div>
 
         <div className="flex-1 p-4 pt-0 md:p-8 md:pt-0 overflow-y-auto">

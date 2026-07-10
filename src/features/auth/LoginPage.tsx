@@ -7,7 +7,7 @@ import { AlertCircle, ArrowRight } from 'lucide-react'
 import { signInWithGoogle, signInWithEmail } from '@/services/firebase/auth'
 import { toast } from 'sonner'
 import logoMark from '@/assets/tinkerer-figjam/tinkerer-lab-board.webp'
-import dashboardArt from '@/assets/tinkerer-figjam/dashboard-clusters.svg'
+import dashboardArt from '@/assets/tinkerer-figjam/register-image.webp'
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -44,26 +44,7 @@ const inputStyle: React.CSSProperties = {
   outline: 'none',
 }
 
-function BrandWordmark() {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-      <img src={logoMark} alt="" style={{ width: 80, height: 80 }} />
-      <span
-        style={{
-          color: palette.pink,
-          fontFamily: displayFont,
-          fontWeight: 900,
-          fontSize: 32,
-          lineHeight: 1,
-          WebkitTextStroke: '1.5px currentColor',
-          letterSpacing: '-0.02em',
-        }}
-      >
-        TINKERERS LAB
-      </span>
-    </div>
-  )
-}
+// BrandWordmark moved inline into header
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -120,18 +101,38 @@ export default function LoginPage() {
       }}
     >
       <header
+        className="flex items-center justify-between"
         style={{
           minHeight: 72,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
           gap: 18,
           padding: '18px clamp(18px, 4vw, 56px)',
         }}
       >
-        <BrandWordmark />
+        <div className="flex items-center gap-3 sm:gap-4">
+          <img 
+            src={logoMark} 
+            alt="Logo" 
+            className="w-12 h-12 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl bg-white object-contain"
+          />
+          <span
+            className="flex flex-col sm:flex-row sm:gap-[0.3em] text-[22px] sm:text-[32px]"
+            style={{
+              color: palette.white,
+              fontFamily: displayFont,
+              fontWeight: 900,
+              lineHeight: 1,
+              WebkitTextStroke: '1.5px currentColor',
+              letterSpacing: '0.05em',
+            }}
+          >
+            <span>TINKERERS</span>
+            <span>LAB</span>
+          </span>
+        </div>
+        
         <Link
           to="/register"
+          className="hidden sm:inline-flex items-center justify-center"
           style={{
             borderRadius: 999,
             background: palette.pink,
@@ -161,60 +162,22 @@ export default function LoginPage() {
       >
         <div style={{ minWidth: 0 }}>
           <div
-            className="max-[768px]:!min-h-0 max-[768px]:!justify-start max-[768px]:!gap-3 max-[768px]:!py-5 max-[768px]:!px-6"
             style={{
               background: palette.beige,
               borderRadius: 14,
-              minHeight: 'min(66svh, 620px)',
-              padding: 'clamp(22px, 4vw, 44px)',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between',
-              gap: 'clamp(24px, 4vh, 48px)',
               position: 'relative',
               overflow: 'hidden',
-              boxShadow: '0 26px 70px rgba(0,0,0,0.45)',
             }}
           >
-            <p className="max-[768px]:!-mt-2" style={{ maxWidth: 280, color: palette.black, fontSize: 24, lineHeight: 1.1, fontWeight: 900, fontFamily: displayFont, WebkitTextStroke: '1px currentColor' }}>
-              Make smarter reservations and keep the lab moving
-            </p>
-
             <img
               src={dashboardArt}
-              className="max-[768px]:!w-[115%] max-[768px]:!max-w-none"
-              alt="Dashboard preview with rounded charts and bright planning blocks"
+              alt="Plan smarter, live better."
               style={{
-                width: 'min(760px, 92%)',
-                alignSelf: 'center',
-                borderRadius: 12,
-                transform: 'rotate(-2deg)',
-                boxShadow: '0 24px 46px rgba(0,0,0,0.38)',
+                width: '100%',
+                height: 'auto',
+                display: 'block',
               }}
             />
-
-            {/* Decorative overlap removed for better responsiveness */}
-
-            <div
-              className="-mt-3"
-              style={{
-                display: 'flex',
-                flexWrap: 'wrap',
-                alignItems: 'center',
-                gap: 10,
-                fontFamily: displayFont,
-                fontWeight: 800,
-                fontSize: 'clamp(40px, 7vw, 88px)',
-                lineHeight: 0.88,
-                color: palette.black,
-              }}
-            >
-              <span style={{ background: palette.lime, borderRadius: 10, padding: '4px 10px' }}>Book</span>
-              <span style={{ background: palette.black, color: palette.white, borderRadius: 10, padding: '4px 10px' }}>your</span>
-              <span style={{ background: palette.pink, borderRadius: 999, width: '1.45em', height: '.78em' }} />
-              <span style={{ background: palette.cream, borderRadius: 10, padding: '4px 10px' }}>next</span>
-              <span style={{ background: palette.orange, borderRadius: 10, padding: '4px 10px' }}>build.</span>
-            </div>
           </div>
         </div>
 
