@@ -66,10 +66,9 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
 }
 
 function OnboardingRoute({ children }: { children: React.ReactNode }) {
-  const { user, profile, loading } = useAuth()
+  const { user, loading } = useAuth()
   if (loading) return <LoadingSpinner fullScreen />
   if (!user) return <Navigate to="/login" replace />
-  if (profile) return <Navigate to="/" replace />
   return <>{children}</>
 }
 
