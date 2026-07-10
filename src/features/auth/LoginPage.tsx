@@ -119,28 +119,23 @@ export default function LoginPage() {
 
         <aside style={{ width: '100%', maxWidth: 460, justifySelf: 'center', display: 'flex', flexDirection: 'column' }}>
           <div style={{
-            background: 'rgba(255, 255, 255, 0.03)',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            borderRadius: 24,
-            padding: '40px 32px',
-            backdropFilter: 'blur(20px)',
-            WebkitBackdropFilter: 'blur(20px)',
             display: 'flex',
             flexDirection: 'column',
+            width: '100%',
           }}>
             <h1 style={{
               fontFamily: displayFont,
-              fontSize: 'clamp(36px, 5vw, 44px)',
+              fontSize: 'clamp(44px, 6vw, 56px)',
               fontWeight: 900,
               lineHeight: 1,
               letterSpacing: '-0.02em',
-              marginBottom: 36,
+              marginBottom: 48,
               color: palette.white
             }}>
               Welcome to<br/>the Lab.
             </h1>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 24, marginBottom: 40 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 32, marginBottom: 56 }}>
               <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
                 <div style={{ padding: 10, background: 'rgba(255, 255, 255, 0.06)', borderRadius: 12, color: palette.white }}>
                   <Wrench size={20} />
@@ -213,7 +208,6 @@ export default function LoginPage() {
                 gap: 12,
                 boxShadow: '0 8px 24px rgba(236, 104, 216, 0.3)',
                 transition: 'all 0.2s ease',
-                marginTop: 'auto'
               }}
             >
               {googleLoading ? 'CONNECTING...' : 'CONTINUE WITH GOOGLE'}
