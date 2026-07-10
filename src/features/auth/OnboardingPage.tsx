@@ -82,7 +82,7 @@ function Field({ label, required, error, children }: {
 
 export default function OnboardingPage() {
   const navigate = useNavigate()
-  const { user, refetchProfile } = useAuth()
+  const { user, profile, refetchProfile } = useAuth()
   const [error, setError] = useState<string | null>(null)
   const [step, setStep] = useState<1 | 2 | 3>(1) // 1=type, 2=details, 3=acknowledgements
 
@@ -92,6 +92,7 @@ export default function OnboardingPage() {
     watch,
     trigger,
     setValue,
+    reset,
     formState: { errors, isSubmitting },
   } = useForm<OnboardingForm>({
     resolver: zodResolver(onboardingSchema) as any,
@@ -104,10 +105,35 @@ export default function OnboardingPage() {
   })
 
   useEffect(() => {
-    if (user) {
+    if (profile) {
+      reset({
+        userType: profile.userType,
+        displayName: profile.displayName || user?.displayName || '',
+        contact: profile.contact || '',
+        universityId: profile.universityId || '',
+        department: profile.department || '',
+        courseName: profile.courseName || '',
+        facultyAdvisor: profile.facultyAdvisor || '',
+        teamName: profile.teamName || '',
+        teamMembers: profile.teamMembers || '',
+        researchArea: profile.researchArea || '',
+        associatedCourse: profile.associatedCourse || '',
+        studentsInvolved: profile.studentsInvolved || '',
+        startupName: profile.startupName || '',
+        industryDomain: profile.industryDomain || '',
+        startupBrief: profile.startupBrief || '',
+        labTeamMembers: profile.labTeamMembers || '',
+        organization: profile.organization || '',
+        designation: profile.designation || '',
+        purposeOfVisit: profile.purposeOfVisit || '',
+        referral: profile.referral || '',
+        safetyAgreementAccepted: true,
+        termsAccepted: true,
+      })
+    } else if (user) {
       if (user.displayName) setValue('displayName', user.displayName)
     }
-  }, [user, setValue])
+  }, [profile, user, reset, setValue])
 
   const userType = watch('userType')
   const STEPS = ['Who are you?', 'Your details', 'Agreements']

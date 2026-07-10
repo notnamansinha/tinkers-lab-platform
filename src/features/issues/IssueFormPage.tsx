@@ -23,6 +23,7 @@ const schema = z.object({
   severity: z.enum(['low','medium','high','urgent']),
   relatedMachine: z.string().optional(),
   description: z.string().min(20, 'Please provide at least 20 characters describing the issue'),
+  dateNoticed: z.string().optional(),
 })
 type FormData = z.infer<typeof schema>
 
@@ -88,6 +89,11 @@ export default function IssueFormPage() {
             <div className="col-span-full space-y-2">
               <Label>Related Machine / Equipment <span className="text-muted-foreground font-normal">(optional)</span></Label>
               <Input placeholder="e.g. Laser Cutter, Bambu X1C..." {...register('relatedMachine')} />
+            </div>
+
+            <div className="col-span-full space-y-2">
+              <Label>When did you notice this? <span className="text-muted-foreground font-normal">(optional)</span></Label>
+              <Input type="date" max={new Date().toISOString().split('T')[0]} {...register('dateNoticed')} />
             </div>
 
             <div className="col-span-full space-y-2">

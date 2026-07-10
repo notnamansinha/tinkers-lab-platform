@@ -1,12 +1,11 @@
 import React, { useState } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { Box, Calendar, LayoutDashboard, LogOut, Menu, MessageSquare, Wrench, X } from 'lucide-react'
+import { Box, Calendar, LayoutDashboard, LogOut, Menu, MessageSquare, Wrench, X, Users, AlertTriangle, ShieldCheck } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { signOut } from '@/services/firebase/auth'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import logoMark from '@/assets/tinkerer-figjam/tinkerer-lab-board.webp'
-
 
 const NAV_LINKS = [
   { name: 'Home',      icon: LayoutDashboard, path: '/' },
@@ -16,9 +15,11 @@ const NAV_LINKS = [
   { name: 'Projects',  icon: MessageSquare,   path: '/projects' },
 ]
 
-// Routes where the page component manages its own full-screen layout.
-// AppLayout will render a plain full-bleed wrapper for these routes.
-const SELF_MANAGED_ROUTES = ['/']
+const ADMIN_LINKS = [
+  { name: 'Admin Hub', icon: ShieldCheck,   path: '/admin' },
+  { name: 'Users',     icon: Users,         path: '/admin/users' },
+  { name: 'Issues',    icon: AlertTriangle, path: '/admin/issues' },
+]
 
 export default function AppLayout() {
   const { profile, user, isStaff } = useAuth()
@@ -42,14 +43,6 @@ export default function AppLayout() {
     .slice(0, 2)
     .toUpperCase()
 
-  // Dashboard manages its own sidebar + header â€” render full-bleed
-  if (SELF_MANAGED_ROUTES.includes(location.pathname)) {
-    return (
-      <div className="w-full min-h-screen bg-black">
-        <Outlet />
-      </div>
-    )
-  }
 
   return (
     <div className="tl-shell">
@@ -82,23 +75,38 @@ export default function AppLayout() {
             </button>
           ))}
           {isStaff && (
-            <button
-              onClick={() => { navigate('/admin'); setMenuOpen(false) }}
-              className={cn(
-                'flex items-center gap-4 px-6 py-4 rounded-full transition-all',
-                isActive('/admin') ? 'bg-indigo text-white text-sidebar-active' : 'text-white/60 hover:text-white hover:bg-white/5 text-sidebar-normal'
-              )}
-            >
-              <LayoutDashboard size={24} />
-              Admin
-            </button>
+            <>
+              <div className="my-2 border-t border-white/10" />
+              {ADMIN_LINKS.map(link => (
+                <button
+                  key={link.path}
+                  onClick={() => { navigate(link.path); setMenuOpen(false) }}
+                  className={cn(
+                    'flex items-center gap-4 px-6 py-4 rounded-full transition-all',
+                    isActive(link.path) && link.path !== '/admin' || (link.path === '/admin' && location.pathname === '/admin') ? 'bg-indigo text-white text-sidebar-active' : 'text-white/60 hover:text-white hover:bg-white/5 text-sidebar-normal'
+                  )}
+                >
+                  <link.icon size={24} />
+                  {link.name}
+                </button>
+              ))}
+            </>
           )}
           <div className="mt-auto flex items-center gap-4 px-6 py-4">
-            <div className="w-10 h-10 rounded-full bg-pink text-black flex items-center justify-center font-bold text-[14px]">
+            <button
+              onClick={() => { navigate('/onboarding'); setMenuOpen(false) }}
+              title="View Profile"
+              className="w-10 h-10 rounded-full bg-pink text-black flex items-center justify-center font-bold text-[14px] hover:scale-105 transition-transform"
+            >
               {initials}
-            </div>
+            </button>
             <div className="flex-1 text-left">
-              <p className="text-white text-sidebar-normal">{profile?.displayName || 'User'}</p>
+              <button
+                onClick={() => { navigate('/onboarding'); setMenuOpen(false) }}
+                className="text-white text-sidebar-normal hover:underline font-bold text-left block"
+              >
+                {profile?.displayName || 'User'}
+              </button>
               <button onClick={handleSignOut} className="text-pink text-badge hover:underline">Log out</button>
             </div>
           </div>
@@ -128,19 +136,25 @@ export default function AppLayout() {
             </button>
           ))}
           {isStaff && (
-            <button
-              onClick={() => navigate('/admin')}
-              title="Admin"
-              className={cn(
-                'w-full lg:w-auto lg:justify-start h-12 mx-auto rounded-full flex items-center justify-center gap-3 px-0 lg:px-4 transition-all hover:scale-[1.02]',
-                isActive('/admin')
-                  ? 'bg-indigo text-white shadow-[0_0_0_1px_rgba(255,255,255,0.08)]'
-                  : 'text-white/50 hover:bg-white/5 hover:text-white'
-              )}
-            >
-              <LayoutDashboard size={20} />
-              <span className={cn("hidden lg:inline", isActive('/admin') ? "text-sidebar-active" : "text-sidebar-normal")}>Admin</span>
-            </button>
+            <>
+              <div className="w-full h-px bg-white/10 my-2" />
+              {ADMIN_LINKS.map(link => (
+                <button
+                  key={link.path}
+                  onClick={() => navigate(link.path)}
+                  title={link.name}
+                  className={cn(
+                    'w-full lg:w-auto lg:justify-start h-12 mx-auto rounded-full flex items-center justify-center gap-3 px-0 lg:px-4 transition-all hover:scale-[1.02]',
+                    isActive(link.path) && link.path !== '/admin' || (link.path === '/admin' && location.pathname === '/admin')
+                      ? 'bg-indigo text-white shadow-[0_0_0_1px_rgba(255,255,255,0.08)]'
+                      : 'text-white/50 hover:bg-white/5 hover:text-white'
+                  )}
+                >
+                  <link.icon size={20} />
+                  <span className={cn("hidden lg:inline", isActive(link.path) && link.path !== '/admin' || (link.path === '/admin' && location.pathname === '/admin') ? "text-sidebar-active" : "text-sidebar-normal")}>{link.name}</span>
+                </button>
+              ))}
+            </>
           )}
         </nav>
 
@@ -152,9 +166,13 @@ export default function AppLayout() {
           >
             <LogOut size={20} />
           </button>
-          <div className="w-12 h-12 rounded-full bg-pink flex items-center justify-center text-black font-bold text-[16px] shadow-lg">
+          <button
+            onClick={() => navigate('/onboarding')}
+            title="View Profile"
+            className="w-12 h-12 rounded-full bg-pink flex items-center justify-center text-black font-bold text-[16px] shadow-lg hover:scale-105 transition-all focus:outline-none"
+          >
             {initials}
-          </div>
+          </button>
         </div>
       </aside>
 
