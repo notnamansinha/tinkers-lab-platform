@@ -1,20 +1,10 @@
 import React, { useState } from 'react'
-import { Link, useNavigate, useLocation } from 'react-router-dom'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-import { AlertCircle, ArrowRight } from 'lucide-react'
-import { signInWithGoogle, signInWithEmail } from '@/services/firebase/auth'
+import { useNavigate, useLocation } from 'react-router-dom'
+import { AlertCircle } from 'lucide-react'
+import { signInWithGoogle } from '@/services/firebase/auth'
 import { toast } from 'sonner'
 import logoMark from '@/assets/tinkerer-figjam/tinkerer-lab-board.webp'
 import dashboardArt from '@/assets/tinkerer-figjam/register-image.webp'
-
-const loginSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
-})
-
-type LoginForm = z.infer<typeof loginSchema>
 
 const palette = {
   black: '#000000',
@@ -31,33 +21,12 @@ const palette = {
 const displayFont = "'PP Mori', 'Arial Black', Arial, sans-serif"
 const bodyFont = "'PP Mori', Arial, sans-serif"
 
-const inputStyle: React.CSSProperties = {
-  width: '100%',
-  minHeight: 48,
-  padding: '12px 16px',
-  background: palette.charcoal,
-  border: '2px solid transparent',
-  borderRadius: 8,
-  color: palette.white,
-  fontSize: 14,
-  fontFamily: bodyFont,
-  outline: 'none',
-}
-
-// BrandWordmark moved inline into header
-
 export default function LoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/'
   const [googleLoading, setGoogleLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<LoginForm>({ resolver: zodResolver(loginSchema) })
 
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true)
@@ -71,22 +40,6 @@ export default function LoginPage() {
       setError(e instanceof Error ? e.message : 'Google sign-in failed')
     } finally {
       setGoogleLoading(false)
-    }
-  }
-
-  const onSubmit = async (data: LoginForm) => {
-    setError(null)
-    try {
-      await signInWithEmail(data.email, data.password)
-      navigate(from, { replace: true })
-      toast.success('Signed in successfully')
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : 'Sign-in failed'
-      setError(
-        msg.includes('invalid-credential') || msg.includes('wrong-password') || msg.includes('user-not-found')
-          ? 'Invalid email or password'
-          : msg
-      )
     }
   }
 
@@ -129,24 +82,6 @@ export default function LoginPage() {
             <span>LAB</span>
           </span>
         </div>
-        
-        <Link
-          to="/register"
-          className="hidden sm:inline-flex items-center justify-center"
-          style={{
-            borderRadius: 999,
-            background: palette.pink,
-            color: palette.black,
-            padding: '9px 18px',
-            fontFamily: displayFont,
-            fontSize: 12,
-            fontWeight: 800,
-            textDecoration: 'none',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          REGISTER
-        </Link>
       </header>
 
       <section
@@ -182,10 +117,8 @@ export default function LoginPage() {
         </div>
 
         <aside style={{ width: '100%', maxWidth: 430, justifySelf: 'center' }}>
-
-
-          <p style={{ color: palette.white, opacity: 0.78, fontSize: 16, lineHeight: 1.35, marginBottom: 28, marginTop: 12 }}>
-            Sign in to book machines, track checkouts, manage projects, and review lab activity.
+          <p style={{ color: palette.white, opacity: 0.78, fontSize: 16, lineHeight: 1.45, marginBottom: 28, marginTop: 12 }}>
+            Welcome to Tinkerers' Lab. Please sign in with your Ahmedabad University Google account to access bookings, equipment checkouts, and projects.
           </p>
 
           {error && (
@@ -196,7 +129,7 @@ export default function LoginPage() {
                 alignItems: 'flex-start',
                 padding: '12px 14px',
                 borderRadius: 8,
-                marginBottom: 16,
+                marginBottom: 20,
                 background: 'rgba(236,104,216,0.16)',
                 border: `2px solid ${palette.pink}`,
                 color: palette.white,
@@ -208,77 +141,31 @@ export default function LoginPage() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: 13 }}>
-            <label style={{ display: 'grid', gap: 6 }}>
-              <span style={{ color: '#777', fontSize: 11, fontWeight: 800 }}>EMAIL</span>
-              <input
-                type="email"
-                autoComplete="email"
-                placeholder="Enter your email address"
-                style={{ ...inputStyle, borderColor: errors.email ? palette.pink : 'transparent' }}
-                {...register('email')}
-              />
-              {errors.email && <span style={{ color: palette.pink, fontSize: 12 }}>{errors.email.message}</span>}
-            </label>
-
-            <label style={{ display: 'grid', gap: 6 }}>
-              <span style={{ color: '#777', fontSize: 11, fontWeight: 800 }}>PASSWORD</span>
-              <input
-                type="password"
-                autoComplete="current-password"
-                placeholder="Enter your password"
-                style={{ ...inputStyle, borderColor: errors.password ? palette.pink : 'transparent' }}
-                {...register('password')}
-              />
-              {errors.password && <span style={{ color: palette.pink, fontSize: 12 }}>{errors.password.message}</span>}
-            </label>
-
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              style={{
-                minHeight: 48,
-                border: 0,
-                borderRadius: 999,
-                background: palette.pink,
-                color: palette.black,
-                fontFamily: displayFont,
-                fontWeight: 800,
-                cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                opacity: isSubmitting ? 0.65 : 1,
-                marginTop: 8,
-              }}
-            >
-              {isSubmitting ? 'SIGNING IN...' : 'SIGN IN'}
-            </button>
-          </form>
-
           <button
             type="button"
             onClick={handleGoogleSignIn}
             disabled={googleLoading}
             style={{
               width: '100%',
-              minHeight: 46,
-              marginTop: 12,
+              minHeight: 52,
               borderRadius: 999,
-              border: `2px solid ${palette.charcoal}`,
-              background: palette.black,
-              color: palette.white,
+              border: 0,
+              background: palette.pink,
+              color: palette.black,
               fontFamily: displayFont,
               fontWeight: 800,
+              fontSize: 15,
               cursor: googleLoading ? 'not-allowed' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 12,
+              boxShadow: '0 8px 24px rgba(236, 104, 216, 0.3)',
+              transition: 'all 0.2s ease',
             }}
           >
             {googleLoading ? 'CONNECTING...' : 'CONTINUE WITH GOOGLE'}
           </button>
-
-          <p style={{ marginTop: 18, color: '#8B8B8B', fontSize: 13 }}>
-            New here?{' '}
-            <Link to="/register" style={{ color: palette.pink, fontWeight: 800, textDecoration: 'none' }}>
-              Create an account
-            </Link>
-          </p>
         </aside>
       </section>
     </main>
