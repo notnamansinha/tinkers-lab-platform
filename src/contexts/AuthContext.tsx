@@ -54,10 +54,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const role = profile?.role ?? null
-  const adminRoles: string[] = ['super_admin', 'admin']
-  const staffRoles: string[] = ['super_admin', 'admin', 'faculty', 'lab_assistant']
-  const isAdmin = role ? adminRoles.includes(role) : false
-  const isStaff = role ? staffRoles.includes(role) : false
+  const normalizedRole = role?.toLowerCase().replace(/[^a-z]/g, '') ?? ''
+  
+  const adminRoles = ['superadmin', 'admin']
+  const staffRoles = ['superadmin', 'admin', 'faculty', 'labassistant']
+  
+  const isAdmin = adminRoles.includes(normalizedRole)
+  const isStaff = staffRoles.includes(normalizedRole)
 
   return (
     <AuthContext.Provider
