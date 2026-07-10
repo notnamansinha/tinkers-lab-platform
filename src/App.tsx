@@ -4,7 +4,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from 'sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { AuthProvider } from '@/contexts/AuthContext'
-import { NotificationProvider } from '@/contexts/NotificationContext'
 import AppRoutes from '@/routes'
 
 // QueryClient optimized for free tier: aggressive caching, minimal refetches
@@ -29,15 +28,13 @@ export default function App() {
       <BrowserRouter>
         <AuthProvider>
           <TooltipProvider>
-            <NotificationProvider>
-              <AppRoutes />
-              <Toaster
-                position="bottom-right"
-                richColors
-                closeButton
-                duration={4000}
-              />
-            </NotificationProvider>
+            <AppRoutes />
+            <Toaster
+              position="bottom-right"
+              richColors
+              closeButton
+              duration={4000}
+            />
           </TooltipProvider>
         </AuthProvider>
       </BrowserRouter>
