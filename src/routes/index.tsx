@@ -50,7 +50,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (loading) return <LoadingSpinner fullScreen />
   if (!user) return <Navigate to="/login" state={{ from: location }} replace />
-  if (!profile) return <Navigate to="/onboarding" replace />
+  if (!profile || !profile.contact) return <Navigate to="/onboarding" replace />
   return <>{children}</>
 }
 
@@ -60,7 +60,7 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
 
   if (loading) return <LoadingSpinner fullScreen />
   if (!user) return <Navigate to="/login" state={{ from: location }} replace />
-  if (!profile) return <Navigate to="/onboarding" replace />
+  if (!profile || !profile.contact) return <Navigate to="/onboarding" replace />
   if (!isAdmin) return <Navigate to="/" replace />
   return <>{children}</>
 }
@@ -76,7 +76,7 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   const { user, profile, loading } = useAuth()
   if (loading) return <LoadingSpinner fullScreen />
   if (user) {
-    if (!profile) return <Navigate to="/onboarding" replace />
+    if (!profile || !profile.contact) return <Navigate to="/onboarding" replace />
     return <Navigate to="/" replace />
   }
   return <>{children}</>

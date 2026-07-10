@@ -28,8 +28,6 @@ const onboardingSchema = z.object({
   department: z.string().optional(),
   courseName: z.string().optional(),
   facultyAdvisor: z.string().optional(),
-  teamName: z.string().optional(),
-  teamMembers: z.string().optional(),
   // Professor fields
   researchArea: z.string().optional(),
   associatedCourse: z.string().optional(),
@@ -114,8 +112,6 @@ export default function OnboardingPage() {
         department: profile.department || '',
         courseName: profile.courseName || '',
         facultyAdvisor: profile.facultyAdvisor || '',
-        teamName: profile.teamName || '',
-        teamMembers: profile.teamMembers || '',
         researchArea: profile.researchArea || '',
         associatedCourse: profile.associatedCourse || '',
         studentsInvolved: profile.studentsInvolved || '',
@@ -170,8 +166,6 @@ export default function OnboardingPage() {
         universityId: data.universityId,
         courseName: data.courseName,
         facultyAdvisor: data.facultyAdvisor,
-        teamName: data.teamName,
-        teamMembers: data.teamMembers,
         // Professor-specific
         researchArea: data.researchArea,
         associatedCourse: data.associatedCourse,
@@ -326,12 +320,6 @@ export default function OnboardingPage() {
                     </Field>
                     <Field label="Faculty Advisor">
                       <input {...register('facultyAdvisor')} placeholder="Faculty advisor name (optional)" className="tl-input" />
-                    </Field>
-                    <Field label="Team Name">
-                      <input {...register('teamName')} placeholder="Optional" className="tl-input" />
-                    </Field>
-                    <Field label="Team Members">
-                      <textarea {...register('teamMembers')} placeholder="Names and IDs of teammates" className="tl-input min-h-[80px] resize-none" />
                     </Field>
                   </div>
                 )}
