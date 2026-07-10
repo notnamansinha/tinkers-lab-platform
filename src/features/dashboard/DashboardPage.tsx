@@ -7,7 +7,7 @@ import { COLLECTIONS } from '@/services/firebase/firestore'
 import { useAuth } from '@/contexts/AuthContext'
 import { getActiveUserCheckouts, isCheckoutOverdue } from '@/services/firebase/toolCheckouts'
 import { getUserProjects } from '@/services/firebase/projects'
-import type { Equipment, Booking } from '@/types'
+import type { Equipment, Booking, Project } from '@/types'
 import { cn, todayStr } from '@/lib/utils'
 import {
   CalendarDays,
@@ -18,16 +18,6 @@ import {
   MessageSquare
 } from 'lucide-react'
 import dashboardClusters from '@/assets/tinkerer-figjam/dashboard-clusters.svg'
-
-// ─── Constants ───────────────────────────────────────────────────────────────
-const FORM_FIELDS = [
-  { id: 'goal',      label: 'MAIN GOAL',           placeholder: 'e.g. Complete PCB prototype' },
-  { id: 'budget',    label: 'BUDGET RANGE',        placeholder: 'e.g. ₹5,000 — ₹15,000' },
-  { id: 'timeline',  label: 'TIMELINE',            placeholder: 'e.g. 3 months' },
-  { id: 'equip',     label: 'PREFERRED EQUIPMENT', placeholder: 'e.g. 3D Printer, Laser Cutter' },
-  { id: 'sessions',  label: 'WEEKLY SESSIONS',     placeholder: 'e.g. 2 sessions/week' },
-  { id: 'members',   label: 'TEAM SIZE',           placeholder: 'e.g. 4 members' },
-] as const
 
 // ─── Stat Strip ──────────────────────────────────────────────────────────────
 function LabStats({ stats }: { stats: { label: string, value: string | number, color: string }[] }) {
@@ -49,55 +39,65 @@ function LabStats({ stats }: { stats: { label: string, value: string | number, c
   )
 }
 
-// ─── Form Panel ──────────────────────────────────────────────────────────────
-function FormPanel() {
+function ProjectsPanel({ projects }: { projects: Project[] }) {
   const navigate = useNavigate()
-  const [formData, setFormData] = useState<Record<string, string>>({})
-  const onChange = (id: string, val: string) => setFormData(p => ({ ...p, [id]: val }))
 
   return (
     <div className="bg-[#514AF1] flex flex-col overflow-hidden shadow-lg" style={{ borderRadius: 16 }}>
       {/* Header */}
       <div className="flex items-center justify-between px-6 pt-6 pb-4">
         <h2 className="text-white leading-none text-2xl font-bold font-display">
-          Future Project Plans
+          Your Projects
         </h2>
+        <button
+          onClick={() => navigate('/projects/new')}
+          className="bg-[#DDF237] text-black font-bold px-4 py-2 rounded-full hover:brightness-110 active:scale-[0.98] transition-all text-sm shadow-md"
+        >
+          + New Project
+        </button>
       </div>
 
-      {/* Fields */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-6 pb-6">
-        {FORM_FIELDS.map((field) => (
-          <div key={field.id} className="flex flex-col gap-1.5">
-            <label
-              htmlFor={`plan-${field.id}`}
-              className="text-white/60 leading-none text-xs font-bold tracking-wider"
-            >
-              {field.label}
-            </label>
-            <div className="relative">
-              <input
-                id={`plan-${field.id}`}
-                type="text"
-                placeholder={field.placeholder}
-                value={formData[field.id] || ''}
-                onChange={e => onChange(field.id, e.target.value)}
-                className={cn(
-                  'w-full h-11 bg-[#746EF8] rounded-[8px] px-3 text-white text-sm font-medium',
-                  'placeholder:text-white/40 outline-none border-2 border-transparent',
-                  'focus:border-[#DDF237] focus:bg-[#6A63F0] hover:bg-[#6E68F5] transition-all'
-                )}
-              />
-              {/* Lime dot: shown on focused/filled field */}
-              {formData[field.id] && (
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-[#DDF237]" />
+      {/* Projects List */}
+      <div className="flex flex-col gap-3 px-6 pb-6 max-h-[320px] overflow-y-auto">
+        {projects.length === 0 ? (
+          <div className="bg-black/10 rounded-[12px] p-6 text-center border border-white/10">
+            <p className="text-white/60 font-medium text-sm">You haven't registered any projects yet.</p>
+            <p className="text-white/40 text-xs mt-1">Register a project to start booking machines.</p>
+          </div>
+        ) : (
+          projects.map((p) => (
+            <div key={p.id} className="bg-[#746EF8] rounded-[12px] p-4 flex flex-col gap-2 border border-white/5 shadow-sm hover:bg-[#6A63F0] transition-colors cursor-pointer" onClick={() => navigate(`/projects/${p.id}`)}>
+              <div className="flex justify-between items-start gap-2">
+                <h3 className="text-white font-bold text-lg leading-tight">{p.title}</h3>
+                <span className={cn('text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider shrink-0', 
+                  p.status === 'active' ? 'bg-[#DDF237] text-black' : 
+                  p.status === 'pending' ? 'bg-amber-400 text-black' : 
+                  'bg-white/20 text-white')}>
+                  {p.status}
+                </span>
+              </div>
+              <p className="text-white/70 text-xs line-clamp-2">{p.abstract}</p>
+              
+              <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 pt-2 border-t border-white/10">
+                <span className="text-white/80 text-[11px] font-medium"><span className="text-white/40">Type:</span> {p.userType}</span>
+                {p.department && <span className="text-white/80 text-[11px] font-medium"><span className="text-white/40">Dept:</span> {p.department}</span>}
+                {p.facultyMentor && <span className="text-white/80 text-[11px] font-medium"><span className="text-white/40">Mentor/Prof:</span> {p.facultyMentor}</span>}
+                {p.startDate && <span className="text-white/80 text-[11px] font-medium"><span className="text-white/40">Started:</span> {p.startDate}</span>}
+              </div>
+              {p.expectedEquipmentNeeds && p.expectedEquipmentNeeds.length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-1.5">
+                  {p.expectedEquipmentNeeds.map(eq => (
+                    <span key={eq} className="bg-black/20 text-white/90 text-[10px] px-1.5 py-0.5 rounded">{eq}</span>
+                  ))}
+                </div>
               )}
             </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
 
       {/* Actions */}
-      <div className="flex gap-3 px-6 py-5 border-t border-white/10 bg-black/10">
+      <div className="flex gap-3 px-6 py-5 border-t border-white/10 bg-black/10 mt-auto">
         <button
           onClick={() => navigate('/bookings/new')}
           className="flex-1 h-11 bg-[#746EF8] text-white font-bold rounded-[8px] hover:bg-[#6A63F0] transition-colors focus:outline-none"
@@ -105,10 +105,10 @@ function FormPanel() {
           Book Machine
         </button>
         <button
-          onClick={() => navigate('/projects/new')}
+          onClick={() => navigate('/checkout')}
           className="flex-1 h-11 bg-[#EC68D8] text-black font-bold rounded-[8px] hover:brightness-110 active:scale-[0.98] transition-all focus:outline-none shadow-md"
         >
-          Start Project
+          Checkout Tool
         </button>
       </div>
     </div>
@@ -280,7 +280,7 @@ export default function DashboardPage() {
         {/* Left Column: Forms and Actions */}
         <div className="xl:col-span-2 flex flex-col gap-6">
           
-          <FormPanel />
+          <ProjectsPanel projects={userProjects} />
 
           {/* Quick Actions */}
           <div className="flex flex-col gap-3">
