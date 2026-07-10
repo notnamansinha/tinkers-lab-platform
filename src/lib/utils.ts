@@ -12,11 +12,16 @@ export const formatDateTime = (d: any) => d ? toDate(d).toLocaleString('en-IN', 
 
 export function formatRelativeTime(date: any): string {
   if (!date) return '—'
-  const d = toDate(date), mins = Math.floor((Date.now() - d.getTime()) / 60000)
-  if (mins < 1) return 'just now'
-  if (mins < 60) return `${mins}m ago`
-  if (mins < 1440) return `${Math.floor(mins / 60)}h ago`
-  if (mins < 10080) return `${Math.floor(mins / 1440)}d ago`
+  const d = toDate(date)
+  const diffInSeconds = (d.getTime() - Date.now()) / 1000
+  
+  if (Math.abs(diffInSeconds) < 60) return 'just now'
+  
+  const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto', style: 'short' })
+  
+  if (Math.abs(diffInSeconds) < 3600) return rtf.format(Math.round(diffInSeconds / 60), 'minute')
+  if (Math.abs(diffInSeconds) < 86400) return rtf.format(Math.round(diffInSeconds / 3600), 'hour')
+  if (Math.abs(diffInSeconds) < 604800) return rtf.format(Math.round(diffInSeconds / 86400), 'day')
   return formatDate(d)
 }
 
