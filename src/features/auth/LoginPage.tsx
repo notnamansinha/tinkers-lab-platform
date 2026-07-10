@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { AlertCircle } from 'lucide-react'
+import { AlertCircle, Wrench, Calendar, Rocket } from 'lucide-react'
 import { signInWithGoogle } from '@/services/firebase/auth'
 import { toast } from 'sonner'
 import logoMark from '@/assets/tinkerer-figjam/tinkerer-lab-board.webp'
@@ -51,6 +51,7 @@ export default function LoginPage() {
         color: palette.white,
         fontFamily: bodyFont,
         overflow: 'hidden',
+        position: 'relative',
       }}
     >
       <header
@@ -116,58 +117,122 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <aside style={{ width: '100%', maxWidth: 430, justifySelf: 'center' }}>
-          <p style={{ color: palette.white, opacity: 0.78, fontSize: 16, lineHeight: 1.45, marginBottom: 28, marginTop: 12 }}>
-            Welcome to Tinkerers' Lab. Please sign in with your Ahmedabad University Google account to access bookings, equipment checkouts, and projects.
-          </p>
+        <aside style={{ width: '100%', maxWidth: 460, justifySelf: 'center', display: 'flex', flexDirection: 'column' }}>
+          <div style={{
+            background: 'rgba(255, 255, 255, 0.03)',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            borderRadius: 24,
+            padding: '40px 32px',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            display: 'flex',
+            flexDirection: 'column',
+          }}>
+            <h1 style={{
+              fontFamily: displayFont,
+              fontSize: 'clamp(36px, 5vw, 44px)',
+              fontWeight: 900,
+              lineHeight: 1,
+              letterSpacing: '-0.02em',
+              marginBottom: 36,
+              color: palette.white
+            }}>
+              Welcome to<br/>the Lab.
+            </h1>
 
-          {error && (
-            <div
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 24, marginBottom: 40 }}>
+              <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+                <div style={{ padding: 10, background: 'rgba(255, 255, 255, 0.06)', borderRadius: 12, color: palette.white }}>
+                  <Wrench size={20} />
+                </div>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4, color: palette.white }}>Reserve Equipment</div>
+                  <div style={{ color: palette.white, opacity: 0.6, fontSize: 14, lineHeight: 1.4 }}>Fast access to hardware checkouts.</div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+                <div style={{ padding: 10, background: 'rgba(255, 255, 255, 0.06)', borderRadius: 12, color: palette.white }}>
+                  <Calendar size={20} />
+                </div>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4, color: palette.white }}>Book Workspaces</div>
+                  <div style={{ color: palette.white, opacity: 0.6, fontSize: 14, lineHeight: 1.4 }}>Secure your spot in the lab.</div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+                <div style={{ padding: 10, background: 'rgba(255, 255, 255, 0.06)', borderRadius: 12, color: palette.white }}>
+                  <Rocket size={20} />
+                </div>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4, color: palette.white }}>Manage Projects</div>
+                  <div style={{ color: palette.white, opacity: 0.6, fontSize: 14, lineHeight: 1.4 }}>Track your builds from start to finish.</div>
+                </div>
+              </div>
+            </div>
+
+            {error && (
+              <div
+                style={{
+                  display: 'flex',
+                  gap: 8,
+                  alignItems: 'flex-start',
+                  padding: '12px 14px',
+                  borderRadius: 8,
+                  marginBottom: 20,
+                  background: 'rgba(236,104,216,0.16)',
+                  border: `2px solid ${palette.pink}`,
+                  color: palette.white,
+                  fontSize: 13,
+                }}
+              >
+                <AlertCircle size={15} style={{ flexShrink: 0, marginTop: 1 }} />
+                {error}
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={handleGoogleSignIn}
+              disabled={googleLoading}
               style={{
+                width: '100%',
+                minHeight: 52,
+                borderRadius: 999,
+                border: 0,
+                background: palette.pink,
+                color: palette.black,
+                fontFamily: displayFont,
+                fontWeight: 800,
+                fontSize: 15,
+                cursor: googleLoading ? 'not-allowed' : 'pointer',
                 display: 'flex',
-                gap: 8,
-                alignItems: 'flex-start',
-                padding: '12px 14px',
-                borderRadius: 8,
-                marginBottom: 20,
-                background: 'rgba(236,104,216,0.16)',
-                border: `2px solid ${palette.pink}`,
-                color: palette.white,
-                fontSize: 13,
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 12,
+                boxShadow: '0 8px 24px rgba(236, 104, 216, 0.3)',
+                transition: 'all 0.2s ease',
+                marginTop: 'auto'
               }}
             >
-              <AlertCircle size={15} style={{ flexShrink: 0, marginTop: 1 }} />
-              {error}
-            </div>
-          )}
-
-          <button
-            type="button"
-            onClick={handleGoogleSignIn}
-            disabled={googleLoading}
-            style={{
-              width: '100%',
-              minHeight: 52,
-              borderRadius: 999,
-              border: 0,
-              background: palette.pink,
-              color: palette.black,
-              fontFamily: displayFont,
-              fontWeight: 800,
-              fontSize: 15,
-              cursor: googleLoading ? 'not-allowed' : 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 12,
-              boxShadow: '0 8px 24px rgba(236, 104, 216, 0.3)',
-              transition: 'all 0.2s ease',
-            }}
-          >
-            {googleLoading ? 'CONNECTING...' : 'CONTINUE WITH GOOGLE'}
-          </button>
+              {googleLoading ? 'CONNECTING...' : 'CONTINUE WITH GOOGLE'}
+            </button>
+          </div>
         </aside>
       </section>
+
+      <div style={{
+        position: 'absolute',
+        bottom: 24,
+        left: 'clamp(18px, 4vw, 56px)',
+        color: palette.white,
+        opacity: 0.4,
+        fontSize: 12,
+        fontWeight: 600
+      }}>
+        © {new Date().getFullYear()} Tinkerers' Lab. All rights reserved.
+      </div>
     </main>
   )
 }
