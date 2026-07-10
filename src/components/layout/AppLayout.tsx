@@ -25,7 +25,6 @@ export default function AppLayout() {
   const { profile, user, role, isStaff } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-  const location = useLocation()
 
   const handleSignOut = async () => {
     try {
