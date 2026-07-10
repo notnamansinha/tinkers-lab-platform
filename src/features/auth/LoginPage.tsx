@@ -90,7 +90,7 @@ export default function LoginPage() {
           display: 'grid',
           gridTemplateColumns: 'minmax(0, 1.05fr) minmax(320px, 0.72fr)',
           gap: 'clamp(24px, 5vw, 72px)',
-          alignItems: 'stretch',
+          alignItems: 'center',
           padding: 'clamp(18px, 4vw, 56px)',
           paddingTop: 10,
         }}
@@ -122,10 +122,6 @@ export default function LoginPage() {
             display: 'flex',
             flexDirection: 'column',
             width: '100%',
-            height: '100%',
-            justifyContent: 'space-between',
-            paddingTop: '2vh',
-            paddingBottom: '2vh'
           }}>
             <h1 
               className="max-lg:text-center max-lg:w-full"
@@ -142,8 +138,8 @@ export default function LoginPage() {
               Welcome to<br/>the Lab
             </h1>
 
-            <div className="max-lg:items-center max-lg:text-center" style={{ display: 'flex', flexDirection: 'column', gap: 32, marginBottom: 56 }}>
-              <div className="max-lg:flex-col max-lg:items-center" style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 32, marginBottom: 56 }}>
+              <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
                 <div style={{ padding: 10, background: 'rgba(255, 255, 255, 0.06)', borderRadius: 12, color: palette.white }}>
                   <Wrench size={20} />
                 </div>
@@ -153,7 +149,7 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              <div className="max-lg:flex-col max-lg:items-center" style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+              <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
                 <div style={{ padding: 10, background: 'rgba(255, 255, 255, 0.06)', borderRadius: 12, color: palette.white }}>
                   <Calendar size={20} />
                 </div>
@@ -163,7 +159,7 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              <div className="max-lg:flex-col max-lg:items-center" style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+              <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
                 <div style={{ padding: 10, background: 'rgba(255, 255, 255, 0.06)', borderRadius: 12, color: palette.white }}>
                   <Rocket size={20} />
                 </div>
