@@ -1,9 +1,9 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { collection, query, orderBy, getDocs, doc, updateDoc } from 'firebase/firestore'
+import { collection, query, orderBy, getDocs, doc, updateDoc, getDoc, addDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
-import { addDocument, COLLECTIONS } from '@/services/firebase/firestore'
+import { COLLECTIONS } from '@/services/firebase/firestore'
 import { useAuth } from '@/contexts/AuthContext'
 import { Search, Plus, Users, Calendar, MapPin, GraduationCap } from 'lucide-react'
 import { toast } from 'sonner'
@@ -36,7 +36,7 @@ export default function WorkshopListPage() {
   const register = async (workshopId: string, workshopTitle: string) => {
     if (!user || !profile) { toast.error('Please sign in'); return }
     try {
-      await addDocument<WorkshopRegistration>(COLLECTIONS.WORKSHOP_REGISTRATIONS, {
+      await addDoc(collection(db, COLLECTIONS.WORKSHOP_REGISTRATIONS), {
         workshopId, workshopTitle,
         userId: user.uid, userName: profile.displayName, userEmail: user.email!,
         status: 'registered', certificateIssued: false,

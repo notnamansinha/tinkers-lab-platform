@@ -4,7 +4,9 @@ import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { getDocument, updateDocument, COLLECTIONS } from '@/services/firebase/firestore'
+import { COLLECTIONS } from '@/services/firebase/firestore'
+import { doc, getDoc, collection, addDoc, updateDoc } from 'firebase/firestore'
+import { db } from '@/lib/firebase'
 import { createProject } from '@/services/firebase/projects'
 import { useAuth } from '@/contexts/AuthContext'
 import { ArrowLeft, Save, Loader2 } from 'lucide-react'
@@ -67,7 +69,11 @@ export default function ProjectFormPage() {
 
   const { data: existing, isLoading } = useQuery({
     queryKey: ['projects', id],
-    queryFn: () => getDocument<Project>(COLLECTIONS.PROJECTS, id!),
+    queryFn: async () => {
+      const snap = await getDoc(doc(db, COLLECTIONS.PROJECTS, id!))
+      if (!snap.exists()) return null
+      return { id: snap.id, ...snap.data() } as Project
+    },
     enabled: isEdit,
   })
 
@@ -107,7 +113,7 @@ export default function ProjectFormPage() {
     if (!user || !profile) { toast.error('Sign in required'); return }
     try {
       if (isEdit) {
-        await updateDocument(COLLECTIONS.PROJECTS, id!, {
+        await updateDoc(doc(db, COLLECTIONS.PROJECTS, id!), {
           title: data.title,
           abstract: data.abstract,
           contact: data.contact,

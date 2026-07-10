@@ -2,7 +2,9 @@ import { Button } from '@/components/ui/button'
 import React from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { getDocument, COLLECTIONS } from '@/services/firebase/firestore'
+import { COLLECTIONS } from '@/services/firebase/firestore'
+import { doc, getDoc, collection, addDoc, updateDoc } from 'firebase/firestore'
+import { db } from '@/lib/firebase'
 import { ArrowLeft, Edit } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
@@ -16,7 +18,11 @@ export default function MaintenanceDetailPage() {
 
   const { data: record, isLoading } = useQuery({
     queryKey: ['maintenance', id],
-    queryFn: () => getDocument<MaintenanceRecord>(COLLECTIONS.MAINTENANCE, id!),
+    queryFn: async () => {
+      const snap = await getDoc(doc(db, COLLECTIONS.MAINTENANCE, id!))
+      if (!snap.exists()) return null
+      return { id: snap.id, ...snap.data() } as MaintenanceRecord
+    },
     enabled: !!id,
   })
 

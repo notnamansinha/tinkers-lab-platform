@@ -7,9 +7,10 @@ import {
   doc,
   updateDoc,
   Timestamp,
+  addDoc,
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
-import { COLLECTIONS, addDocument } from './firestore'
+import { COLLECTIONS } from './firestore'
 import type { ToolCheckout, ToolCondition } from '@/types'
 
 // ============================================================
@@ -26,11 +27,15 @@ import type { ToolCheckout, ToolCondition } from '@/types'
 export async function createToolCheckout(
   data: Omit<ToolCheckout, 'id' | 'createdAt' | 'updatedAt' | 'isOverdue' | 'returnedAt' | 'conditionAtReturn'>
 ): Promise<string> {
-  return addDocument<ToolCheckout>(COLLECTIONS.TOOL_CHECKOUTS, {
+  const ref = collection(db, COLLECTIONS.TOOL_CHECKOUTS)
+  const docRef = await addDoc(ref, {
     ...data,
     action: 'checking_out',
     isOverdue: false,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
   })
+  return docRef.id
 }
 
 /**

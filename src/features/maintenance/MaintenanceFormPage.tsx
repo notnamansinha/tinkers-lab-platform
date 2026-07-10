@@ -4,9 +4,9 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { collection, query, orderBy, getDocs } from 'firebase/firestore'
+import { collection, query, orderBy, getDocs, doc, getDoc, addDoc, updateDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
-import { getDocument, addDocument, updateDocument, COLLECTIONS } from '@/services/firebase/firestore'
+import { COLLECTIONS } from '@/services/firebase/firestore'
 import { useAuth } from '@/contexts/AuthContext'
 import { ArrowLeft, Save, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -58,7 +58,11 @@ export default function MaintenanceFormPage() {
 
   const { data: existing, isLoading } = useQuery({
     queryKey: ['maintenance', id],
-    queryFn: () => getDocument<MaintenanceRecord>(COLLECTIONS.MAINTENANCE, id!),
+    queryFn: async () => {
+      const snap = await getDoc(doc(db, COLLECTIONS.MAINTENANCE, id!))
+      if (!snap.exists()) return null
+      return { id: snap.id, ...snap.data() } as MaintenanceRecord
+    },
     enabled: isEdit,
   })
 
@@ -87,8 +91,8 @@ export default function MaintenanceFormPage() {
     if (!eq) { toast.error('Equipment not found'); return }
     const payload = { ...data, machineId: eq.machineId, machineName: eq.name, reportUrls: existing?.reportUrls ?? [] }
     try {
-      if (isEdit) { await updateDocument(COLLECTIONS.MAINTENANCE, id!, payload); toast.success('Updated') }
-      else { const nId = await addDocument<MaintenanceRecord>(COLLECTIONS.MAINTENANCE, payload as Omit<MaintenanceRecord,'id'|'createdAt'|'updatedAt'>); toast.success('Scheduled'); navigate(`/maintenance/${nId}`); return }
+      if (isEdit) { await updateDoc(doc(db, COLLECTIONS.MAINTENANCE, id!), payload); toast.success('Updated') }
+      else { const nId = await addDoc(collection(db, COLLECTIONS.MAINTENANCE), payload as Omit<MaintenanceRecord,'id'|'createdAt'|'updatedAt'>); toast.success('Scheduled'); navigate(`/maintenance/${nId}`); return }
       qc.invalidateQueries({ queryKey: ['maintenance'] })
       navigate(`/maintenance/${id}`)
     } catch (e) { toast.error(e instanceof Error ? e.message : 'Failed') }

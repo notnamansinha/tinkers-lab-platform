@@ -1,11 +1,8 @@
 import {
   GoogleAuthProvider,
   signInWithPopup,
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  sendPasswordResetEmail,
-  signOut as firebaseSignOut,
   updateProfile,
+  signOut as firebaseSignOut,
   type User,
 } from 'firebase/auth'
 import {
@@ -42,35 +39,7 @@ export async function signInWithGoogle(): Promise<User> {
   }
 }
 
-// ============================================================
-// SIGN IN — Email + Password
-// ============================================================
-export async function signInWithEmail(email: string, password: string): Promise<User> {
-  const result = await signInWithEmailAndPassword(auth, email, password)
-  return result.user
-}
 
-// ============================================================
-// REGISTER — Email + Password
-// ============================================================
-export async function registerWithEmail(
-  email: string,
-  password: string,
-  displayName: string,
-  extraData: Partial<UserProfile> = {}
-): Promise<User> {
-  const result = await createUserWithEmailAndPassword(auth, email, password)
-  await updateProfile(result.user, { displayName })
-  await createUserProfile(result.user, displayName, extraData)
-  return result.user
-}
-
-// ============================================================
-// PASSWORD RESET
-// ============================================================
-export async function resetPassword(email: string): Promise<void> {
-  await sendPasswordResetEmail(auth, email)
-}
 
 // ============================================================
 // SIGN OUT

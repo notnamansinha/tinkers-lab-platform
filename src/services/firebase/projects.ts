@@ -4,9 +4,13 @@ import {
   where,
   getDocs,
   getCountFromServer,
+  addDoc,
+  updateDoc,
+  doc,
+  serverTimestamp,
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
-import { COLLECTIONS, addDocument, updateDocument } from './firestore'
+import { COLLECTIONS } from './firestore'
 import type { Project, ProjectStatus } from '@/types'
 
 // ============================================================
@@ -37,15 +41,19 @@ export async function createProject(
   data: Omit<Project, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'imageUrls' | 'documentUrls'>
 ): Promise<string> {
   const projectId = await generateProjectId()
-  // addDocument stores id as a Firestore field alongside the auto-generated doc ID
+  // addDoc stores id as a Firestore field alongside the auto-generated doc ID
   // We cast to any to store the human-readable TL-001 id as a document field
-  return addDocument(COLLECTIONS.PROJECTS, {
+  const ref = collection(db, COLLECTIONS.PROJECTS)
+  const docRef = await addDoc(ref, {
     ...data,
     id: projectId,         // Human-readable: "TL-001" — stored as a field
     status: 'pending',
     imageUrls: [],
     documentUrls: [],
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
   } as any)
+  return docRef.id
 
 }
 
@@ -105,7 +113,8 @@ export async function updateProjectStatus(
   status: 'active' | 'rejected' | 'on_hold' | 'completed',
   rejectionReason?: string
 ): Promise<void> {
-  const updates: Record<string, unknown> = { status }
+  const updates: Record<string, unknown> = { status, updatedAt: serverTimestamp() }
   if (rejectionReason) updates.rejectionReason = rejectionReason
-  await updateDocument(COLLECTIONS.PROJECTS, firestoreDocId, updates)
+  const ref = doc(db, COLLECTIONS.PROJECTS, firestoreDocId)
+  await updateDoc(ref, updates)
 }
