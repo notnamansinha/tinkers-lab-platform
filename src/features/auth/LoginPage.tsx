@@ -136,7 +136,7 @@ export default function LoginPage() {
                 color: palette.white
               }}
             >
-              Welcome to<br/>the Lab
+              Book it.<br/>Build it.
             </h1>
 
             <div className="max-lg:mx-auto" style={{ display: 'flex', flexDirection: 'column', gap: 36, marginBottom: 56, width: 'fit-content' }}>
