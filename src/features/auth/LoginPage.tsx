@@ -112,7 +112,7 @@ export default function LoginPage() {
           <img 
             src={logoMark} 
             alt="Logo" 
-            className="w-12 h-12 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl bg-white object-contain"
+            className="w-12 h-12 sm:w-20 sm:h-20 bg-white object-contain"
           />
           <span
             className="flex flex-col sm:flex-row sm:gap-[0.3em] text-[22px] sm:text-[32px]"
@@ -184,21 +184,7 @@ export default function LoginPage() {
         <aside style={{ width: '100%', maxWidth: 430, justifySelf: 'center' }}>
 
 
-          <h1
-            style={{
-              fontFamily: displayFont,
-              fontWeight: 800,
-              fontSize: 'clamp(42px, 6vw, 72px)',
-              lineHeight: 0.86,
-              letterSpacing: 0,
-              marginBottom: 12,
-            }}
-          >
-            Plan smarter,
-            <br />
-            build better.
-          </h1>
-          <p style={{ color: palette.white, opacity: 0.78, fontSize: 14, lineHeight: 1.35, marginBottom: 22 }}>
+          <p style={{ color: palette.white, opacity: 0.78, fontSize: 16, lineHeight: 1.35, marginBottom: 28, marginTop: 12 }}>
             Sign in to book machines, track checkouts, manage projects, and review lab activity.
           </p>
 
