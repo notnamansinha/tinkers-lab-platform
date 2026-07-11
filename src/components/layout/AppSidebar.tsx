@@ -45,7 +45,7 @@ export default function AppSidebar() {
   return (
     <Sidebar className="border-r border-hairline bg-graphite text-chalk">
       <SidebarHeader className="h-16 px-6 flex items-center justify-center border-b border-hairline">
-        <div className="font-display font-bold text-lg tracking-tight text-chalk">
+        <div className="font-display font-bold text-lg tracking-wider text-chalk">
           TINKERERS LAB
         </div>
       </SidebarHeader>

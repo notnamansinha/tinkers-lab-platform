@@ -4,7 +4,9 @@ import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { getDocument, updateDocument, COLLECTIONS } from '@/services/firebase/firestore'
+import { COLLECTIONS } from '@/services/firebase/firestore'
+import { doc, getDoc, collection, addDoc, updateDoc } from 'firebase/firestore'
+import { db } from '@/lib/firebase'
 import { createProject } from '@/services/firebase/projects'
 import { useAuth } from '@/contexts/AuthContext'
 import { ArrowLeft, Save, Loader2 } from 'lucide-react'
@@ -67,7 +69,11 @@ export default function ProjectFormPage() {
 
   const { data: existing, isLoading } = useQuery({
     queryKey: ['projects', id],
-    queryFn: () => getDocument<Project>(COLLECTIONS.PROJECTS, id!),
+    queryFn: async () => {
+      const snap = await getDoc(doc(db, COLLECTIONS.PROJECTS, id!))
+      if (!snap.exists()) return null
+      return { id: snap.id, ...snap.data() } as Project
+    },
     enabled: isEdit,
   })
 
@@ -107,7 +113,7 @@ export default function ProjectFormPage() {
     if (!user || !profile) { toast.error('Sign in required'); return }
     try {
       if (isEdit) {
-        await updateDocument(COLLECTIONS.PROJECTS, id!, {
+        await updateDoc(doc(db, COLLECTIONS.PROJECTS, id!), {
           title: data.title,
           abstract: data.abstract,
           contact: data.contact,
@@ -193,7 +199,7 @@ export default function ProjectFormPage() {
               <Field label="Start Date" required error={errors.startDate?.message}>
                 <Input type="date" {...register('startDate')} className={cn(errors.startDate && 'border-destructive')} />
               </Field>
-              <Field label="Estimated End Date">
+              <Field label="End Date" hint="Update this if your project timeline changes.">
                 <Input type="date" {...register('endDate')} />
               </Field>
             </div>
@@ -202,9 +208,15 @@ export default function ProjectFormPage() {
               <Input {...register('contact')} placeholder="+91 XXXXXXXXXX or your email" className={cn(errors.contact && 'border-destructive')} />
             </Field>
 
-            <Field label="Project Resource Link" hint="GitHub, Google Drive, Notion, or any public link (optional)">
-              <Input type="url" {...register('resourceLink')} placeholder="https://github.com/your-project" />
-            </Field>
+            <div className="space-y-3 pt-2">
+              <Field label="Project Resource Link" hint="GitHub, Google Drive, Notion, or any public link (optional)">
+                <Input type="url" {...register('resourceLink')} placeholder="https://github.com/your-project" />
+              </Field>
+              <div className="p-3 border-2 border-dashed rounded-lg bg-muted/30 text-sm text-muted-foreground flex items-center justify-between">
+                <span className="font-medium">Project Documentation / File Upload</span>
+                <span className="px-2 py-1 bg-primary/10 text-primary rounded-md text-[10px] font-bold uppercase tracking-wider">Coming Soon</span>
+              </div>
+            </div>
 
           </CardContent>
         </Card>

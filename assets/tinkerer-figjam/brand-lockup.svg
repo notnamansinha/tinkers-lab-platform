@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 360" role="img" aria-labelledby="title">
+  <title id="title">Tinkerers Lab bold brand lockup</title>
+  <rect width="960" height="360" fill="#000"/>
+  <text x="36" y="135" fill="#EC68D8" font-family="Arial Black, Arial, sans-serif" font-size="112" font-weight="900">tinkerers</text>
+  <text x="36" y="230" fill="#EC68D8" font-family="Arial Black, Arial, sans-serif" font-size="112" font-weight="900">lab</text>
+  <rect x="334" y="198" width="50" height="126" rx="25" fill="#FFB13F"/>
+  <rect x="397" y="198" width="88" height="126" rx="44" fill="#DDF237"/>
+  <rect x="506" y="198" width="320" height="126" rx="63" fill="#514AF1"/>
+  <g transform="translate(810 92)" fill="#EC68D8">
+    <ellipse cx="64" cy="28" rx="20" ry="35"/>
+    <ellipse cx="64" cy="100" rx="20" ry="35"/>
+    <ellipse cx="28" cy="64" rx="35" ry="20"/>
+    <ellipse cx="100" cy="64" rx="35" ry="20"/>
+    <ellipse cx="38" cy="38" rx="18" ry="34" transform="rotate(-45 38 38)"/>
+    <ellipse cx="90" cy="90" rx="18" ry="34" transform="rotate(-45 90 90)"/>
+    <ellipse cx="90" cy="38" rx="34" ry="18" transform="rotate(-45 90 38)"/>
+    <ellipse cx="38" cy="90" rx="34" ry="18" transform="rotate(-45 38 90)"/>
+  </g>
+  <circle cx="150" cy="276" r="58" fill="#FFF4BE"/>
+  <text x="93" y="264" fill="#000" font-family="Arial Black, Arial, sans-serif" font-size="22" font-weight="900" transform="rotate(-19 93 264)">Make smarter</text>
+  <text x="101" y="300" fill="#000" font-family="Arial Black, Arial, sans-serif" font-size="22" font-weight="900" transform="rotate(16 101 300)">build better</text>
+</svg>

@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { addDocument, COLLECTIONS } from '@/services/firebase/firestore'
+import { COLLECTIONS } from '@/services/firebase/firestore'
+import { doc, getDoc, collection, addDoc, updateDoc } from 'firebase/firestore'
+import { db } from '@/lib/firebase'
 import { useAuth } from '@/contexts/AuthContext'
 import { ArrowLeft, AlertTriangle, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -21,6 +23,7 @@ const schema = z.object({
   severity: z.enum(['low','medium','high','urgent']),
   relatedMachine: z.string().optional(),
   description: z.string().min(20, 'Please provide at least 20 characters describing the issue'),
+  dateNoticed: z.string().optional(),
 })
 type FormData = z.infer<typeof schema>
 
@@ -35,7 +38,7 @@ export default function IssueFormPage() {
   const onSubmit = async (data: FormData) => {
     if (!user || !profile) { toast.error('Sign in required'); return }
     try {
-      await addDocument<Issue>(COLLECTIONS.ISSUES, {
+      await addDoc(collection(db, COLLECTIONS.ISSUES), {
         ...data, userId: user.uid, userName: profile.displayName, userEmail: user.email!,
         status: 'open',
       } as Omit<Issue,'id'|'createdAt'|'updatedAt'>)
@@ -86,6 +89,11 @@ export default function IssueFormPage() {
             <div className="col-span-full space-y-2">
               <Label>Related Machine / Equipment <span className="text-muted-foreground font-normal">(optional)</span></Label>
               <Input placeholder="e.g. Laser Cutter, Bambu X1C..." {...register('relatedMachine')} />
+            </div>
+
+            <div className="col-span-full space-y-2">
+              <Label>When did you notice this? <span className="text-muted-foreground font-normal">(optional)</span></Label>
+              <Input type="date" max={new Date().toISOString().split('T')[0]} {...register('dateNoticed')} />
             </div>
 
             <div className="col-span-full space-y-2">

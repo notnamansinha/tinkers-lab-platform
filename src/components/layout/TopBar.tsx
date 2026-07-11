@@ -72,7 +72,7 @@ export default function TopBar() {
             </div>
             <span
               className="font-semibold text-sm tracking-tight text-white hidden sm:block"
-              style={{ fontFamily: '-apple-system, SF Pro Display, Inter, sans-serif' }}
+              style={{ fontFamily: 'PP Mori, Arial, sans-serif' }}
             >
               Tinkerers' Lab
             </span>

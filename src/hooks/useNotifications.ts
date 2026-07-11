@@ -1,23 +1,11 @@
-import React, { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useState } from 'react'
 import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { COLLECTIONS } from '@/services/firebase/firestore'
 import { useAuth } from '@/contexts/AuthContext'
 import type { Notification } from '@/types'
 
-interface NotificationContextValue {
-  notifications: Notification[]
-  unreadCount: number
-  loading: boolean
-}
-
-const NotificationContext = createContext<NotificationContextValue>({
-  notifications: [],
-  unreadCount: 0,
-  loading: true,
-})
-
-export function NotificationProvider({ children }: { children: ReactNode }) {
+export function useNotifications() {
   const { user } = useAuth()
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [loading, setLoading] = useState(true)
@@ -29,8 +17,6 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       return
     }
 
-    // Real-time listener — only fetch user's own notifications, latest first
-    // Limit to 50 to reduce reads
     const ref = collection(db, COLLECTIONS.NOTIFICATIONS)
     const q = query(
       ref,
@@ -52,13 +38,5 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
   const unreadCount = notifications.filter((n) => !n.isRead).length
 
-  return (
-    <NotificationContext.Provider value={{ notifications, unreadCount, loading }}>
-      {children}
-    </NotificationContext.Provider>
-  )
-}
-
-export function useNotifications() {
-  return useContext(NotificationContext)
+  return { notifications, unreadCount, loading }
 }

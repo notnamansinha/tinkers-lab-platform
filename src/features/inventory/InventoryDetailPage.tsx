@@ -1,7 +1,9 @@
 import React from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { getDocument, getDocumentsWhere, COLLECTIONS } from '@/services/firebase/firestore'
+import { COLLECTIONS } from '@/services/firebase/firestore'
+import { doc, getDoc, collection, query, where, getDocs, limit } from 'firebase/firestore'
+import { db } from '@/lib/firebase'
 import { useAuth } from '@/contexts/AuthContext'
 import { ArrowLeft, Edit, TrendingDown, TrendingUp } from 'lucide-react'
 import { formatDateTime } from '@/lib/utils'
@@ -21,13 +23,21 @@ export default function InventoryDetailPage() {
 
   const { data: item, isLoading } = useQuery({
     queryKey: ['inventory', id],
-    queryFn: () => getDocument<InventoryItem>(COLLECTIONS.INVENTORY, id!),
+    queryFn: async () => {
+      const snap = await getDoc(doc(db, COLLECTIONS.INVENTORY, id!))
+      if (!snap.exists()) return null
+      return { id: snap.id, ...snap.data() } as InventoryItem
+    },
     enabled: !!id,
   })
 
   const { data: transactions = [] } = useQuery({
     queryKey: ['inventoryTransactions', id],
-    queryFn: () => getDocumentsWhere<InventoryTransaction>(COLLECTIONS.INVENTORY_TRANSACTIONS, 'itemId', '==', id!, 20),
+    queryFn: async () => {
+      const q = query(collection(db, COLLECTIONS.INVENTORY_TRANSACTIONS), where('itemId', '==', id!), limit(20))
+      const snap = await getDocs(q)
+      return snap.docs.map(d => ({ id: d.id, ...d.data() }) as InventoryTransaction)
+    },
     enabled: !!id,
     staleTime: 5 * 60 * 1000,
   })
@@ -129,7 +139,7 @@ export default function InventoryDetailPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {transactions.map(t => (
+                  {transactions.map((t: any) => (
                     <TableRow key={t.id}>
                       <TableCell>
                         <Badge variant={t.type === 'damage' || t.type === 'write_off' ? 'destructive' : 'default'} className="flex w-fit items-center gap-1">

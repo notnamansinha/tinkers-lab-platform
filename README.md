@@ -1,32 +1,78 @@
-# React + TypeScript + Vite
+<div align="center">
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+# Tinkers Lab Platform
 
-Currently, two official plugins are available:
+A comprehensive device and lab management system for tracking equipment, bookings, tool checkouts, and inventory in a maker space environment.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+[Features](#features) • [Quick Start](#quick-start) • [Architecture](#architecture) • [Contributing](#contributing)
 
-## React Compiler
+</div>
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Overview
 
-## Expanding the Oxlint configuration
+The Tinkers Lab Platform is a robust web application built to streamline operations within a maker space or fabrication lab. It manages user roles, tracks physical equipment (across bookable and checkout tiers), handles project-based consumable tracking, and provides administrative oversight for inventory and maintenance. 
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+## Features
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+- **Equipment Management** — Track machines across bookable tiers (e.g., 3D printers, laser cutters) and checkout tiers (e.g., power tools, hand tools).
+- **Booking & Checkout System** — Allow users to reserve calendar slots for heavy machinery or check out hand tools for project usage.
+- **Project Tracking** — Require and track user projects to associate lab usage and consumable materials with specific initiatives.
+- **Inventory & Maintenance** — Provide staff with dashboards to monitor stock levels, record maintenance, and track equipment health.
+- **Role-Based Access** — Secure different sections of the app for Students, Faculty, Lab Assistants, and Super Admins.
+
+## Quick Start
+
+### Prerequisites
+
+- Node.js 18+
+- npm or yarn
+
+### Installation
+
+```bash
+npm install
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+### Usage
+
+Start the local development server:
+
+```bash
+npm run dev
+```
+
+Build the production bundle:
+
+```bash
+npm run build
+```
+
+## Project Structure
+
+```
+tinkers-lab-platform/
+├── src/
+│   ├── components/      # Shared React components (UI and layout)
+│   ├── contexts/        # React contexts (e.g., AuthContext)
+│   ├── features/        # Feature-based domains (bookings, equipment, etc.)
+│   ├── hooks/           # Custom React hooks
+│   ├── lib/             # Utility functions and configurations
+│   ├── routes/          # Application routing definitions
+│   ├── services/        # External services (Firebase)
+│   ├── styles/          # Global CSS and Tailwind configurations
+│   └── types/           # TypeScript type definitions
+├── docs/                # Project documentation and specifications
+└── package.json         # Dependencies and scripts
+```
+
+## Architecture
+
+The platform uses React and Vite on the frontend, integrated with Firebase (Firestore and Auth) on the backend. For a complete look at the system design and data model, see [ARCHITECTURE.md](ARCHITECTURE.md).
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## License
+
+No license specified.

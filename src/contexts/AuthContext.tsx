@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import { onAuthStateChanged, type User } from 'firebase/auth'
-import { auth } from '@/lib/firebase'
+import { doc, onSnapshot } from 'firebase/firestore'
+import { auth, db } from '@/lib/firebase'
 import { getUserProfile } from '@/services/firebase/auth'
 import type { UserProfile, UserRole, ADMIN_ROLES, STAFF_ROLES } from '@/types'
 
@@ -37,31 +38,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Handle redirect result for environments where popup is blocked
     import('firebase/auth').then(({ getRedirectResult }) => {
-      getRedirectResult(auth).then(async (result) => {
-        if (result?.user) {
-          const { ensureUserProfile } = await import('@/services/firebase/auth')
-          await ensureUserProfile(result.user)
-        }
-      }).catch(console.error)
+      getRedirectResult(auth).catch(console.error)
     })
 
-    const unsubscribe = onAuthStateChanged(auth, async (u) => {
+    let profileUnsub: (() => void) | null = null;
+
+    const authUnsub = onAuthStateChanged(auth, (u) => {
+      setLoading(true)
       setUser(u)
+      
+      if (profileUnsub) {
+        profileUnsub();
+        profileUnsub = null;
+      }
+
       if (u) {
-        await loadProfile(u)
+        profileUnsub = onSnapshot(doc(db, 'users', u.uid), (docSnap: any) => {
+          if (docSnap.exists()) {
+            setProfile(docSnap.data() as UserProfile)
+          } else {
+            setProfile(null)
+          }
+          setLoading(false)
+        }, (error: any) => {
+          console.error("Profile snapshot error:", error)
+          setProfile(null)
+          setLoading(false)
+        })
       } else {
         setProfile(null)
+        setLoading(false)
       }
-      setLoading(false)
     })
-    return unsubscribe
+
+    return () => {
+      authUnsub()
+      if (profileUnsub) profileUnsub()
+    }
   }, [])
 
   const role = profile?.role ?? null
-  const adminRoles: UserRole[] = ['super_admin']
-  const staffRoles: UserRole[] = ['super_admin', 'faculty', 'lab_assistant']
-  const isAdmin = role ? adminRoles.includes(role) : false
-  const isStaff = role ? staffRoles.includes(role) : false
+  const normalizedRole = role?.toLowerCase().replace(/[^a-z]/g, '') ?? ''
+  
+  const adminRoles = ['superadmin', 'admin']
+  const staffRoles = ['superadmin', 'admin', 'faculty', 'labassistant']
+  
+  const isAdmin = adminRoles.includes(normalizedRole)
+  const isStaff = staffRoles.includes(normalizedRole)
 
   return (
     <AuthContext.Provider

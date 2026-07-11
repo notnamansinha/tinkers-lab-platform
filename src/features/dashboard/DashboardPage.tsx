@@ -7,323 +7,206 @@ import { COLLECTIONS } from '@/services/firebase/firestore'
 import { useAuth } from '@/contexts/AuthContext'
 import { getActiveUserCheckouts, isCheckoutOverdue } from '@/services/firebase/toolCheckouts'
 import { getUserProjects } from '@/services/firebase/projects'
-import { EQUIPMENT_SEED } from '@/../scripts/seedEquipment'
-import type { Equipment, Booking, ToolCheckout } from '@/types'
+import type { Equipment, Booking, Project } from '@/types'
 import { cn, todayStr } from '@/lib/utils'
-import { CalendarDays, Package, AlertTriangle, Plus, ArrowRight } from 'lucide-react'
+import {
+  CalendarDays,
+  Wrench,
+  ChevronRight,
+  AlertTriangle,
+  Box,
+  MessageSquare
+} from 'lucide-react'
+import dashboardClusters from '@/assets/tinkerer-figjam/dashboard-clusters.svg'
 
-// ─── Category metadata ──────────────────────────────────────────────────────
-const CATEGORY_META = [
-  {
-    id: 'Digital Fabrication' as const,
-    label: '3D Printing & Additive',
-    icon: '⬡',
-    gradient: `
-      radial-gradient(circle at center,  rgba(5,8,2,0.92) 0%, rgba(12,18,6,0.80) 28%, rgba(35,55,20,0.22) 58%, transparent 100%),
-      radial-gradient(circle at top left, rgba(212,245,190,0.48) 0%, rgba(212,245,190,0.20) 36%, transparent 66%),
-      radial-gradient(circle at bottom right, rgba(166,227,128,0.38) 0%, rgba(166,227,128,0.14) 32%, transparent 62%),
-      linear-gradient(135deg, #1f2c14 0%, #84B860 100%)
-    `,
-    accent: '#A3D97A',
-  },
-  {
-    id: 'Electronics' as const,
-    label: 'Electronics & PCB Lab',
-    icon: '⚡',
-    gradient: `
-      radial-gradient(circle at center,  rgba(5,5,18,0.92) 0%, rgba(12,12,30,0.80) 30%, rgba(40,40,70,0.20) 60%, transparent 100%),
-      radial-gradient(circle at top left, rgba(200,204,227,0.42) 0%, rgba(200,204,227,0.18) 36%, transparent 66%),
-      radial-gradient(circle at bottom right, rgba(144,149,192,0.34) 0%, rgba(144,149,192,0.14) 32%, transparent 62%),
-      linear-gradient(135deg, #1d2038 0%, #6D729C 100%)
-    `,
-    accent: '#9598C0',
-  },
-  {
-    id: 'Heavy Duty' as const,
-    label: 'Metal Shop & CNC',
-    icon: '⚙',
-    gradient: `
-      radial-gradient(circle at center,  rgba(0,5,8,0.94) 0%, rgba(0,12,14,0.82) 30%, rgba(10,40,42,0.20) 60%, transparent 100%),
-      radial-gradient(circle at top left, rgba(83,126,114,0.40) 0%, rgba(83,126,114,0.18) 36%, transparent 66%),
-      radial-gradient(circle at bottom right, rgba(43,106,109,0.36) 0%, rgba(43,106,109,0.14) 32%, transparent 62%),
-      linear-gradient(135deg, #0d2028 0%, #17506A 100%)
-    `,
-    accent: '#4A8E80',
-  },
-  {
-    id: 'Tabletop Power' as const,
-    label: 'Woodshop & Power Tools',
-    icon: '🪚',
-    gradient: `
-      radial-gradient(circle at center,  rgba(10,6,3,0.92) 0%, rgba(20,13,6,0.80) 28%, rgba(80,45,15,0.22) 58%, transparent 100%),
-      radial-gradient(circle at top left, rgba(245,200,140,0.46) 0%, rgba(245,200,140,0.20) 36%, transparent 66%),
-      radial-gradient(circle at bottom right, rgba(196,120,60,0.36) 0%, rgba(196,120,60,0.14) 32%, transparent 62%),
-      linear-gradient(135deg, #2c1c10 0%, #B87333 100%)
-    `,
-    accent: '#C08050',
-  },
-  {
-    id: 'Other' as const,
-    label: 'Test & Measurement',
-    icon: '◎',
-    gradient: `
-      radial-gradient(circle at center,  rgba(3,5,8,0.92) 0%, rgba(8,12,16,0.80) 28%, rgba(30,45,58,0.22) 58%, transparent 100%),
-      radial-gradient(circle at top left, rgba(190,205,224,0.44) 0%, rgba(190,205,224,0.18) 36%, transparent 66%),
-      radial-gradient(circle at bottom right, rgba(120,140,168,0.36) 0%, rgba(120,140,168,0.14) 32%, transparent 62%),
-      linear-gradient(135deg, #10161d 0%, #5C7A99 100%)
-    `,
-    accent: '#7A9AB8',
-  },
-] as const
-
-type CategoryId = typeof CATEGORY_META[number]['id']
-
-// ─── Status helpers ──────────────────────────────────────────────────────────
-function StatusDot({ status }: { status: Equipment['status'] }) {
-  const isDown     = status === 'under_maintenance' || status === 'out_of_service' || status === 'retired'
-  const isOccupied = status === 'in_use' || status === 'reserved'
-
-  let color = '#34C759'
-  let pulse = false
-
-  if (isDown)     { color = '#8E8E93' }
-  else if (isOccupied) { color = '#FF9500'; pulse = true }
-
+// ─── Stat Strip ──────────────────────────────────────────────────────────────
+function LabStats({ stats }: { stats: { label: string, value: string | number, color: string }[] }) {
   return (
-    <span
-      className={cn('inline-block w-2 h-2 rounded-full shrink-0', pulse && 'animate-status-pulse')}
-      style={{ background: color }}
-    />
-  )
-}
-
-function statusLabel(status: Equipment['status']): string {
-  switch (status) {
-    case 'available':         return 'Available'
-    case 'in_use':            return 'In Use'
-    case 'reserved':          return 'Reserved'
-    case 'under_maintenance': return 'Maintenance'
-    case 'out_of_service':    return 'Out of Service'
-    case 'retired':           return 'Retired'
-    default:                  return status
-  }
-}
-
-// ─── Atmospheric Gradient Category Tile ─────────────────────────────────────
-function CategoryTile({
-  meta,
-  count,
-  isActive,
-  onClick,
-}: {
-  meta: typeof CATEGORY_META[number]
-  count: number
-  isActive: boolean
-  onClick: () => void
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className="relative text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A84FF]"
-      style={{
-        borderRadius: 32,
-        border: isActive ? '1.5px solid rgba(10,132,255,0.55)' : '1px solid rgba(255,255,255,0.10)',
-        background: meta.gradient,
-        boxShadow: isActive
-          ? '0 20px 50px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.08), 0 0 0 1px rgba(10,132,255,0.25)'
-          : '0 20px 50px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.06)',
-        backdropFilter: 'blur(30px) saturate(135%)',
-        WebkitBackdropFilter: 'blur(30px) saturate(135%)',
-        overflow: 'hidden',
-        transition: 'transform 400ms cubic-bezier(0.32,0.72,0,1), box-shadow 300ms ease, border-color 200ms ease',
-        transform: isActive ? 'scale(0.98)' : 'scale(1)',
-        padding: '20px 20px 18px',
-        minHeight: 130,
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'space-between',
-        cursor: 'pointer',
-      }}
-    >
-      {/* Grain overlay */}
-      <div
-        aria-hidden
-        style={{
-          position: 'absolute', inset: 0, borderRadius: 'inherit', pointerEvents: 'none',
-          backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E\")",
-          opacity: 1, zIndex: 1,
-        }}
-      />
-
-      {/* Content — sits above grain (z-index: 2) */}
-      <div style={{ position: 'relative', zIndex: 2 }}>
-        <span style={{ fontSize: 22, lineHeight: 1 }}>{meta.icon}</span>
-      </div>
-
-      <div style={{ position: 'relative', zIndex: 2 }}>
-        <p
-          style={{
-            fontFamily: '-apple-system, SF Pro Display, Inter, sans-serif',
-            fontWeight: 600,
-            fontSize: 15,
-            letterSpacing: '0',
-            lineHeight: 1.2,
-            color: '#F5F5F7',
-            marginBottom: 4,
-          }}
-        >
-          {meta.label}
-        </p>
-        <p
-          style={{
-            fontFamily: 'ui-monospace, SF Mono, JetBrains Mono, monospace',
-            fontSize: 12,
-            color: meta.accent,
-            opacity: 0.85,
-          }}
-        >
-          {count} {count === 1 ? 'machine' : 'machines'}
-        </p>
-      </div>
-    </button>
-  )
-}
-
-// ─── Flat Equipment Card ─────────────────────────────────────────────────────
-function EquipmentCard({
-  eq,
-  categoryAccent,
-  onClick,
-}: {
-  eq: Equipment
-  categoryAccent: string
-  onClick: () => void
-}) {
-  const isDown     = eq.status === 'under_maintenance' || eq.status === 'out_of_service' || eq.status === 'retired'
-  const isOccupied = eq.status === 'in_use' || eq.status === 'reserved'
-
-  const dotColor = isDown ? '#8E8E93' : isOccupied ? '#FF9500' : '#34C759'
-  const label    = statusLabel(eq.status)
-
-  return (
-    <button
-      onClick={onClick}
-      className="group text-left w-full"
-      style={{
-        background: '#141518',
-        borderRadius: 24,
-        border: '1px solid rgba(255,255,255,0.08)',
-        boxShadow: '0 4px 24px rgba(0,0,0,0.30)',
-        overflow: 'hidden',
-        transition: 'transform 300ms cubic-bezier(0.32,0.72,0,1), border-color 300ms ease, box-shadow 300ms ease',
-        display: 'flex',
-        flexDirection: 'column',
-        cursor: 'pointer',
-      }}
-      onMouseEnter={e => {
-        ;(e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'
-        ;(e.currentTarget as HTMLElement).style.borderColor = 'rgba(10,132,255,0.28)'
-        ;(e.currentTarget as HTMLElement).style.boxShadow = '0 8px 32px rgba(0,0,0,0.45)'
-      }}
-      onMouseLeave={e => {
-        ;(e.currentTarget as HTMLElement).style.transform = 'translateY(0)'
-        ;(e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)'
-        ;(e.currentTarget as HTMLElement).style.boxShadow = '0 4px 24px rgba(0,0,0,0.30)'
-      }}
-    >
-      {/* Photo / Placeholder */}
-      <div
-        style={{
-          aspectRatio: '16/9',
-          overflow: 'hidden',
-          flexShrink: 0,
-          position: 'relative',
-          background: `radial-gradient(circle at 30% 30%, ${categoryAccent}22 0%, transparent 70%), #0D0E10`,
-        }}
-      >
-        {eq.imageUrls?.[0] ? (
-          <img
-            src={eq.imageUrls[0]}
-            alt={eq.name}
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-          />
-        ) : (
-          <div
-            style={{
-              width: '100%', height: '100%',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontFamily: 'ui-monospace, SF Mono, monospace',
-              fontSize: 11, color: 'rgba(255,255,255,0.18)',
-              letterSpacing: '0.08em',
-            }}
-          >
-            NO IMAGE
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 w-full">
+      {stats.map((stat) => (
+        <div key={stat.label} className="rounded-[16px] p-5 flex flex-col gap-2 shadow-sm" style={{ backgroundColor: stat.color }}>
+          <span className="text-[11px] font-bold text-black/50 tracking-wider leading-none">
+            {stat.label}
+          </span>
+          <div className="flex items-center gap-2">
+            <span className="font-brand text-[32px] font-bold text-black leading-none tracking-tight">
+              {stat.value}
+            </span>
           </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function ProjectsPanel({ projects }: { projects: Project[] }) {
+  const navigate = useNavigate()
+
+  return (
+    <div className="bg-[#514AF1] flex flex-col overflow-hidden shadow-lg" style={{ borderRadius: 16 }}>
+      {/* Header */}
+      <div className="flex items-center justify-between px-6 pt-6 pb-4">
+        <h2 className="text-white leading-none text-2xl font-bold font-display">
+          Your Projects
+        </h2>
+        <button
+          onClick={() => navigate('/projects/new')}
+          className="bg-[#DDF237] text-black font-bold px-4 py-2 rounded-full hover:brightness-110 active:scale-[0.98] transition-all text-sm shadow-md"
+        >
+          + New Project
+        </button>
+      </div>
+
+      {/* Projects List */}
+      <div className="flex flex-col gap-3 px-6 pb-6 max-h-[320px] overflow-y-auto">
+        {projects.length === 0 ? (
+          <div className="bg-black/10 rounded-[12px] p-6 text-center border border-white/10">
+            <p className="text-white/60 font-medium text-sm">You haven't registered any projects yet.</p>
+            <p className="text-white/40 text-xs mt-1">Register a project to start booking machines.</p>
+          </div>
+        ) : (
+          projects.map((p) => (
+            <div key={p.id} className="bg-[#746EF8] rounded-[12px] p-4 flex flex-col gap-2 border border-white/5 shadow-sm hover:bg-[#6A63F0] transition-colors cursor-pointer" onClick={() => navigate(`/projects/${p.id}`)}>
+              <div className="flex justify-between items-start gap-2">
+                <h3 className="text-white font-bold text-lg leading-tight">{p.title}</h3>
+                <span className={cn('text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider shrink-0', 
+                  p.status === 'active' ? 'bg-[#DDF237] text-black' : 
+                  p.status === 'pending' ? 'bg-amber-400 text-black' : 
+                  'bg-white/20 text-white')}>
+                  {p.status}
+                </span>
+              </div>
+              <p className="text-white/70 text-xs line-clamp-2">{p.abstract}</p>
+              
+              <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 pt-2 border-t border-white/10">
+                <span className="text-white/80 text-[11px] font-medium"><span className="text-white/40">Type:</span> {p.userType}</span>
+                {p.department && <span className="text-white/80 text-[11px] font-medium"><span className="text-white/40">Dept:</span> {p.department}</span>}
+                {p.facultyMentor && <span className="text-white/80 text-[11px] font-medium"><span className="text-white/40">Mentor/Prof:</span> {p.facultyMentor}</span>}
+                {p.startDate && <span className="text-white/80 text-[11px] font-medium"><span className="text-white/40">Started:</span> {p.startDate}</span>}
+              </div>
+              {p.expectedEquipmentNeeds && p.expectedEquipmentNeeds.length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-1.5">
+                  {p.expectedEquipmentNeeds.map(eq => (
+                    <span key={eq} className="bg-black/20 text-white/90 text-[10px] px-1.5 py-0.5 rounded">{eq}</span>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))
         )}
       </div>
 
-      {/* Info */}
-      <div style={{ padding: '14px 16px 16px', flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-          <p
-            style={{
-              fontFamily: '-apple-system, SF Pro Display, Inter, sans-serif',
-              fontWeight: 600, fontSize: 15, lineHeight: 1.25,
-              color: '#F5F5F7',
-              flex: 1,
-              overflow: 'hidden', display: '-webkit-box',
-              WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
-            }}
-          >
-            {eq.name}
-          </p>
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 'auto', paddingTop: 4 }}>
-          <span
-            className={cn(
-              'inline-block w-2 h-2 rounded-full shrink-0',
-              (eq.status === 'in_use' || eq.status === 'reserved') && 'animate-status-pulse'
-            )}
-            style={{ background: dotColor }}
-          />
-          <span
-            style={{
-              fontFamily: '-apple-system, SF Pro Text, Inter, sans-serif',
-              fontSize: 12, color: '#98989D',
-            }}
-          >
-            {label}
-          </span>
-          {eq.requiresTraining && (
-            <span
-              style={{
-                marginLeft: 'auto',
-                fontFamily: 'ui-monospace, SF Mono, monospace',
-                fontSize: 10, color: '#98989D',
-                background: 'rgba(255,255,255,0.06)',
-                borderRadius: 999, padding: '2px 7px',
-                letterSpacing: '0.04em', textTransform: 'uppercase',
-              }}
-            >
-              Induction
-            </span>
-          )}
-        </div>
+      {/* Actions */}
+      <div className="flex gap-3 px-6 py-5 border-t border-white/10 bg-black/10 mt-auto">
+        <button
+          onClick={() => navigate('/bookings/new')}
+          className="flex-1 h-11 bg-[#746EF8] text-white font-bold rounded-[8px] hover:bg-[#6A63F0] transition-colors focus:outline-none"
+        >
+          Book Machine
+        </button>
+        <button
+          onClick={() => navigate('/checkout')}
+          className="flex-1 h-11 bg-[#EC68D8] text-black font-bold rounded-[8px] hover:brightness-110 active:scale-[0.98] transition-all focus:outline-none shadow-md"
+        >
+          Checkout Tool
+        </button>
       </div>
-    </button>
+    </div>
   )
 }
 
-export default function DashboardPage() {
+// ─── Attention Panel ──────────────────────────────────────────────────────────
+function AttentionPanel({ overdueCount, activeCheckouts, todayBookings }: {
+  overdueCount: number
+  activeCheckouts: { id: string }[]
+  todayBookings: Booking[]
+}) {
   const navigate = useNavigate()
-  const { user } = useAuth()
-  const [activeCategory, setActiveCategory] = useState<CategoryId | null>(null)
-  const [isSeeding, setIsSeeding] = useState(false)
-  const today = todayStr()
+  
+  const hasAlerts = overdueCount > 0 || activeCheckouts.length > 0 || todayBookings.length > 0
 
-  const { data: equipment = [], isLoading, refetch } = useQuery({
-    queryKey: ['equipment', 'all'],
+  return (
+    <div className="bg-[#EC68D8] flex flex-col p-6 gap-5 h-full shadow-lg" style={{ borderRadius: 16 }}>
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 bg-black rounded-full flex items-center justify-center text-[#EC68D8] shrink-0 shadow-sm">
+          <AlertTriangle size={18} />
+        </div>
+        <h3 className="text-black text-2xl font-bold leading-none font-display">
+          Attention Required
+        </h3>
+      </div>
+      
+      {!hasAlerts ? (
+        <div className="flex-1 flex items-center justify-center py-8">
+          <p className="text-black/60 font-medium">All clear! No pending actions.</p>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-3 flex-1">
+          {overdueCount > 0 && (
+            <button
+              onClick={() => navigate('/checkout/history')}
+              className="bg-black text-white p-4 rounded-[12px] text-left hover:bg-black/80 transition-colors w-full shadow-md"
+            >
+              <p className="text-[#EC68D8] text-lg font-bold">{overdueCount} tools overdue</p>
+              <p className="text-white/60 text-sm mt-1">Return them immediately to avoid penalties.</p>
+            </button>
+          )}
+          {activeCheckouts.length > 0 && overdueCount === 0 && (
+            <div className="bg-white/40 p-4 rounded-[12px] shadow-sm">
+              <p className="text-black text-lg font-bold">
+                {activeCheckouts.length} tools checked out
+              </p>
+              <p className="text-black/70 text-sm mt-1">Make sure to return them on time.</p>
+            </div>
+          )}
+          {todayBookings.length > 0 && (
+            <div className="bg-white/40 p-4 rounded-[12px] shadow-sm">
+              <p className="text-black text-lg font-bold">
+                {todayBookings.length} machine bookings today
+              </p>
+              <p className="text-black/70 text-sm mt-1">Check your schedule so you aren't late.</p>
+            </div>
+          )}
+        </div>
+      )}
+      
+      <button
+        onClick={() => navigate('/bookings')}
+        className="flex items-center justify-between w-full bg-black text-white font-bold px-5 py-3.5 rounded-full hover:bg-black/80 transition-colors mt-auto shadow-md"
+      >
+        View My Schedule
+        <ChevronRight size={16} />
+      </button>
+    </div>
+  )
+}
+
+// ─── Empty State ──────────────────────────────────────────────────────────────
+function EmptyState({ onSeed, seeding }: { onSeed: () => void; seeding: boolean }) {
+  return (
+    <div className="flex flex-col items-center justify-center gap-4 py-12 bg-white/5 rounded-[16px] border border-white/10 mt-4">
+      <img src={dashboardClusters} alt="Dashboard illustration" className="w-full max-w-[200px] opacity-40 mb-2" />
+      <p className="text-white/50 font-medium">No equipment found in the lab.</p>
+      <button
+        onClick={onSeed}
+        disabled={seeding}
+        className="bg-[#DDF237] text-black font-bold px-6 py-2.5 rounded-full hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-50 shadow-md"
+      >
+        {seeding ? 'Seeding Database…' : 'Seed Equipment Database'}
+      </button>
+    </div>
+  )
+}
+
+// ─── Dashboard Page ───────────────────────────────────────────────────────────
+export default function DashboardPage() {
+  const { user } = useAuth()
+  const navigate = useNavigate()
+  const today = todayStr()
+  const [isSeeding, setIsSeeding] = useState(false)
+
+  const { data: equipment = [], isLoading: eqLoading, refetch } = useQuery({
+    queryKey: ['equipment', 'all-dashboard'],
     queryFn: async () => {
       const ref = collection(db, COLLECTIONS.EQUIPMENT)
       const snap = await getDocs(ref)
@@ -332,12 +215,11 @@ export default function DashboardPage() {
     staleTime: 5 * 60 * 1000,
   })
 
-  // Today's bookings for this user
   const { data: todayBookings = [] } = useQuery({
     queryKey: ['bookings', 'today', user?.uid],
     queryFn: async () => {
-      const ref  = collection(db, COLLECTIONS.BOOKINGS)
-      const q    = query(ref, where('userId', '==', user!.uid), where('date', '==', today))
+      const ref = collection(db, COLLECTIONS.BOOKINGS)
+      const q = query(ref, where('userId', '==', user!.uid), where('date', '==', today))
       const snap = await getDocs(q)
       return snap.docs.map(d => ({ id: d.id, ...d.data() }) as Booking)
     },
@@ -345,7 +227,6 @@ export default function DashboardPage() {
     staleTime: 2 * 60 * 1000,
   })
 
-  // Active tool checkouts
   const { data: activeCheckouts = [] } = useQuery({
     queryKey: ['toolCheckouts', 'active', user?.uid],
     queryFn: () => getActiveUserCheckouts(user!.uid),
@@ -353,7 +234,6 @@ export default function DashboardPage() {
     staleTime: 2 * 60 * 1000,
   })
 
-  // User's projects
   const { data: userProjects = [] } = useQuery({
     queryKey: ['projects', 'user', user?.uid],
     queryFn: () => getUserProjects(user!.uid),
@@ -361,306 +241,86 @@ export default function DashboardPage() {
     staleTime: 5 * 60 * 1000,
   })
 
-  const overdueCount = activeCheckouts.filter(isCheckoutOverdue).length
-
+  const overdueCount   = activeCheckouts.filter(isCheckoutOverdue).length
   const availableCount = equipment.filter(e => e.status === 'available').length
-  const inUseCount     = equipment.filter(e => e.status === 'in_use' || e.status === 'reserved').length
-  const offlineCount   = equipment.filter(e => ['under_maintenance','out_of_service','retired'].includes(e.status)).length
 
-  const categoryCounts = CATEGORY_META.reduce((acc, cat) => {
-    acc[cat.id] = equipment.filter(e => e.category === cat.id).length
-    return acc
-  }, {} as Record<CategoryId, number>)
-
-  const filteredEquipment = activeCategory
-    ? equipment.filter(e => e.category === activeCategory)
-    : equipment
-
-  const activeMeta = activeCategory
-    ? CATEGORY_META.find(c => c.id === activeCategory)
-    : null
-
-  // Full seed handler — uses all items from scripts/seedEquipment.ts
   const handleSeed = async () => {
+    if (isSeeding) return
     setIsSeeding(true)
     try {
+      const { EQUIPMENT_SEED } = await import('@/../scripts/seedEquipment')
       const { addDoc, serverTimestamp } = await import('firebase/firestore')
-      const equipCollection = collection(db, COLLECTIONS.EQUIPMENT)
-      let seeded = 0
+      const coll = collection(db, COLLECTIONS.EQUIPMENT)
       for (const item of EQUIPMENT_SEED) {
-        await addDoc(equipCollection, {
-          ...item,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        })
-        seeded++
+        await addDoc(coll, { ...item, createdAt: serverTimestamp(), updatedAt: serverTimestamp() })
       }
-      alert(`✅ ${seeded} items seeded to Firestore!`)
       refetch()
     } catch (err: any) {
-      alert('Error seeding: ' + err.message)
+      console.error('Seed failed:', err)
     } finally {
       setIsSeeding(false)
     }
   }
 
+  const labStats = [
+    { label: 'ACTIVE PROJECTS', value: userProjects.length, color: '#E1D7A8' },
+    { label: 'AVAILABLE MACHINES', value: `${availableCount} / ${Math.max(equipment.length, 1)}`, color: '#DDF237' },
+    { label: "TODAY'S BOOKINGS", value: todayBookings.length, color: '#FFF4BE' },
+    { label: 'OVERDUE TOOLS', value: overdueCount, color: overdueCount > 0 ? '#EC68D8' : '#E1D7A8' },
+  ]
+
   return (
-    <div className="flex flex-col w-full animate-fade-in">
-      {/* ── Temporary Seed Button ── */}
-      {equipment.length === 0 && (
-        <div style={{ marginBottom: 20, padding: 16, background: 'rgba(10, 132, 255, 0.1)', borderRadius: 12, border: '1px solid rgba(10, 132, 255, 0.3)' }}>
-          <p style={{ color: '#F5F5F7', marginBottom: 12, fontSize: 14 }}>
-            <strong>Action Required:</strong> The equipment database is empty. Click below to seed the 14 machines from the Phase 2 migration plan.
-          </p>
-          <button 
-            onClick={handleSeed}
-            disabled={isSeeding}
-            style={{ padding: '8px 16px', background: '#0A84FF', color: 'white', borderRadius: 8, border: 'none', cursor: 'pointer' }}
-          >
-            {isSeeding ? 'Seeding...' : 'Seed Machines'}
-          </button>
-        </div>
-      )}
+    <div className="w-full flex flex-col gap-6 animate-fade-in pb-12">
+      {/* Top Stats Strip */}
+      <LabStats stats={labStats} />
 
-      {/* ── Hero tagline ─────────────────────────────────────────── */}
-      <div style={{ marginBottom: 28 }}>
-        <h1
-          style={{
-            fontFamily: '-apple-system, SF Pro Display, Inter, sans-serif',
-            fontWeight: 600,
-            fontSize: 'clamp(36px, 5vw, 64px)',
-            letterSpacing: '-0.02em',
-            lineHeight: 1.05,
-            color: '#F5F5F7',
-            marginBottom: 10,
-          }}
-        >
-          Book time on real machines.
-        </h1>
-        <p style={{ color: '#98989D', fontSize: 15 }}>
-          Reserve equipment, manage sessions, and track your projects — all in one place.
-        </p>
-      </div>
+      {/* Main Dashboard Layout */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        
+        {/* Left Column: Forms and Actions */}
+        <div className="xl:col-span-2 flex flex-col gap-6">
+          
+          <ProjectsPanel projects={userProjects} />
 
-      {/* ── Today's Activity Panel ──────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12, marginBottom: 28 }}>
-
-        {/* Bookings Today */}
-        <button
-          onClick={() => navigate('/bookings')}
-          style={{ background: '#141518', borderRadius: 20, border: '1px solid rgba(255,255,255,0.08)', padding: '18px 20px', textAlign: 'left', cursor: 'pointer', transition: 'border-color 200ms ease' }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(10,132,255,0.35)' }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)' }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-            <span style={{ width: 32, height: 32, borderRadius: 10, background: 'rgba(10,132,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <CalendarDays size={16} color="#0A84FF" />
-            </span>
-            <span style={{ fontSize: 13, color: '#98989D', fontFamily: '-apple-system,Inter,sans-serif' }}>Today's Bookings</span>
+          {/* Quick Actions */}
+          <div className="flex flex-col gap-3">
+            <h3 className="text-white/70 text-xs font-bold tracking-wider uppercase ml-1">Quick Actions</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {[
+                { label: 'Book Machine',  icon: CalendarDays, path: '/bookings/new',  bg: '#EC68D8', fg: '#000' },
+                { label: 'Checkout Tool', icon: Wrench,       path: '/checkout',       bg: '#191919', fg: '#fff' },
+                { label: 'Lab Inventory', icon: Box,          path: '/inventory',      bg: '#514AF1', fg: '#fff' },
+                { label: 'My Projects',   icon: MessageSquare,path: '/projects',       bg: '#191919', fg: '#fff' },
+              ].map(a => (
+                <button
+                  key={a.label}
+                  onClick={() => navigate(a.path)}
+                  className="flex flex-col items-center justify-center gap-3 p-5 rounded-[16px] hover:brightness-110 active:scale-[0.98] transition-all border border-white/5 shadow-md"
+                  style={{ backgroundColor: a.bg, color: a.fg }}
+                >
+                  <a.icon size={28} strokeWidth={2} />
+                  <span className="font-bold text-sm text-center tracking-tight">{a.label}</span>
+                </button>
+              ))}
+            </div>
           </div>
-          <p style={{ fontSize: 32, fontWeight: 700, color: '#F5F5F7', lineHeight: 1, fontFamily: '-apple-system,Inter,sans-serif', marginBottom: 4 }}>{todayBookings.length}</p>
-          <p style={{ fontSize: 12, color: '#98989D' }}>
-            {todayBookings.length === 0 ? 'No sessions today' : todayBookings.map(b => b.machineName).join(', ')}
-          </p>
-        </button>
+          
+          {equipment.length === 0 && !eqLoading && (
+            <EmptyState onSeed={handleSeed} seeding={isSeeding} />
+          )}
 
-        {/* Active Tool Checkouts */}
-        <button
-          onClick={() => navigate('/checkout/history')}
-          style={{ background: '#141518', borderRadius: 20, border: `1px solid ${overdueCount > 0 ? 'rgba(255,69,58,0.35)' : 'rgba(255,255,255,0.08)'}`, padding: '18px 20px', textAlign: 'left', cursor: 'pointer', transition: 'border-color 200ms ease' }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = overdueCount > 0 ? 'rgba(255,69,58,0.6)' : 'rgba(10,132,255,0.35)' }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = overdueCount > 0 ? 'rgba(255,69,58,0.35)' : 'rgba(255,255,255,0.08)' }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-            <span style={{ width: 32, height: 32, borderRadius: 10, background: overdueCount > 0 ? 'rgba(255,69,58,0.15)' : 'rgba(255,149,0,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              {overdueCount > 0 ? <AlertTriangle size={16} color="#FF453A" /> : <Package size={16} color="#FF9500" />}
-            </span>
-            <span style={{ fontSize: 13, color: '#98989D', fontFamily: '-apple-system,Inter,sans-serif' }}>Tool Checkouts</span>
-          </div>
-          <p style={{ fontSize: 32, fontWeight: 700, color: overdueCount > 0 ? '#FF453A' : '#F5F5F7', lineHeight: 1, fontFamily: '-apple-system,Inter,sans-serif', marginBottom: 4 }}>{activeCheckouts.length}</p>
-          <p style={{ fontSize: 12, color: overdueCount > 0 ? '#FF453A' : '#98989D' }}>
-            {overdueCount > 0 ? `${overdueCount} overdue — return immediately` : activeCheckouts.length === 0 ? 'No active checkouts' : 'Active borrowings'}
-          </p>
-        </button>
-
-        {/* Projects */}
-        <button
-          onClick={() => navigate('/projects')}
-          style={{ background: '#141518', borderRadius: 20, border: '1px solid rgba(255,255,255,0.08)', padding: '18px 20px', textAlign: 'left', cursor: 'pointer', transition: 'border-color 200ms ease' }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(48,209,88,0.35)' }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)' }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-            <span style={{ width: 32, height: 32, borderRadius: 10, background: 'rgba(48,209,88,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <span style={{ fontSize: 16 }}>🔬</span>
-            </span>
-            <span style={{ fontSize: 13, color: '#98989D', fontFamily: '-apple-system,Inter,sans-serif' }}>My Projects</span>
-          </div>
-          <p style={{ fontSize: 32, fontWeight: 700, color: '#F5F5F7', lineHeight: 1, fontFamily: '-apple-system,Inter,sans-serif', marginBottom: 4 }}>{userProjects.length}</p>
-          <p style={{ fontSize: 12, color: '#98989D' }}>
-            {userProjects.length === 0 ? 'Register a project first' : userProjects.map(p => p.id).join(', ')}
-          </p>
-        </button>
-
-        {/* Quick Actions */}
-        <div style={{ background: '#141518', borderRadius: 20, border: '1px solid rgba(255,255,255,0.08)', padding: '18px 20px' }}>
-          <p style={{ fontSize: 13, color: '#98989D', marginBottom: 12, fontFamily: '-apple-system,Inter,sans-serif' }}>Quick Actions</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {[
-              { label: 'Book a machine', path: '/bookings/new', color: '#0A84FF' },
-              { label: 'Checkout a tool', path: '/checkout', color: '#FF9500' },
-              { label: 'New project', path: '/projects/new', color: '#30D158' },
-            ].map(a => (
-              <button
-                key={a.path}
-                onClick={() => navigate(a.path)}
-                style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  padding: '7px 10px', borderRadius: 10,
-                  background: 'rgba(255,255,255,0.04)',
-                  border: '1px solid rgba(255,255,255,0.06)',
-                  cursor: 'pointer', width: '100%',
-                  fontFamily: '-apple-system,Inter,sans-serif',
-                  fontSize: 13, color: a.color,
-                  fontWeight: 500,
-                  transition: 'background 150ms ease',
-                }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)' }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)' }}
-              >
-                {a.label}
-                <ArrowRight size={13} color={a.color} />
-              </button>
-            ))}
-          </div>
         </div>
-      </div>
 
-      {/* ── Live status ticker ───────────────────────────────────── */}
-      <div
-        style={{
-          display: 'flex', gap: 20, marginBottom: 32,
-          padding: '10px 16px',
-          borderRadius: 12,
-          border: '1px solid rgba(255,255,255,0.06)',
-          background: 'rgba(255,255,255,0.03)',
-          width: 'fit-content',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 13, color: '#F5F5F7', fontFamily: 'ui-monospace, SF Mono, monospace' }}>
-          <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#34C759', display: 'inline-block', flexShrink: 0 }} />
-          {availableCount} available
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 13, color: '#F5F5F7', fontFamily: 'ui-monospace, SF Mono, monospace' }}>
-          <span className="animate-status-pulse" style={{ width: 8, height: 8, borderRadius: '50%', background: '#FF9500', display: 'inline-block', flexShrink: 0 }} />
-          {inUseCount} in use
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 13, color: '#98989D', fontFamily: 'ui-monospace, SF Mono, monospace' }}>
-          <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#8E8E93', display: 'inline-block', flexShrink: 0 }} />
-          {offlineCount} offline
-        </div>
-      </div>
-
-      {/* ── Category Tiles ───────────────────────────────────────── */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
-          gap: 12,
-          marginBottom: 40,
-        }}
-      >
-        {CATEGORY_META.map(cat => (
-          <CategoryTile
-            key={cat.id}
-            meta={cat}
-            count={categoryCounts[cat.id] ?? 0}
-            isActive={activeCategory === cat.id}
-            onClick={() => setActiveCategory(activeCategory === cat.id ? null : cat.id)}
+        {/* Right Column: Attention & Alerts */}
+        <div className="xl:col-span-1 flex flex-col gap-6">
+          <AttentionPanel 
+            overdueCount={overdueCount} 
+            activeCheckouts={activeCheckouts} 
+            todayBookings={todayBookings} 
           />
-        ))}
+        </div>
+        
       </div>
-
-      {/* ── Section header ──────────────────────────────────────── */}
-      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 20 }}>
-        <h2
-          style={{
-            fontFamily: '-apple-system, SF Pro Display, Inter, sans-serif',
-            fontWeight: 600, fontSize: 22, letterSpacing: '-0.01em',
-            color: '#F5F5F7',
-          }}
-        >
-          {activeMeta ? activeMeta.label : 'All Machines'}
-          <span style={{ fontWeight: 400, fontSize: 16, color: '#98989D', marginLeft: 10 }}>
-            {filteredEquipment.length}
-          </span>
-        </h2>
-        {activeCategory && (
-          <button
-            onClick={() => setActiveCategory(null)}
-            style={{
-              fontSize: 13, color: '#0A84FF',
-              background: 'none', border: 'none', cursor: 'pointer',
-              fontFamily: '-apple-system, SF Pro Text, Inter, sans-serif',
-            }}
-          >
-            Show all →
-          </button>
-        )}
-      </div>
-
-      {/* ── Equipment Grid ──────────────────────────────────────── */}
-      {isLoading ? (
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
-            gap: 16,
-          }}
-        >
-          {Array.from({ length: 8 }).map((_, i) => (
-            <div
-              key={i}
-              style={{
-                height: 240, borderRadius: 24,
-                background: '#141518',
-                border: '1px solid rgba(255,255,255,0.06)',
-                animation: 'pulse 2s cubic-bezier(0.4,0,0.6,1) infinite',
-              }}
-            />
-          ))}
-        </div>
-      ) : filteredEquipment.length === 0 ? (
-        <div
-          style={{
-            padding: '64px 0', textAlign: 'center',
-            color: '#98989D', fontSize: 15,
-            fontFamily: '-apple-system, SF Pro Text, Inter, sans-serif',
-          }}
-        >
-          No sessions booked yet. Find a machine and grab a slot.
-        </div>
-      ) : (
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
-            gap: 16,
-          }}
-        >
-          {filteredEquipment.map(eq => {
-            const meta = CATEGORY_META.find(c => c.id === eq.category)
-            return (
-              <EquipmentCard
-                key={eq.id}
-                eq={eq}
-                categoryAccent={meta?.accent ?? '#98989D'}
-                onClick={() => navigate(`/equipment/${eq.id}`)}
-              />
-            )
-          })}
-        </div>
-      )}
     </div>
   )
 }

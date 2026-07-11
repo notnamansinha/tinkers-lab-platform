@@ -2,7 +2,9 @@ import { Button } from '@/components/ui/button'
 import React from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { getDocument, COLLECTIONS } from '@/services/firebase/firestore'
+import { COLLECTIONS } from '@/services/firebase/firestore'
+import { doc, getDoc, collection, addDoc, updateDoc } from 'firebase/firestore'
+import { db } from '@/lib/firebase'
 import { ArrowLeft, Edit } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import type { Project } from '@/types'
@@ -14,7 +16,11 @@ export default function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { isAdmin, user } = useAuth()
-  const { data: project, isLoading } = useQuery({ queryKey: ['projects', id], queryFn: () => getDocument<Project>(COLLECTIONS.PROJECTS, id!), enabled: !!id })
+  const { data: project, isLoading } = useQuery({ queryKey: ['projects', id], queryFn: async () => {
+      const snap = await getDoc(doc(db, COLLECTIONS.PROJECTS, id!))
+      if (!snap.exists()) return null
+      return { id: snap.id, ...snap.data() } as Project
+    }, enabled: !!id })
 
   if (isLoading) return <LoadingSpinner text="Loading…" />
   if (!project) return <div className="py-16 text-center text-muted-foreground">Not found. <Link to="/projects" className="text-primary hover:underline">← Back</Link></div>
@@ -40,7 +46,7 @@ export default function ProjectDetailPage() {
 
       <div className="rounded-lg border bg-card p-5 grid grid-cols-2 gap-3">
         <h2 className="col-span-full font-display font-semibold text-sm text-muted-foreground uppercase tracking-wide">Details</h2>
-        {[['Registered by', project.userName], ['Email', project.userEmail], ['Contact', project.contact], ['Department', project.department], ['University ID', project.universityId || '—'], ['User Type', project.userType], ['Team Members', project.teamMembers || '—'], ['Faculty Mentor', project.facultyMentor || '—'], ['Start Date', project.startDate], ['End Date', project.endDate || '—'], ['Resource Link', project.resourceLink || '—']].map(([k,v]) => (
+        {[['Registered by', project.userName], ['Email', project.userEmail], ['Contact', project.contact], ['Department', project.department], ['University ID', project.universityId || '—'], ['User Type', project.userType], ['Team Members', project.teamMembers || '—'], ['Faculty Mentor', project.facultyMentor || '—'], ['Start Date', project.startDate], ['End Date', project.endDate || '—'], ['Resource Link', project.resourceLink || '—'], ['Documentation File', 'Coming Soon']].map(([k,v]) => (
           <div key={k}><p className="text-xs text-muted-foreground font-mono">{k}</p><p className="text-sm font-medium mt-0.5">{String(v)}</p></div>
         ))}
         {project.rejectionReason && <div className="col-span-2"><p className="text-xs text-destructive font-mono">Rejection Reason</p><p className="text-sm text-destructive">{project.rejectionReason}</p></div>}

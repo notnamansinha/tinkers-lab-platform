@@ -17,36 +17,51 @@ const config = {
     },
     extend: {
       fontFamily: {
-        // Apple HIG system stack — SF Pro on Apple, Inter elsewhere
-        sans:    ['-apple-system', 'SF Pro Text', 'SF Pro Display', 'Inter', 'Segoe UI', 'sans-serif'],
-        display: ['-apple-system', 'SF Pro Display', 'Inter', 'Segoe UI', 'sans-serif'],
+        // Brand/display: Fredoka ExtraBold for wordmark and large headlines
+        brand:   ['Fredoka', 'PP Mori', 'Arial Black', 'sans-serif'],
+        // Body/labels: Inter for all UI text, inputs, numbers, helper text
+        sans:    ['Inter', 'PP Mori', 'Arial', 'sans-serif'],
+        // Legacy display fallback
+        display: ['PP Mori', 'Arial Black', 'Arial', 'sans-serif'],
         mono:    ['ui-monospace', 'SF Mono', 'JetBrains Mono', 'Courier New', 'monospace'],
       },
 
       colors: {
-        // ── New design-system tokens ──────────────────────────────
-        canvas:  '#08090B',   // app background
-        surface: '#141518',   // flat card container
+        // ── FigJam Palette Tokens ──────────────────────────────
+        black: '#000000',
+        'near-black': '#101010',
+        charcoal: '#191919',
+        pink: '#EC68D8',
+        indigo: '#514AF1',
+        'electric-blue': '#4C48F2',
+        lime: '#DDF237',
+        orange: '#FFB13F',
+        cream: '#FFF4BE',
+        sand: '#A9957A',
+        beige: '#E1D7A8',
+        'modal-blue': '#5A53F4',
+        'track-purple': '#746EF8',
+        white: '#FFFFFF',
 
-        'accent-blue': '#0A84FF', // Apple dark-mode blue — flat Accent
-
-        // Status dots (flat, functional only — no gradient)
-        'status-green':  '#34C759',
-        'status-orange': '#FF9500',
-        'status-red':    '#FF3B30',
-        'status-grey':   '#8E8E93',
-
-        // Legacy tokens kept so existing components don't break
+        // Legacy compatibility
+        canvas:  '#08090B',
+        surface: '#141518',
+        'accent-blue': '#0A84FF',
         graphite: '#08090B',
         steel:    '#141518',
         hairline: 'rgba(255,255,255,0.10)',
         chalk:    '#F5F5F7',
         hazard:   '#FF9500',
-
         'signal-green': '#34C759',
         'signal-amber': '#FF9500',
         'signal-red':   '#FF3B30',
         'signal-grey':  '#8E8E93',
+
+        // Status dots
+        'status-green':  '#DDF237', // lime for available/success
+        'status-orange': '#FFB13F', // orange for pending/warning
+        'status-red':    '#EC68D8', // pink for destructive/attention
+        'status-grey':   '#191919', // charcoal for disabled
 
         // ── shadcn/ui CSS-var tokens ──────────────────────────────
         border:     'hsl(var(--border))',
@@ -87,9 +102,61 @@ const config = {
       borderRadius: {
         tile: '32px',
         card: '24px',
+        panel: '12px',
+        chip:  '999px',
         lg:   'var(--radius)',
         md:   'calc(var(--radius) - 2px)',
         sm:   'calc(var(--radius) - 4px)',
+      },
+
+      // 8px grid spacing tokens: 1u = 8px, 2u = 16px, etc.
+      spacing: {
+        '1u': '8px',
+        '2u': '16px',
+        '3u': '24px',
+        '4u': '32px',
+        '5u': '40px',
+        '6u': '48px',
+        '7u': '56px',
+        '8u': '64px',
+        '10u': '80px',
+        '11u': '88px',
+        '12u': '96px',
+      },
+
+      fontSize: {
+        'hero': ['clamp(64px, 5vw, 72px)', { lineHeight: '1', fontWeight: '900' }],
+        'onboarding': ['clamp(40px, 4vw, 56px)', { lineHeight: '1.1', fontWeight: '800' }],
+        'empty-state': ['32px', { lineHeight: '1.2', fontWeight: '700' }],
+        'dashboard-title': ['28px', { lineHeight: '1.2', fontWeight: '700' }],
+        'card-title': ['clamp(22px, 2vw, 24px)', { lineHeight: '1.2', fontWeight: '700' }],
+        'widget-title': ['clamp(18px, 1.5vw, 20px)', { lineHeight: '1.2', fontWeight: '600' }],
+        'chart-title': ['18px', { lineHeight: '1.2', fontWeight: '700' }],
+        'form-heading': ['18px', { lineHeight: '1.2', fontWeight: '700' }],
+        
+        'sidebar-active': ['15px', { lineHeight: '1.4', fontWeight: '600' }],
+        'sidebar-normal': ['15px', { lineHeight: '1.4', fontWeight: '500' }],
+        'nav': ['15px', { lineHeight: '1.4', fontWeight: '500' }],
+        
+        'input-label': ['13px', { lineHeight: '1', fontWeight: '500' }],
+        'input-text': ['16px', { lineHeight: '1.5', fontWeight: '400' }],
+        'dropdown-text': ['16px', { lineHeight: '1.5', fontWeight: '500' }],
+        'placeholder': ['16px', { lineHeight: '1.5', fontWeight: '400' }],
+        
+        'btn': ['15px', { lineHeight: '1.2', fontWeight: '600' }],
+        
+        'kpi': ['clamp(32px, 3vw, 42px)', { lineHeight: '1', fontWeight: '700' }],
+        'card-stat': ['clamp(24px, 2.5vw, 28px)', { lineHeight: '1', fontWeight: '700' }],
+        
+        'table-th': ['14px', { lineHeight: '1.4', fontWeight: '600' }],
+        'table-td': ['14px', { lineHeight: '1.4', fontWeight: '400' }],
+        
+        'chart-label': ['12px', { lineHeight: '1.4', fontWeight: '500' }],
+        'axis-label': ['11px', { lineHeight: '1.4', fontWeight: '500' }],
+        
+        'helper': ['12px', { lineHeight: '1.4', fontWeight: '400' }],
+        'tooltip': ['13px', { lineHeight: '1.4', fontWeight: '500' }],
+        'badge': ['12px', { lineHeight: '1', fontWeight: '600' }],
       },
 
       keyframes: {
