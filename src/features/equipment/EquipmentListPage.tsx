@@ -16,9 +16,9 @@ const STATUS_CONFIG = {
   available:         { label: 'Available',      chip: 'bg-[#DDF237] text-white' },
   reserved:          { label: 'Reserved',       chip: 'bg-[#FFB13F] text-white' },
   in_use:            { label: 'In Use',         chip: 'bg-[#FFB13F] text-white' },
-  under_maintenance: { label: 'Maintenance',    chip: 'bg-white/10 text-white/50' },
+  under_maintenance: { label: 'Maintenance',    chip: 'bg-white/10 text-[#7D9FC2]' },
   out_of_service:    { label: 'Out of Service', chip: 'bg-[#EC68D8] text-white' },
-  retired:           { label: 'Retired',        chip: 'bg-[rgba(255,255,255,0.05)] text-white/40' },
+  retired:           { label: 'Retired',        chip: 'bg-white/40 border border-white/20 shadow-sm text-[#7D9FC2]' },
 } as const
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -80,7 +80,7 @@ export default function EquipmentListPage() {
           <div className="flex flex-col gap-6">
             <div className="flex flex-col lg:flex-row gap-5 items-start lg:items-center">
               <div className="relative w-full lg:w-80 flex-shrink-0">
-                <Search size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-white/40" />
+                <Search size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#7D9FC2]" />
                 <input
                   type="text"
                   placeholder="Search by name or ID..."
@@ -101,7 +101,7 @@ export default function EquipmentListPage() {
                 ))}
               </div>
             </div>
-            <div className="flex flex-wrap gap-2 pt-5 border-t border-[rgba(255,255,255,0.06)]">
+            <div className="flex flex-wrap gap-2 pt-5 border-t border-white/20">
               <FilterChip label="Any Status" active={filterStatus === 'all'} onClick={() => setFilterStatus('all')} />
               {STATUS_FILTERS.map(s => (
                 <FilterChip
@@ -145,7 +145,7 @@ export default function EquipmentListPage() {
                     </div>
                   )}
                   {/* Status Overlay */}
-                  <div className="absolute top-3 left-3 bg-[rgba(0,0,0,0.4)] backdrop-blur-md border border-[rgba(255,255,255,0.1)] px-2.5 py-1 rounded-full flex items-center gap-2">
+                  <div className="absolute top-3 left-3 bg-[rgba(0,0,0,0.4)]  border border-[#6FA9FF]/50 px-2.5 py-1 rounded-full flex items-center gap-2">
                     <span className={cn('w-2 h-2 rounded-full', dotColorClass)} />
                     <span className="text-white/80 font-medium text-[10px] uppercase tracking-widest leading-none">
                       {cfg.label}
@@ -157,7 +157,7 @@ export default function EquipmentListPage() {
                   <span className="text-[11px] font-semibold text-white/30 uppercase tracking-[0.1em] mb-1.5 block">
                     {CATEGORY_LABELS[e.category] ?? e.category}
                   </span>
-                  <h3 className="text-[18px] font-semibold text-white mb-2 leading-tight group-hover:text-[#514AF1] transition-colors">
+                  <h3 className="text-[18px] font-semibold text-[#56779D] mb-2 leading-tight group-hover:text-[#514AF1] transition-colors">
                     {e.name}
                   </h3>
                   
@@ -165,7 +165,7 @@ export default function EquipmentListPage() {
                     {e.status === 'available' && (
                       <span
                         onClick={ev => { ev.stopPropagation(); navigate(`/bookings/new?machine=${e.id}`) }}
-                        className="bg-[rgba(255,255,255,0.08)] text-white/80 hover:text-white px-4 py-2 rounded-full text-[11px] font-bold uppercase tracking-wider hover:bg-[#514AF1] transition-all border border-[rgba(255,255,255,0.1)]"
+                        className="bg-white/70 text-white/80 hover:text-white px-4 py-2 rounded-full text-[11px] font-bold uppercase tracking-wider hover:bg-[#514AF1] transition-all border border-[#6FA9FF]/50"
                       >
                         Book
                       </span>

@@ -36,7 +36,7 @@ export default function LoginPage() {
         <div className="flex items-center gap-3">
           <img src={logoMark} alt="" className="w-12 h-12 rounded-[14px] object-contain" />
           <span
-            className="font-brand uppercase text-white text-xl lg:text-2xl tracking-wider"
+            className="font-brand uppercase text-[#56779D] text-xl lg:text-2xl tracking-wider"
             style={{ WebkitTextStroke: '0.8px currentColor' }}
           >
             Tinkerers Lab
@@ -52,7 +52,7 @@ export default function LoginPage() {
         </div>
 
         <aside className="w-full max-w-[460px] justify-self-center flex flex-col">
-          <h1 className="tl-display-title text-white text-5xl lg:text-6xl mb-10 max-lg:text-center">
+          <h1 className="tl-display-title text-[#56779D] text-5xl lg:text-6xl mb-10 max-lg:text-center">
             Book it.<br />Build it.
           </h1>
 
@@ -62,8 +62,8 @@ export default function LoginPage() {
                 <Cpu size={20} className="text-indigo" strokeWidth={1.5} />
               </div>
               <div>
-                <div className="tl-page-title text-lg text-white mb-1">Reserve Equipment</div>
-                <div className="text-white/50 text-sm leading-relaxed">Fast access to hardware checkouts and machine bookings.</div>
+                <div className="tl-page-title text-lg text-[#56779D] mb-1">Reserve Equipment</div>
+                <div className="text-[#7D9FC2] text-sm leading-relaxed">Fast access to hardware checkouts and machine bookings.</div>
               </div>
             </div>
 
@@ -72,15 +72,15 @@ export default function LoginPage() {
                 <CalendarCheck size={20} className="text-lime" strokeWidth={1.5} />
               </div>
               <div>
-                <div className="tl-page-title text-lg text-white mb-1">Book Workspaces</div>
-                <div className="text-white/50 text-sm leading-relaxed">Secure your spot in the lab and track your projects.</div>
+                <div className="tl-page-title text-lg text-[#56779D] mb-1">Book Workspaces</div>
+                <div className="text-[#7D9FC2] text-sm leading-relaxed">Secure your spot in the lab and track your projects.</div>
               </div>
             </div>
           </div>
 
           <div className="tl-auth-panel max-lg:mx-auto">
             {error && (
-              <div className="flex gap-2 items-start p-4 rounded-[16px] mb-5 bg-orange/15 border border-orange/40 text-white text-sm">
+              <div className="flex gap-2 items-start p-4 rounded-[16px] mb-5 bg-orange/15 border border-orange/40 text-[#56779D] text-sm">
                 <AlertCircle size={16} className="shrink-0 mt-0.5" />
                 {error}
               </div>
@@ -90,7 +90,7 @@ export default function LoginPage() {
               type="button"
               onClick={handleGoogleSignIn}
               disabled={googleLoading}
-              className="w-full min-h-[52px] rounded-full bg-white text-white font-semibold text-sm uppercase tracking-wide flex items-center justify-center gap-3 hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-60 shadow-[0_8px_32px_rgba(255,255,255,0.12)]"
+              className="w-full min-h-[52px] rounded-full bg-white text-[#56779D] font-semibold text-sm uppercase tracking-wide flex items-center justify-center gap-3 hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-60 shadow-[0_8px_32px_rgba(255,255,255,0.12)]"
             >
               {googleLoading ? 'Connecting…' : (
                 <>

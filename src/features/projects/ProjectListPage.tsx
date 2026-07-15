@@ -37,7 +37,7 @@ export default function ProjectListPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active': return 'bg-[#DDF237] text-white shadow-[0_0_12px_rgba(221,242,55,0.4)]'
+      case 'active': return 'bg-[#DDF237] text-[#56779D] shadow-[0_0_12px_rgba(221,242,55,0.4)]'
       case 'completed': return 'bg-[#514AF1] text-white'
       case 'rejected': return 'bg-[#EC68D8] text-white'
       case 'pending': return 'bg-[#FFB13F] text-white'
@@ -59,7 +59,7 @@ export default function ProjectListPage() {
         filters={
           <div className="flex flex-col lg:flex-row gap-5 items-start lg:items-center">
             <div className="relative w-full lg:w-96 flex-shrink-0">
-              <Search size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-white/40" />
+              <Search size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#7D9FC2]" />
               <input
                 type="text"
                 placeholder="Search by title or member..."
@@ -104,13 +104,13 @@ export default function ProjectListPage() {
                 </span>
               </div>
 
-              <h3 className="text-[20px] font-semibold text-white mb-2 group-hover:text-[#DDF237] transition-colors line-clamp-2 leading-tight">
+              <h3 className="text-[20px] font-semibold text-[#56779D] mb-2 group-hover:text-[#DDF237] transition-colors line-clamp-2 leading-tight">
                 {p.title}
               </h3>
 
-              <p className="text-white/40 font-medium text-[13px] mb-4">{p.userName}</p>
+              <p className="text-[#7D9FC2] font-medium text-[13px] mb-4">{p.userName}</p>
 
-              <div className="mt-auto pt-4 border-t border-[rgba(255,255,255,0.06)] flex justify-between items-center text-[10px] font-semibold uppercase tracking-widest text-white/40">
+              <div className="mt-auto pt-4 border-t border-white/20 flex justify-between items-center text-[10px] font-semibold uppercase tracking-widest text-[#7D9FC2]">
                 <span>{p.department}</span>
                 <span>{p.startDate}</span>
               </div>

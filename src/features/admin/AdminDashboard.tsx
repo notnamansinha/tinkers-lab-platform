@@ -89,26 +89,26 @@ export default function AdminDashboard() {
         <DataPanel title="Tool Checkout Status">
           <div className="grid grid-cols-3 gap-4">
             <div className="tl-kpi-tile" style={{ backgroundColor: '#DDF237' }}>
-              <span className="tl-kpi-label text-white">Active</span>
-              <span className="tl-kpi-value text-white">{activeCheckoutCount}</span>
+              <span className="tl-kpi-label text-[#56779D]">Active</span>
+              <span className="tl-kpi-value text-[#56779D]">{activeCheckoutCount}</span>
             </div>
             <div className="tl-kpi-tile" style={{ backgroundColor: overdueCount > 0 ? '#EC68D8' : '#191919' }}>
-              <span className={overdueCount > 0 ? 'tl-kpi-label text-white' : 'tl-kpi-label text-white/50'}>Overdue</span>
+              <span className={overdueCount > 0 ? 'tl-kpi-label text-white' : 'tl-kpi-label text-[#7D9FC2]'}>Overdue</span>
               <span className={overdueCount > 0 ? 'tl-kpi-value text-white' : 'tl-kpi-value text-white'}>{overdueCount}</span>
             </div>
             <Link to="/checkout/history" className="tl-kpi-tile group" style={{ backgroundColor: '#514AF1' }}>
-              <span className="tl-kpi-label text-white/60">Total</span>
-              <span className="tl-kpi-value text-white">{allCheckouts.length}</span>
-              <span className="text-[11px] font-bold text-white/40 uppercase tracking-wider group-hover:text-white/70">View →</span>
+              <span className="tl-kpi-label text-[#7D9FC2]">Total</span>
+              <span className="tl-kpi-value text-[#56779D]">{allCheckouts.length}</span>
+              <span className="text-[11px] font-bold text-[#7D9FC2] uppercase tracking-wider group-hover:text-white/70">View →</span>
             </Link>
           </div>
         </DataPanel>
 
         <DataPanel title="Database Setup">
           <div className="flex items-center gap-2 mb-3">
-            <Database size={18} className="text-white/40" />
-            <p className="text-white/60 text-sm font-medium">
-              Equipment database has <strong className="text-white">{totalEquipment}</strong> items.
+            <Database size={18} className="text-[#7D9FC2]" />
+            <p className="text-[#7D9FC2] text-sm font-medium">
+              Equipment database has <strong className="text-[#56779D]">{totalEquipment}</strong> items.
               {totalEquipment === 0 && ' Seed the full equipment list to get started.'}
             </p>
           </div>
@@ -117,7 +117,7 @@ export default function AdminDashboard() {
             disabled={isSeeding || seeded}
             className={`flex items-center gap-2 px-6 py-3 rounded-full text-sm font-bold uppercase tracking-wide transition-all ${
               seeded
-                ? 'bg-lime text-white cursor-not-allowed'
+                ? 'bg-lime text-[#56779D] cursor-not-allowed'
                 : 'tl-pill-button'
             }`}
           >

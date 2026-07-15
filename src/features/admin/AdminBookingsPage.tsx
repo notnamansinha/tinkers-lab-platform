@@ -16,7 +16,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 const STATUS_COLOR: Record<string, string> = {
   approved: 'bg-[rgba(221,242,55,0.15)] text-[#DDF237]',
   rejected: 'bg-[rgba(236,104,216,0.15)] text-[#EC68D8]',
-  cancelled: 'bg-[rgba(255,255,255,0.1)] text-white/60',
+  cancelled: 'bg-[rgba(255,255,255,0.1)] text-[#7D9FC2]',
   completed: 'bg-[rgba(81,74,241,0.2)] text-[#9B97F7]',
 }
 
@@ -53,14 +53,14 @@ export default function AdminBookingsPage() {
         title="Bookings"
         description={`${bookings.length} total · Review and manage all machine reservations.`}
         action={
-          <div className="w-12 h-12 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-full flex items-center justify-center">
+          <div className="w-12 h-12 bg-white/40 border border-white/20 shadow-sm border border-[#6FA9FF]/50 rounded-full flex items-center justify-center">
             <Calendar size={22} className="text-[#FFB13F]" />
           </div>
         }
         filters={
           <div className="flex flex-col lg:flex-row gap-5 items-start lg:items-center">
             <div className="relative w-full lg:w-80 flex-shrink-0">
-              <Search size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-white/40" />
+              <Search size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#7D9FC2]" />
               <input type="text" placeholder="Search bookings…" value={search} onChange={e => setSearch(e.target.value)} className="tl-input pl-12 w-full h-[44px]" />
             </div>
             <div className="flex flex-wrap gap-2">
@@ -74,38 +74,38 @@ export default function AdminBookingsPage() {
       />
 
       <DataPanel title="All Bookings" description={`${filtered.length} of ${bookings.length} · Latest first`}>
-        <div className="overflow-hidden rounded-[16px] border border-[rgba(255,255,255,0.05)]">
+        <div className="overflow-hidden rounded-[16px] border border-white/20">
           <Table>
             <TableHeader className="bg-[rgba(255,255,255,0.02)]">
-              <TableRow className="hover:bg-transparent border-[rgba(255,255,255,0.05)]">
-                <TableHead className="text-white/40 font-semibold">#</TableHead>
-                <TableHead className="text-white/40 font-semibold">Machine</TableHead>
-                <TableHead className="text-white/40 font-semibold">Date</TableHead>
-                <TableHead className="text-white/40 font-semibold">Time</TableHead>
-                <TableHead className="text-white/40 font-semibold">Booked By</TableHead>
-                <TableHead className="text-white/40 font-semibold">Purpose</TableHead>
-                <TableHead className="text-white/40 font-semibold">Submitted</TableHead>
-                <TableHead className="text-white/40 font-semibold">Status</TableHead>
-                <TableHead className="text-right text-white/40 font-semibold">Actions</TableHead>
+              <TableRow className="hover:bg-transparent border-white/20">
+                <TableHead className="text-[#7D9FC2] font-semibold">#</TableHead>
+                <TableHead className="text-[#7D9FC2] font-semibold">Machine</TableHead>
+                <TableHead className="text-[#7D9FC2] font-semibold">Date</TableHead>
+                <TableHead className="text-[#7D9FC2] font-semibold">Time</TableHead>
+                <TableHead className="text-[#7D9FC2] font-semibold">Booked By</TableHead>
+                <TableHead className="text-[#7D9FC2] font-semibold">Purpose</TableHead>
+                <TableHead className="text-[#7D9FC2] font-semibold">Submitted</TableHead>
+                <TableHead className="text-[#7D9FC2] font-semibold">Status</TableHead>
+                <TableHead className="text-right text-[#7D9FC2] font-semibold">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                <TableRow><TableCell colSpan={9} className="h-32 text-center text-white/40 border-0">Loading…</TableCell></TableRow>
+                <TableRow><TableCell colSpan={9} className="h-32 text-center text-[#7D9FC2] border-0">Loading…</TableCell></TableRow>
               ) : filtered.map((b, idx) => (
-                <TableRow key={b.id} className="border-[rgba(255,255,255,0.05)] hover:bg-[rgba(255,255,255,0.03)] transition-colors">
-                  <TableCell className="text-white/40 font-mono text-[12px]">{filtered.length - idx}</TableCell>
-                  <TableCell className="font-semibold text-white">{b.machineName}</TableCell>
+                <TableRow key={b.id} className="border-white/20 hover:bg-white/40 border border-white/20 shadow-sm transition-colors">
+                  <TableCell className="text-[#7D9FC2] font-mono text-[12px]">{filtered.length - idx}</TableCell>
+                  <TableCell className="font-semibold text-[#56779D]">{b.machineName}</TableCell>
                   <TableCell className="text-white/70 text-[13px]">{b.date}</TableCell>
                   <TableCell className="text-white/70 text-[13px]">{b.startTime}–{b.endTime}</TableCell>
                   <TableCell>
-                    <div className="text-[13px] font-medium text-white">{b.userName || '—'}</div>
-                    <div className="text-[11px] text-white/40">{b.userEmail}</div>
+                    <div className="text-[13px] font-medium text-[#56779D]">{b.userName || '—'}</div>
+                    <div className="text-[11px] text-[#7D9FC2]">{b.userEmail}</div>
                   </TableCell>
-                  <TableCell className="text-white/60 text-[13px] max-w-[160px] truncate">{b.purpose}</TableCell>
-                  <TableCell className="text-white/40 text-[12px]">{formatDateTime(b.createdAt)}</TableCell>
+                  <TableCell className="text-[#7D9FC2] text-[13px] max-w-[160px] truncate">{b.purpose}</TableCell>
+                  <TableCell className="text-[#7D9FC2] text-[12px]">{formatDateTime(b.createdAt)}</TableCell>
                   <TableCell>
-                    <span className={cn('text-[10px] px-2.5 py-1 rounded-[6px] font-bold uppercase tracking-widest border border-transparent', STATUS_COLOR[b.status] || 'bg-[rgba(255,255,255,0.05)] text-white/50')}>{b.status}</span>
+                    <span className={cn('text-[10px] px-2.5 py-1 rounded-[6px] font-bold uppercase tracking-widest border border-transparent', STATUS_COLOR[b.status] || 'bg-white/40 border border-white/20 shadow-sm text-[#7D9FC2]')}>{b.status}</span>
                   </TableCell>
                   <TableCell className="text-right">
                     {b.status === 'approved' && (

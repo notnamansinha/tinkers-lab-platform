@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { collection, getDocs, query, where } from 'firebase/firestore'
@@ -7,7 +7,7 @@ import { COLLECTIONS } from '@/services/firebase/firestore'
 import { useAuth } from '@/contexts/AuthContext'
 import { getActiveUserCheckouts, isCheckoutOverdue } from '@/services/firebase/toolCheckouts'
 import { getUserProjects } from '@/services/firebase/projects'
-import type { Equipment, Booking, Project } from '@/types'
+import type { Equipment, Booking } from '@/types'
 import { todayStr } from '@/lib/utils'
 import {
   CalendarDays,
@@ -17,29 +17,34 @@ import {
   MessageSquare
 } from 'lucide-react'
 
-function KivoBlock({ title, value, icon: Icon, colorClass, path }: { title: string, value?: number | string, icon: any, colorClass: string, path: string }) {
+function BlobGlassBlock({ title, value, icon: Icon, path }: { title: string, value?: number | string, icon: any, path: string }) {
   const navigate = useNavigate()
   return (
     <button
       onClick={() => navigate(path)}
-      className={`relative flex flex-col items-center justify-center gap-4 aspect-square ${colorClass} hover:-translate-y-1 active:scale-[0.98] transition-transform duration-300 overflow-hidden`}
+      className="premium-gradient-card group relative flex flex-col items-center justify-center gap-4 aspect-square hover:-translate-y-1 transition-transform"
     >
-      <div className="absolute inset-0 bg-white/5 backdrop-blur-md opacity-0 hover:opacity-100 transition-opacity" />
-      <div className="w-16 h-16 rounded-[24px] bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center shadow-lg relative z-10">
-        <Icon size={32} strokeWidth={2} className="text-white" />
+      {/* Background blobs for depth */}
+      <div className="blob-base blob-1"></div>
+      <div className="blob-base blob-2 group-hover:scale-110 transition-transform duration-700"></div>
+      <div className="blob-base blob-3 group-hover:scale-110 transition-transform duration-700 delay-100"></div>
+      <div className="blob-base blob-4"></div>
+
+      <div className="w-16 h-16 rounded-full bg-white/20 shadow-inner flex items-center justify-center mb-2 z-10 backdrop-blur-sm border border-white/40">
+        <Icon size={32} strokeWidth={1.5} className="text-white drop-shadow-md" />
       </div>
-      <div className="text-center relative z-10 flex flex-col gap-1">
-        <span className="font-semibold text-white/90 tracking-wide text-[14px] uppercase">{title}</span>
-        {value !== undefined && <span className="font-data text-white text-[28px] leading-none drop-shadow-md">{value}</span>}
+      <div className="text-center flex flex-col gap-1 z-10">
+        {value !== undefined && <span className="font-brand font-light text-[#56779D] text-[48px] leading-none drop-shadow-sm">{value}</span>}
+        <span className="font-brand font-medium text-[#56779D] text-[16px] tracking-wide drop-shadow-sm">{title}</span>
       </div>
     </button>
   )
 }
 
-function DataCard({ title, children }: { title: string, children: React.ReactNode }) {
+function DataCard({ title, children, alert = false }: { title: string, children: React.ReactNode, alert?: boolean }) {
   return (
-    <div className="kivo-glass-panel p-6 flex flex-col gap-4">
-      <h3 className="text-white/60 text-[13px] font-semibold uppercase tracking-widest">{title}</h3>
+    <div className={`premium-glass-card p-8 md:p-10 flex flex-col gap-6 ${alert ? 'border-red-400/50' : ''}`}>
+      <h3 className="text-[#56779D]/70 text-[13px] font-brand font-semibold uppercase tracking-widest">{title}</h3>
       {children}
     </div>
   )
@@ -87,72 +92,68 @@ export default function DashboardPage() {
   const hasAlerts = overdueCount > 0
 
   return (
-    <div className="w-full flex flex-col gap-6 animate-fade-in pt-4">
+    <div className="w-full flex flex-col gap-8 animate-fade-in pt-8">
       
-      {/* Top Main Stat (Like KIVO's large number) */}
+      {/* Top Main Stat */}
       <div className="flex flex-col items-center justify-center py-6">
-        <h2 className="text-white/50 text-[12px] font-semibold uppercase tracking-[0.2em] mb-2">Lab Capacity</h2>
+        <h2 className="text-[#7D9FC2] text-[14px] font-brand font-medium uppercase tracking-widest mb-3">Lab Capacity</h2>
         <div className="flex items-end gap-2">
-          <span className="font-data text-white text-[64px] leading-none drop-shadow-xl tracking-tighter">
+          <span className="font-brand text-[#56779D] font-light text-[80px] leading-none tracking-tighter">
             {availableCount}
           </span>
-          <span className="text-white/40 text-[18px] mb-2 font-medium">/ {Math.max(equipment.length, 1)}</span>
+          <span className="text-[#7D9FC2] text-[24px] mb-2 font-brand font-light">/ {Math.max(equipment.length, 1)}</span>
         </div>
       </div>
 
-      {/* The 2x2 Grid matching KIVO */}
-      <div className="grid grid-cols-2 gap-4 max-w-[600px] mx-auto w-full">
-        <KivoBlock 
+      {/* The 2x2 Soft Glass Grid */}
+      <div className="grid grid-cols-2 gap-6 max-w-[700px] mx-auto w-full px-2">
+        <BlobGlassBlock 
           title="Schedule" 
           value={todayBookings.length}
           icon={CalendarDays} 
-          colorClass="kivo-block-magenta" 
           path="/bookings" 
         />
-        <KivoBlock 
+        <BlobGlassBlock 
           title="Machines" 
           icon={Wrench} 
-          colorClass="kivo-block-lime" 
           path="/equipment" 
         />
-        <KivoBlock 
+        <BlobGlassBlock 
           title="Inventory" 
           value={activeCheckouts.length}
           icon={Box} 
-          colorClass="kivo-block-orange" 
           path="/inventory" 
         />
-        <KivoBlock 
+        <BlobGlassBlock 
           title="Projects" 
           value={userProjects.length}
           icon={MessageSquare} 
-          colorClass="kivo-block-purple" 
           path="/projects" 
         />
       </div>
 
       {/* Secondary Data Cards Area */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-[600px] mx-auto w-full mt-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-[700px] mx-auto w-full mt-6 px-2">
         
-        <DataCard title="Attention">
+        <DataCard title="Attention" alert={hasAlerts}>
           {!hasAlerts ? (
-            <div className="flex items-center gap-4">
-               <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-[#DDF237]">
-                  <AlertTriangle size={20} />
+            <div className="flex items-center gap-5">
+               <div className="w-14 h-14 rounded-full bg-white/40 shadow-sm border border-white flex items-center justify-center text-[#6FA9FF]">
+                  <AlertTriangle size={24} strokeWidth={2} />
                </div>
-               <div>
-                 <p className="font-semibold text-white/90">All clear</p>
-                 <p className="text-white/40 text-sm">No pending actions</p>
+               <div className="flex flex-col">
+                 <span className="font-brand text-[20px] text-[#56779D] font-medium">All clear</span>
+                 <span className="text-[#7D9FC2] text-[15px]">No pending actions</span>
                </div>
             </div>
           ) : (
-            <div className="flex items-center gap-4">
-               <div className="w-12 h-12 rounded-full bg-[#FF007A]/20 border border-[#FF007A]/50 flex items-center justify-center text-[#FF007A]">
-                  <AlertTriangle size={20} />
+            <div className="flex items-center gap-5">
+               <div className="w-14 h-14 rounded-full bg-red-100/80 shadow-sm border border-red-200 flex items-center justify-center text-red-500">
+                  <AlertTriangle size={24} strokeWidth={2.5} />
                </div>
-               <div>
-                 <p className="font-semibold text-[#FF007A]">{overdueCount} tools overdue</p>
-                 <p className="text-white/60 text-sm">Return them immediately</p>
+               <div className="flex flex-col">
+                 <span className="font-brand text-[20px] text-red-500 font-medium">{overdueCount} overdue</span>
+                 <span className="text-red-400/80 text-[15px]">Return immediately</span>
                </div>
             </div>
           )}
@@ -160,13 +161,13 @@ export default function DashboardPage() {
 
         <DataCard title="Active Projects">
            {userProjects.length === 0 ? (
-             <p className="text-white/40 text-sm h-12 flex items-center">No active projects</p>
+             <p className="text-[#7D9FC2] text-[15px] h-14 flex items-center">No active projects.</p>
            ) : (
-             <div className="flex flex-col gap-2">
+             <div className="flex flex-col gap-4">
                {userProjects.slice(0, 2).map(p => (
-                 <div key={p.id} className="flex justify-between items-center py-1">
-                   <span className="text-white/90 text-sm truncate pr-4">{p.title}</span>
-                   <span className="text-[#A8E063] font-data text-xs">{p.status === 'active' ? 'ON' : 'PND'}</span>
+                 <div key={p.id} className="flex justify-between items-center py-1 border-b border-[#7D9FC2]/20 last:border-0">
+                   <span className="text-[#56779D] text-[16px] font-medium truncate pr-4">{p.title}</span>
+                   <span className="text-[#6FA9FF] font-brand text-[14px] font-medium">{p.status === 'active' ? 'ON' : 'PND'}</span>
                  </div>
                ))}
              </div>

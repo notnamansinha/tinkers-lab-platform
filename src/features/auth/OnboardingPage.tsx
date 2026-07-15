@@ -195,9 +195,9 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-black text-white p-4 py-8 md:p-12 relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center bg-black text-[#56779D] p-4 py-8 md:p-12 relative overflow-hidden">
       {/* Profile Wizard Panel */}
-      <div className="w-full max-w-[560px] bg-[rgba(81,74,241,0.15)] border border-[rgba(81,74,241,0.3)] text-white shadow-2xl border-4 border-white/10 p-8 rounded-2xl relative z-10">
+      <div className="w-full max-w-[560px] bg-[rgba(81,74,241,0.15)] border border-[rgba(81,74,241,0.3)] text-[#56779D] shadow-2xl border-4 border-white/10 p-8 rounded-2xl relative z-10">
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-9 h-9 bg-white flex items-center justify-center rounded-[8px] shadow-sm overflow-hidden">
@@ -205,11 +205,11 @@ export default function OnboardingPage() {
             </div>
             <div>
               <h1 className="font-display uppercase text-2xl font-black leading-none">Tinkerers Lab</h1>
-              <p className="text-white/40 text-[10px] font-bold uppercase tracking-wider mt-0.5">Ahmedabad University</p>
+              <p className="text-[#7D9FC2] text-[10px] font-bold uppercase tracking-wider mt-0.5">Ahmedabad University</p>
             </div>
           </div>
           <h2 className="font-display uppercase text-xl font-black mb-1">Complete your profile</h2>
-          <p className="text-white/60 text-xs font-semibold">
+          <p className="text-[#7D9FC2] text-xs font-semibold">
             Logged in as <span className="text-pink font-bold">{user?.email}</span>
           </p>
 
@@ -224,12 +224,12 @@ export default function OnboardingPage() {
                   <div className="flex items-center gap-2">
                     <div className={cn(
                       'w-8 h-8 rounded-full text-sm font-black flex items-center justify-center transition-colors shadow-lg border-2',
-                      isActive ? 'bg-pink text-white border-pink' :
-                      isDone ? 'bg-pink text-white border-pink' : 'bg-white/5 text-white/40 border-transparent'
+                      isActive ? 'bg-pink text-[#56779D] border-pink' :
+                      isDone ? 'bg-pink text-[#56779D] border-pink' : 'bg-white/5 text-[#7D9FC2] border-transparent'
                     )}>
                       {isDone ? '✓' : idx}
                     </div>
-                    <span className={cn('text-xs uppercase font-bold tracking-wider hidden sm:block', isActive ? 'text-white' : 'text-white/40')}>
+                    <span className={cn('text-xs uppercase font-bold tracking-wider hidden sm:block', isActive ? 'text-[#56779D]' : 'text-[#7D9FC2]')}>
                       {label}
                     </span>
                   </div>
@@ -241,7 +241,7 @@ export default function OnboardingPage() {
         </div>
 
         {error && (
-          <div className="mb-6 p-4 rounded-xl bg-pink/20 border-2 border-pink text-white flex items-center gap-3 font-bold text-sm">
+          <div className="mb-6 p-4 rounded-xl bg-pink/20 border-2 border-pink text-[#56779D] flex items-center gap-3 font-bold text-sm">
             <AlertCircle size={20} className="text-pink" />
             {error}
           </div>
@@ -265,13 +265,13 @@ export default function OnboardingPage() {
                   >
                     <input type="radio" value={value} {...register('userType')} className="w-5 h-5 accent-pink" />
                     <div>
-                      <p className="font-bold text-white uppercase tracking-wider">{label}</p>
-                      <p className="text-xs font-semibold text-white/60 mt-1">{description}</p>
+                      <p className="font-bold text-[#56779D] uppercase tracking-wider">{label}</p>
+                      <p className="text-xs font-semibold text-[#7D9FC2] mt-1">{description}</p>
                     </div>
                   </label>
                 ))}
               </div>
-              <p className="text-[11px] text-white/40 text-center mt-6">
+              <p className="text-[11px] text-[#7D9FC2] text-center mt-6">
                 Please finalize your profile details to book machines, track checkouts, and access Tinkerers' Lab features
               </p>
               <button type="button" onClick={handleNextStep} className="tl-pill-button w-full mt-2 flex justify-center items-center gap-2">
@@ -372,7 +372,7 @@ export default function OnboardingPage() {
                 </div>
               )}
 
-              <p className="text-[11px] text-white/40 text-center mt-6">
+              <p className="text-[11px] text-[#7D9FC2] text-center mt-6">
                 Please finalize your profile details to book machines, track checkouts, and access Tinkerers' Lab features
               </p>
               <div className="flex gap-4 pt-4 mt-2 border-t-2 border-white/10">
@@ -397,8 +397,8 @@ export default function OnboardingPage() {
               )}>
                 <input type="checkbox" {...register('safetyAgreementAccepted')} className="mt-1 w-5 h-5 accent-pink" />
                 <div>
-                  <p className="font-bold text-white uppercase tracking-wider">Safety Agreement <span className="text-pink">*</span></p>
-                  <p className="text-xs font-semibold text-white/60 mt-1">I agree to follow lab safety guidelines and return all tools and equipment after use.</p>
+                  <p className="font-bold text-[#56779D] uppercase tracking-wider">Safety Agreement <span className="text-pink">*</span></p>
+                  <p className="text-xs font-semibold text-[#7D9FC2] mt-1">I agree to follow lab safety guidelines and return all tools and equipment after use.</p>
                   {errors.safetyAgreementAccepted && <p className="text-xs text-pink mt-2 font-bold">{errors.safetyAgreementAccepted.message}</p>}
                 </div>
               </label>
@@ -409,13 +409,13 @@ export default function OnboardingPage() {
               )}>
                 <input type="checkbox" {...register('termsAccepted')} className="mt-1 w-5 h-5 accent-pink" />
                 <div>
-                  <p className="font-bold text-white uppercase tracking-wider">Terms Agreement <span className="text-pink">*</span></p>
-                  <p className="text-xs font-semibold text-white/60 mt-1">I understand that equipment booking is subject to availability and coordinator approval.</p>
+                  <p className="font-bold text-[#56779D] uppercase tracking-wider">Terms Agreement <span className="text-pink">*</span></p>
+                  <p className="text-xs font-semibold text-[#7D9FC2] mt-1">I understand that equipment booking is subject to availability and coordinator approval.</p>
                   {errors.termsAccepted && <p className="text-xs text-pink mt-2 font-bold">{errors.termsAccepted.message}</p>}
                 </div>
               </label>
 
-              <p className="text-[11px] text-white/40 text-center mt-6">
+              <p className="text-[11px] text-[#7D9FC2] text-center mt-6">
                 Please finalize your profile details to book machines, track checkouts, and access Tinkerers' Lab features
               </p>
               <div className="flex gap-4 pt-4 mt-2 border-t-2 border-white/10">

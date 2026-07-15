@@ -21,8 +21,8 @@ const SEVERITY_COLOR: Record<string, string> = {
 }
 const STATUS_COLOR: Record<string, string> = {
   open: 'bg-orange text-white',
-  investigating: 'bg-[rgba(255,255,255,0.05)] text-white',
-  in_progress: 'bg-[rgba(255,255,255,0.05)] text-white',
+  investigating: 'bg-white/40 border border-white/20 shadow-sm text-white',
+  in_progress: 'bg-white/40 border border-white/20 shadow-sm text-white',
   resolved: 'bg-lime text-white',
   closed: 'bg-[rgba(0,0,0,0.4)] text-white',
 }
@@ -72,7 +72,7 @@ export default function AdminIssuesPage() {
         filters={
           <div className="flex flex-col gap-4">
             <div className="relative w-full lg:w-80">
-              <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" />
+              <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#7D9FC2]" />
               <input type="text" placeholder="Search issues…" value={search} onChange={e => setSearch(e.target.value)} className="tl-input pl-11 w-full" />
             </div>
             <div className="flex flex-wrap gap-2">
@@ -108,19 +108,19 @@ export default function AdminIssuesPage() {
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow><TableCell colSpan={9} className="h-32 text-center text-white/40">Loading…</TableCell></TableRow>
+              <TableRow><TableCell colSpan={9} className="h-32 text-center text-[#7D9FC2]">Loading…</TableCell></TableRow>
             ) : filtered.map((i, idx) => (
               <TableRow key={i.id} className={cn('border-0', i.severity === 'urgent' && 'bg-pink/5')}>
-                <TableCell className="text-white/40 font-mono text-xs">{filtered.length - idx}</TableCell>
-                <TableCell className="text-white/60 text-xs uppercase">{i.type.replace('_', ' ')}</TableCell>
+                <TableCell className="text-[#7D9FC2] font-mono text-xs">{filtered.length - idx}</TableCell>
+                <TableCell className="text-[#7D9FC2] text-xs uppercase">{i.type.replace('_', ' ')}</TableCell>
                 <TableCell><span className={cn('text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider', SEVERITY_COLOR[i.severity])}>{i.severity}</span></TableCell>
                 <TableCell className="text-white/70 text-sm">{i.relatedMachine || '—'}</TableCell>
                 <TableCell className="text-white max-w-[200px] truncate">{i.description}</TableCell>
                 <TableCell>
-                  <div className="text-sm font-medium text-white">{i.userName}</div>
+                  <div className="text-sm font-medium text-[#56779D]">{i.userName}</div>
                   <div className="text-xs text-white/45">{i.userEmail}</div>
                 </TableCell>
-                <TableCell className="text-white/50 text-sm">{formatDateTime(i.createdAt)}</TableCell>
+                <TableCell className="text-[#7D9FC2] text-sm">{formatDateTime(i.createdAt)}</TableCell>
                 <TableCell><span className={cn('text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider', STATUS_COLOR[i.status])}>{i.status}</span></TableCell>
                 <TableCell>
                   <select value={i.status} onChange={e => updateStatus(i.id, e.target.value)} className="text-xs border border-white/10 rounded-full px-3 py-1 outline-none bg-white/50 font-medium">

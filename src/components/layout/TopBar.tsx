@@ -65,13 +65,13 @@ export default function TopBar() {
             className="flex items-center gap-2.5 shrink-0 group"
           >
             <div
-              className="w-7 h-7 rounded-lg flex items-center justify-center text-white font-bold text-xs shrink-0"
+              className="w-7 h-7 rounded-lg flex items-center justify-center text-[#56779D] font-bold text-xs shrink-0"
               style={{ background: '#0A84FF' }}
             >
               TL
             </div>
             <span
-              className="font-semibold text-sm tracking-tight text-white hidden sm:block"
+              className="font-semibold text-sm tracking-tight text-[#56779D] hidden sm:block"
               style={{ fontFamily: 'PP Mori, Arial, sans-serif' }}
             >
               Tinkerers' Lab
@@ -140,7 +140,7 @@ export default function TopBar() {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
-                className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold shrink-0 transition-opacity hover:opacity-80"
+                className="w-8 h-8 rounded-full flex items-center justify-center text-[#56779D] text-xs font-semibold shrink-0 transition-opacity hover:opacity-80"
                 style={{
                   background: 'linear-gradient(135deg, #0A84FF 0%, #0060D0 100%)',
                   border: '1.5px solid rgba(255,255,255,0.15)',
@@ -159,7 +159,7 @@ export default function TopBar() {
               }}
             >
               <DropdownMenuLabel className="font-normal px-3 py-2.5">
-                <p className="text-sm font-semibold text-white leading-none mb-1">{displayName}</p>
+                <p className="text-sm font-semibold text-[#56779D] leading-none mb-1">{displayName}</p>
                 <p className="text-xs text-[#98989D]" style={{ fontFamily: 'ui-monospace, SF Mono, monospace' }}>
                   {user?.email}
                 </p>

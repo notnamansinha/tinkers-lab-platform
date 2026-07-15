@@ -86,7 +86,7 @@ export default function AdminAnnouncementsPage() {
 
       {showForm && (
         <form onSubmit={handleSubmit(onSubmit)} className="tl-form-panel mb-8 space-y-4">
-          <h2 className="tl-page-title text-xl text-white">Create Announcement</h2>
+          <h2 className="tl-page-title text-xl text-[#56779D]">Create Announcement</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
               <label className="tl-input-label-dark">Title *</label>
@@ -121,9 +121,9 @@ export default function AdminAnnouncementsPage() {
 
       <DataPanel title="All Announcements">
         {isLoading ? (
-          <div className="py-16 text-center text-white/40">Loading…</div>
+          <div className="py-16 text-center text-[#7D9FC2]">Loading…</div>
         ) : announcements.length === 0 ? (
-          <div className="py-16 text-center text-white/40 flex flex-col items-center gap-3">
+          <div className="py-16 text-center text-[#7D9FC2] flex flex-col items-center gap-3">
             <Bell size={32} className="opacity-30" />
             No announcements yet.
           </div>
@@ -142,15 +142,15 @@ export default function AdminAnnouncementsPage() {
             <TableBody>
               {announcements.map((a, idx) => (
                 <TableRow key={a.id} className="border-0">
-                  <TableCell className="text-white/40 font-mono text-xs">{announcements.length - idx}</TableCell>
-                  <TableCell className="font-semibold text-white">{a.title}</TableCell>
-                  <TableCell className="text-white/60 text-sm max-w-[240px] truncate">{a.body}</TableCell>
+                  <TableCell className="text-[#7D9FC2] font-mono text-xs">{announcements.length - idx}</TableCell>
+                  <TableCell className="font-semibold text-[#56779D]">{a.title}</TableCell>
+                  <TableCell className="text-[#7D9FC2] text-sm max-w-[240px] truncate">{a.body}</TableCell>
                   <TableCell><span className={cn('text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider', PRIORITY_COLOR[a.priority])}>{a.priority}</span></TableCell>
-                  <TableCell className="text-white/60 text-sm">{a.authorName}</TableCell>
+                  <TableCell className="text-[#7D9FC2] text-sm">{a.authorName}</TableCell>
                   <TableCell>
                     <button
                       onClick={() => toggleActive(a.id, a.isActive)}
-                      className={cn('text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider cursor-pointer transition-colors', a.isActive ? 'bg-lime text-white hover:brightness-110' : 'bg-[rgba(0,0,0,0.4)] text-white hover:bg-[rgba(0,0,0,0.4)]/80')}
+                      className={cn('text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider cursor-pointer transition-colors', a.isActive ? 'bg-lime text-[#56779D] hover:brightness-110' : 'bg-[rgba(0,0,0,0.4)] text-[#56779D] hover:bg-[rgba(0,0,0,0.4)]/80')}
                     >
                       {a.isActive ? 'Active' : 'Inactive'}
                     </button>

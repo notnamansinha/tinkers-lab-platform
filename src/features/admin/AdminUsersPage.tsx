@@ -19,7 +19,7 @@ const ROLE_COLOR: Record<UserRole, string> = {
   super_admin: 'bg-pink text-white',
   faculty: 'bg-indigo text-white',
   lab_assistant: 'bg-lime text-white',
-  student: 'bg-[rgba(255,255,255,0.05)] text-white',
+  student: 'bg-white/40 border border-white/20 shadow-sm text-white',
 }
 
 export default function AdminUsersPage() {
@@ -75,7 +75,7 @@ export default function AdminUsersPage() {
         filters={
           <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center">
             <div className="relative w-full lg:w-80 flex-shrink-0">
-              <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" />
+              <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#7D9FC2]" />
               <input
                 type="text"
                 placeholder="Search users…"
@@ -117,7 +117,7 @@ export default function AdminUsersPage() {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={9} className="h-32 text-center text-white/40">
+                <TableCell colSpan={9} className="h-32 text-center text-[#7D9FC2]">
                   <div className="flex flex-col items-center justify-center gap-3">
                     <div className="w-6 h-6 border-2 border-white/10 border-t-black/60 rounded-full animate-spin" />
                     Loading users…
@@ -126,11 +126,11 @@ export default function AdminUsersPage() {
               </TableRow>
             ) : filtered.map((u, idx) => (
               <TableRow key={u.uid} className="border-0">
-                <TableCell className="text-white/40 font-mono text-xs">{filtered.length - idx}</TableCell>
-                <TableCell className="font-semibold text-white">{u.displayName}</TableCell>
-                <TableCell className="text-white/60 text-sm">{u.email}</TableCell>
-                <TableCell className="text-white/50 text-xs uppercase">{u.userType}</TableCell>
-                <TableCell className="text-white/50 text-sm">{u.department || '—'}</TableCell>
+                <TableCell className="text-[#7D9FC2] font-mono text-xs">{filtered.length - idx}</TableCell>
+                <TableCell className="font-semibold text-[#56779D]">{u.displayName}</TableCell>
+                <TableCell className="text-[#7D9FC2] text-sm">{u.email}</TableCell>
+                <TableCell className="text-[#7D9FC2] text-xs uppercase">{u.userType}</TableCell>
+                <TableCell className="text-[#7D9FC2] text-sm">{u.department || '—'}</TableCell>
                 <TableCell>
                   <select
                     value={u.role}
@@ -140,7 +140,7 @@ export default function AdminUsersPage() {
                     {ROLES.map(r => <option key={r} value={r}>{r.replace('_', ' ')}</option>)}
                   </select>
                 </TableCell>
-                <TableCell className="text-white/50 text-sm">{formatDateTime(u.createdAt)}</TableCell>
+                <TableCell className="text-[#7D9FC2] text-sm">{formatDateTime(u.createdAt)}</TableCell>
                 <TableCell>
                   <span className={cn('text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider', u.isActive ? 'bg-lime text-white' : 'bg-pink text-white')}>
                     {u.isActive ? 'Active' : 'Disabled'}
@@ -149,7 +149,7 @@ export default function AdminUsersPage() {
                 <TableCell className="text-right">
                   <button
                     onClick={() => toggleActive(u.uid, u.isActive)}
-                    className="p-2 rounded-full hover:bg-black/5 transition-colors text-white/50 hover:text-white"
+                    className="p-2 rounded-full hover:bg-black/5 transition-colors text-[#7D9FC2] hover:text-white"
                     aria-label={u.isActive ? 'Deactivate user' : 'Activate user'}
                   >
                     {u.isActive ? <UserX size={16} /> : <UserCheck size={16} />}

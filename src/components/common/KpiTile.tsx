@@ -26,12 +26,12 @@ export function KpiTile({
   onClick,
 }: KpiTileProps) {
   const isLight = textColor === 'light'
-  const labelClass = isLight ? 'text-white/50 text-[11px] font-semibold tracking-[0.1em] uppercase mb-1' : 'text-white/50 text-[11px] font-semibold tracking-[0.1em] uppercase mb-1'
-  const valueClass = isLight ? 'tl-kpi-value text-white text-[32px] md:text-[40px]' : 'tl-kpi-value text-white text-[32px] md:text-[40px]'
-  const iconClass = isLight ? 'text-white/30 group-hover:text-white/50' : 'text-white/30 group-hover:text-white/50'
+  const labelClass = isLight ? 'text-[#7D9FC2] text-[11px] font-semibold tracking-[0.1em] uppercase mb-1' : 'text-[#7D9FC2] text-[11px] font-semibold tracking-[0.1em] uppercase mb-1'
+  const valueClass = isLight ? 'tl-kpi-value text-[#56779D] text-[32px] md:text-[40px]' : 'tl-kpi-value text-[#56779D] text-[32px] md:text-[40px]'
+  const iconClass = isLight ? 'text-white/30 group-hover:text-[#7D9FC2]' : 'text-white/30 group-hover:text-[#7D9FC2]'
   const footerClass = isLight
-    ? 'text-[11px] font-semibold text-white/40 uppercase tracking-wider group-hover:text-white/60 mt-2'
-    : 'text-[11px] font-semibold text-white/40 uppercase tracking-wider group-hover:text-white/60 mt-2'
+    ? 'text-[11px] font-semibold text-[#7D9FC2] uppercase tracking-wider group-hover:text-[#7D9FC2] mt-2'
+    : 'text-[11px] font-semibold text-[#7D9FC2] uppercase tracking-wider group-hover:text-[#7D9FC2] mt-2'
 
   const inner = (
     <div className="flex flex-col h-full justify-between">

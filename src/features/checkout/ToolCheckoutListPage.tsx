@@ -67,7 +67,7 @@ export default function ToolCheckoutListPage() {
 
   return (
     <div className="w-full max-w-4xl mx-auto pb-20 animate-fade-in">
-      <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-white/50 hover:text-white mb-6 transition-colors text-sm font-medium">
+      <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-[#7D9FC2] hover:text-white mb-6 transition-colors text-sm font-medium">
         <ArrowLeft size={16} /> Back
       </button>
 
@@ -83,10 +83,10 @@ export default function ToolCheckoutListPage() {
       />
 
       {overdueCount > 0 && (
-        <div className="bg-[rgba(236,104,216,0.15)] border border-[rgba(236,104,216,0.3)] text-white p-5 mb-6 flex items-start gap-3 rounded-[20px]">
+        <div className="bg-[rgba(236,104,216,0.15)] border border-[rgba(236,104,216,0.3)] text-[#56779D] p-5 mb-6 flex items-start gap-3 rounded-[20px]">
           <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" />
           <div>
-            <p className="font-bold text-white">{overdueCount} overdue tool{overdueCount > 1 ? 's' : ''}</p>
+            <p className="font-bold text-[#56779D]">{overdueCount} overdue tool{overdueCount > 1 ? 's' : ''}</p>
             <p className="text-white/70 text-sm mt-1">Return them immediately to avoid penalties.</p>
           </div>
         </div>
@@ -112,11 +112,11 @@ export default function ToolCheckoutListPage() {
 
       <DataPanel title="Checkout History">
         {isLoading ? (
-          <div className="py-12 text-center text-white/40">Loading checkouts…</div>
+          <div className="py-12 text-center text-[#7D9FC2]">Loading checkouts…</div>
         ) : filtered.length === 0 ? (
-          <div className="py-12 text-center flex flex-col items-center gap-3 text-white/40">
+          <div className="py-12 text-center flex flex-col items-center gap-3 text-[#7D9FC2]">
             <Package className="w-10 h-10 opacity-30" />
-            <p className="font-medium text-white/60">No {filter === 'all' ? '' : filter} checkouts</p>
+            <p className="font-medium text-[#7D9FC2]">No {filter === 'all' ? '' : filter} checkouts</p>
             <p className="text-sm">{filter === 'all' ? 'Start by checking out a tool.' : 'Nothing matches this filter.'}</p>
           </div>
         ) : (
@@ -135,7 +135,7 @@ export default function ToolCheckoutListPage() {
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap mb-2">
-                        <p className="font-semibold text-base text-white">{c.toolName}</p>
+                        <p className="font-semibold text-base text-[#56779D]">{c.toolName}</p>
                         <span className={cn('text-xs px-3 py-0.5 rounded-full font-bold uppercase tracking-wider', badge.className)}>
                           {badge.label}
                         </span>
@@ -150,7 +150,7 @@ export default function ToolCheckoutListPage() {
                         <p>Project: {c.projectTitle || c.projectId}</p>
                         <p>
                           Checked out: {new Date(c.createdAt?.toDate?.()).toLocaleDateString()} · Due:{' '}
-                          <span className={cn('font-semibold', overdue && !c.returnedAt ? 'text-pink' : 'text-white')}>
+                          <span className={cn('font-semibold', overdue && !c.returnedAt ? 'text-pink' : 'text-[#56779D]')}>
                             {c.expectedReturnDate}
                           </span>
                         </p>
@@ -166,7 +166,7 @@ export default function ToolCheckoutListPage() {
                         disabled={returningId === c.id}
                         className={cn(
                           'shrink-0 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider border-2 transition-all',
-                          overdue ? 'border-pink text-pink hover:bg-pink/10' : 'border-white/10 text-white hover:bg-black/5',
+                          overdue ? 'border-pink text-pink hover:bg-pink/10' : 'border-white/10 text-[#56779D] hover:bg-black/5',
                         )}
                       >
                         {returningId === c.id

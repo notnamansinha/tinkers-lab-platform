@@ -161,7 +161,7 @@ export default function EquipmentDetailPage() {
       {/* ── Back ── */}
       <button
         onClick={() => navigate(-1)}
-        className="flex items-center gap-2 text-white/50 hover:text-white font-bold mb-6 transition-colors uppercase tracking-[0.08em] text-xs"
+        className="flex items-center gap-2 text-[#7D9FC2] hover:text-white font-bold mb-6 transition-colors uppercase tracking-[0.08em] text-xs"
       >
         <ArrowLeft size={16} /> Back
       </button>
@@ -186,32 +186,32 @@ export default function EquipmentDetailPage() {
           </div>
 
           {/* Details Panel */}
-          <div className="bg-[rgba(255,255,255,0.02)] border border-[rgba(255,255,255,0.05)] text-white p-6 lg:p-8 rounded-[16px]">
+          <div className="bg-[rgba(255,255,255,0.02)] border border-white/20 text-[#56779D] p-6 lg:p-8 rounded-[16px]">
             <div className="space-y-4">
               <div className="grid grid-cols-[100px_1fr] gap-4 py-3 border-b-2 border-white/10">
-                <span className="font-bold text-white/50 uppercase tracking-[0.08em] text-xs">Location</span>
-                <span className="font-bold text-white">{equipment.location || 'Unknown'}</span>
+                <span className="font-bold text-[#7D9FC2] uppercase tracking-[0.08em] text-xs">Location</span>
+                <span className="font-bold text-[#56779D]">{equipment.location || 'Unknown'}</span>
               </div>
               <div className="grid grid-cols-[100px_1fr] gap-4 py-3 border-b-2 border-white/10">
-                <span className="font-bold text-white/50 uppercase tracking-[0.08em] text-xs">Induction</span>
-                <span className="font-bold text-white">
+                <span className="font-bold text-[#7D9FC2] uppercase tracking-[0.08em] text-xs">Induction</span>
+                <span className="font-bold text-[#56779D]">
                   {equipment.requiresTraining ? (
                     <span className="flex items-center gap-2">Required <span className="inline-block h-2.5 w-2.5 rounded-full bg-lime" /> Cleared</span>
                   ) : 'No training required'}
                 </span>
               </div>
               <div className="grid grid-cols-[100px_1fr] gap-4 py-3 border-b-2 border-white/10">
-                <span className="font-bold text-white/50 uppercase tracking-[0.08em] text-xs">Max session</span>
-                <span className="font-bold text-white">3 hrs</span>
+                <span className="font-bold text-[#7D9FC2] uppercase tracking-[0.08em] text-xs">Max session</span>
+                <span className="font-bold text-[#56779D]">3 hrs</span>
               </div>
               <div className="grid grid-cols-[100px_1fr] gap-4 py-3 border-b-2 border-white/10">
-                <span className="font-bold text-white/50 uppercase tracking-[0.08em] text-xs">My bookings</span>
-                <span className="font-bold text-white">{myBookingsCount} session{myBookingsCount !== 1 ? 's' : ''} this month</span>
+                <span className="font-bold text-[#7D9FC2] uppercase tracking-[0.08em] text-xs">My bookings</span>
+                <span className="font-bold text-[#56779D]">{myBookingsCount} session{myBookingsCount !== 1 ? 's' : ''} this month</span>
               </div>
               {equipment.description && (
                 <div className="grid grid-cols-[100px_1fr] gap-4 py-3">
-                  <span className="font-bold text-white/50 uppercase tracking-[0.08em] text-xs">About</span>
-                  <span className="font-bold text-white leading-relaxed">{equipment.description}</span>
+                  <span className="font-bold text-[#7D9FC2] uppercase tracking-[0.08em] text-xs">About</span>
+                  <span className="font-bold text-[#56779D] leading-relaxed">{equipment.description}</span>
                 </div>
               )}
             </div>
@@ -221,12 +221,12 @@ export default function EquipmentDetailPage() {
         {/* Right Col: Booking Flow */}
         <div className="space-y-8">
           {/* Title & Status */}
-          <div className="bg-[rgba(81,74,241,0.15)] border border-[rgba(81,74,241,0.3)] text-white p-6 lg:p-8 rounded-[16px]">
+          <div className="bg-[rgba(81,74,241,0.15)] border border-[rgba(81,74,241,0.3)] text-[#56779D] p-6 lg:p-8 rounded-[16px]">
             <div className="flex items-center gap-3 mb-4">
               <span className={cn('w-4 h-4 rounded-full border-2 border-black', si.pulse && 'animate-status-pulse')} style={{ background: si.color }} />
-              <span className="font-bold text-white uppercase tracking-[0.08em] text-sm">{si.label}</span>
+              <span className="font-bold text-[#56779D] uppercase tracking-[0.08em] text-sm">{si.label}</span>
             </div>
-            <h1 className="font-display uppercase text-4xl lg:text-5xl font-black text-white leading-[0.95]">
+            <h1 className="font-display uppercase text-4xl lg:text-5xl font-black text-[#56779D] leading-[0.95]">
               {equipment.name}
             </h1>
           </div>
@@ -234,7 +234,7 @@ export default function EquipmentDetailPage() {
           {/* Slot picker */}
           {isAvailableForBooking && (
             <div className="bg-[#101010] border border-white/5 p-6 lg:p-8 rounded-[16px] shadow-2xl">
-              <h3 className="font-display uppercase text-xl font-black text-white mb-6">Select a Slot</h3>
+              <h3 className="font-display uppercase text-xl font-black text-[#56779D] mb-6">Select a Slot</h3>
               
               {/* Day tabs */}
               <div className="flex gap-3 mb-8 overflow-x-auto pb-2 scrollbar-hide">
@@ -246,7 +246,7 @@ export default function EquipmentDetailPage() {
                       onClick={() => { setSelectedDay(d.date); setSelectedSlot(null) }}
                       className={cn(
                         "px-5 py-2 rounded-full font-bold uppercase tracking-[0.08em] text-xs whitespace-nowrap transition-colors border-2",
-                        isActiveD ? "bg-lime text-white border-lime" : "bg-transparent text-white/50 border-white/20 hover:border-white/50 hover:text-white"
+                        isActiveD ? "bg-lime text-[#56779D] border-lime" : "bg-transparent text-[#7D9FC2] border-white/20 hover:border-white/50 hover:text-white"
                       )}
                     >
                       {d.label}
@@ -272,12 +272,12 @@ export default function EquipmentDetailPage() {
                       className={cn(
                         "flex items-center gap-2 px-4 py-3 rounded-[16px] font-bold text-sm transition-all border-2",
                         selected
-                          ? "bg-pink text-white border-black shadow-[2px_2px_0_0_#000] -translate-y-0.5"
+                          ? "bg-pink text-[#56779D] border-black shadow-[2px_2px_0_0_#000] -translate-y-0.5"
                           : mine
                             ? "bg-lime/20 text-lime border-lime/40"
                             : taken
                               ? "bg-white/5 text-white/20 border-white/5 cursor-not-allowed"
-                              : "bg-[#1a1a1a] text-white border-[#333] hover:border-pink hover:text-pink"
+                              : "bg-[#1a1a1a] text-[#56779D] border-[#333] hover:border-pink hover:text-pink"
                       )}
                     >
                       {taken && !mine && <Lock size={14} className="opacity-50" />}
@@ -301,7 +301,7 @@ export default function EquipmentDetailPage() {
                     }
                   </button>
                 ) : (
-                  <div className="w-full text-center py-4 rounded-[16px] bg-white/5 border-2 border-dashed border-white/20 text-white/50 font-bold uppercase tracking-[0.08em] text-xs">
+                  <div className="w-full text-center py-4 rounded-[16px] bg-white/5 border-2 border-dashed border-white/20 text-[#7D9FC2] font-bold uppercase tracking-[0.08em] text-xs">
                     Select a slot above to book
                   </div>
                 )}

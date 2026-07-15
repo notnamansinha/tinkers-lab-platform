@@ -17,7 +17,7 @@ const STATUS_COLOR: Record<string, string> = {
   pending: 'bg-orange text-white',
   active: 'bg-lime text-white',
   completed: 'bg-indigo text-white',
-  on_hold: 'bg-[rgba(255,255,255,0.05)] text-white',
+  on_hold: 'bg-white/40 border border-white/20 shadow-sm text-white',
   rejected: 'bg-pink text-white',
 }
 
@@ -64,7 +64,7 @@ export default function AdminProjectsPage() {
         filters={
           <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center">
             <div className="relative w-full lg:w-80 flex-shrink-0">
-              <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" />
+              <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#7D9FC2]" />
               <input type="text" placeholder="Search projects…" value={search} onChange={e => setSearch(e.target.value)} className="tl-input pl-11 w-full" />
             </div>
             <div className="flex flex-wrap gap-2">
@@ -94,20 +94,20 @@ export default function AdminProjectsPage() {
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow><TableCell colSpan={9} className="h-32 text-center text-white/40">Loading…</TableCell></TableRow>
+              <TableRow><TableCell colSpan={9} className="h-32 text-center text-[#7D9FC2]">Loading…</TableCell></TableRow>
             ) : filtered.map((p, idx) => (
               <TableRow key={p.id} className={cn('border-0', p.status === 'pending' && 'bg-orange/5')}>
-                <TableCell className="text-white/40 font-mono text-xs">{filtered.length - idx}</TableCell>
-                <TableCell className="font-semibold text-white">{p.title}</TableCell>
+                <TableCell className="text-[#7D9FC2] font-mono text-xs">{filtered.length - idx}</TableCell>
+                <TableCell className="font-semibold text-[#56779D]">{p.title}</TableCell>
                 <TableCell>
-                  <div className="text-sm font-medium text-white">{p.userName}</div>
+                  <div className="text-sm font-medium text-[#56779D]">{p.userName}</div>
                   <div className="text-xs text-white/45">{p.userEmail}</div>
                 </TableCell>
-                <TableCell className="text-white/50 text-xs uppercase">{p.userType}</TableCell>
-                <TableCell className="text-white/60 text-sm">{p.department}</TableCell>
-                <TableCell className="text-white/60 text-sm">{p.startDate}</TableCell>
-                <TableCell className="text-white/50 text-sm">{formatDateTime(p.createdAt)}</TableCell>
-                <TableCell><span className={cn('text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider', STATUS_COLOR[p.status] || 'bg-[rgba(255,255,255,0.05)] text-white')}>{p.status}</span></TableCell>
+                <TableCell className="text-[#7D9FC2] text-xs uppercase">{p.userType}</TableCell>
+                <TableCell className="text-[#7D9FC2] text-sm">{p.department}</TableCell>
+                <TableCell className="text-[#7D9FC2] text-sm">{p.startDate}</TableCell>
+                <TableCell className="text-[#7D9FC2] text-sm">{formatDateTime(p.createdAt)}</TableCell>
+                <TableCell><span className={cn('text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider', STATUS_COLOR[p.status] || 'bg-white/40 border border-white/20 shadow-sm text-white')}>{p.status}</span></TableCell>
                 <TableCell className="text-right">
                   {p.status === 'pending' ? (
                     <div className="flex gap-1 justify-end">

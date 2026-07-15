@@ -1,7 +1,19 @@
 @font-face {
   font-family: 'Outfit';
+  src: url('/node_modules/@fontsource/outfit/files/outfit-latin-300-normal.woff2') format('woff2');
+  font-weight: 300;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Outfit';
   src: url('/node_modules/@fontsource/outfit/files/outfit-latin-400-normal.woff2') format('woff2');
   font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Outfit';
+  src: url('/node_modules/@fontsource/outfit/files/outfit-latin-500-normal.woff2') format('woff2');
+  font-weight: 500;
   font-style: normal;
 }
 
@@ -11,41 +23,34 @@
 
 @layer base {
   :root {
-    --canvas:   255 27% 6%;        /* #0E0C15 */
-    --surface:  255 24% 10%;       /* #16141D */
-    --background: 255 27% 6%;
-    --foreground: 0 0% 100%;
-    --card: 255 24% 10%;
-    --card-foreground: 0 0% 100%;
-    --popover: 255 24% 10%;
-    --popover-foreground: 0 0% 100%;
+    --canvas:   0 0% 100%;       
+    --surface:  212 37% 91%;     /* #DCE6F2 */
+    --background: 212 37% 91%;
+    --foreground: 212 29% 48%;   /* #56779D */
+    --card: 212 37% 91%;
+    --card-foreground: 212 29% 48%;
+    --popover: 212 37% 91%;
+    --popover-foreground: 212 29% 48%;
 
-    --primary: 331 100% 50%;       /* #FF007A */
+    --primary: 191 100% 72%;     /* #72E8FF Cyan Highlight */
     --primary-foreground: 0 0% 100%;
-    --secondary: 252 83% 60%;      /* Purple/Blue */
+    --secondary: 211 32% 62%;    /* #7D9FC2 Deep Blue */
     --secondary-foreground: 0 0% 100%;
-    --muted: 255 20% 20%;          
-    --muted-foreground: 255 10% 70%;
-    --accent: 331 100% 50%;        
+    --muted: 213 41% 84%;        /* #C3D5E8 Secondary */
+    --muted-foreground: 212 29% 48%;
+    --accent: 216 100% 72%;      /* #6FA9FF Blue Highlight */
     --accent-foreground: 0 0% 100%;
-    --destructive: 331 100% 50%;
+    --destructive: 0 100% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 100% / 0.08;
-    --input:  0 0% 100% / 0.05;
-    --ring:   331 100% 50%;
+    --border: 213 41% 84%;
+    --input:  213 41% 84%;
+    --ring:   191 100% 72%;
 
-    --radius: 28px;
-    --tl-radius-panel: 32px;
-    --tl-radius-control: 16px;
+    --radius: 34px;
+    --tl-radius-panel: 34px;
+    --tl-radius-control: 12px;
     --tl-radius-pill: 999px;
-
-    /* KIVO gradients */
-    --grad-magenta: linear-gradient(135deg, #FF6B9E 0%, #D81B60 100%);
-    --grad-lime: linear-gradient(135deg, #A8E063 0%, #56AB2F 100%);
-    --grad-orange: linear-gradient(135deg, #FFB75E 0%, #ED8F03 100%);
-    --grad-purple: linear-gradient(135deg, #C471ED 0%, #8A2387 100%);
-    --grad-nav: linear-gradient(90deg, rgba(85,50,255,0.7), rgba(150,50,255,0.7));
 
     --spring: cubic-bezier(0.32, 0.72, 0, 1);
   }
@@ -60,12 +65,12 @@
   }
 
   html {
-    color-scheme: dark;
+    color-scheme: light;
   }
 
   body {
-    background: #0E0C15;
-    color: #FFFFFF;
+    background: #DCE6F2;
+    color: #56779D;
     font-family: 'Outfit', 'Inter', Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -76,17 +81,19 @@
 
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Outfit', 'Inter', Arial, sans-serif;
-    font-weight: 500;
-    letter-spacing: -0.01em;
-    color: #FFFFFF;
+    font-weight: 400;
+    letter-spacing: -0.02em;
   }
 
   .font-brand {
-    font-family: 'Zen Dots', monospace;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 300;
   }
 
-  .font-mono {
-    font-family: 'Zen Dots', 'Space Mono', monospace;
+  .font-data {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 300;
+    letter-spacing: 0em;
   }
 
   #root {
@@ -100,11 +107,10 @@
 
 @layer utilities {
   .font-brand {
-    font-family: 'Zen Dots', monospace !important;
+    font-family: 'Outfit', sans-serif !important;
   }
   .font-data {
-    font-family: 'Zen Dots', monospace !important;
-    letter-spacing: 0.05em;
+    font-family: 'Outfit', sans-serif !important;
   }
 
   @keyframes fade-in {
@@ -114,57 +120,86 @@
 
   .animate-fade-in { animation: fade-in 0.4s var(--spring) both; }
 
-  /* KIVO Specific UI Utilities */
   .kivo-shell {
-    @apply bg-[#0E0C15] min-h-screen text-white relative overflow-x-hidden;
+    @apply bg-[#DCE6F2] min-h-screen text-[#56779D] relative overflow-x-hidden;
   }
 
   .kivo-nav-bar {
-    background: var(--grad-nav);
-    backdrop-filter: blur(20px) saturate(150%);
-    -webkit-backdrop-filter: blur(20px) saturate(150%);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    box-shadow: 0 10px 40px rgba(130, 50, 255, 0.4);
+    @apply bg-white/10 backdrop-blur-md border-b border-white/20;
   }
 
-  .kivo-glass-panel {
-    background: rgba(255, 255, 255, 0.03);
-    backdrop-filter: blur(24px) saturate(120%);
-    -webkit-backdrop-filter: blur(24px) saturate(120%);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: var(--tl-radius-panel);
+  /* Premium Apple/Linear Frosted Glass Card */
+  .premium-glass-card {
+    position: relative;
+    overflow: hidden;
+    backdrop-filter: blur(35px);
+    -webkit-backdrop-filter: blur(35px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow:
+        inset 0 1px rgba(255, 255, 255, 0.4),
+        inset 0 -20px 40px rgba(0, 0, 0, 0.05),
+        0 20px 40px rgba(0, 0, 0, 0.05);
+    border-radius: 34px;
+    background: rgba(255,255,255,0.1);
   }
 
-  .kivo-block-magenta {
-    background: var(--grad-magenta);
-    border-radius: var(--tl-radius-panel);
-    box-shadow: 0 16px 40px rgba(216, 27, 96, 0.3);
-    color: white;
+  /* The actual gradient card as provided by the user */
+  .premium-gradient-card {
+    position: relative;
+    overflow: hidden;
+    border-radius: 34px;
+    border: 1px solid rgba(255,255,255,0.15);
+    box-shadow:
+        inset 0 1px rgba(255,255,255,0.18),
+        inset 0 -20px 40px rgba(0,0,0,0.12),
+        0 30px 70px rgba(0,0,0,0.18);
+    backdrop-filter: blur(35px);
+    background:
+        radial-gradient(ellipse at 55% 20%, rgba(255,255,255,.88) 0%, rgba(236,244,255,.72) 22%, rgba(190,214,236,.42) 42%, rgba(146,181,214,.18) 68%, transparent 82%),
+        radial-gradient(circle at 82% 10%, rgba(98,230,255,.55), transparent 38%),
+        radial-gradient(circle at 20% 85%, rgba(83,150,255,.28), transparent 52%),
+        radial-gradient(ellipse at 75% 75%, rgba(95,150,215,.35), transparent 62%),
+        linear-gradient(160deg, #d8e3f2 0%, #b8cde2 35%, #7ea2c6 70%, #5b7ea5 100%);
   }
-  .kivo-block-lime {
-    background: var(--grad-lime);
-    border-radius: var(--tl-radius-panel);
-    box-shadow: 0 16px 40px rgba(86, 171, 47, 0.3);
-    color: white;
+  
+  .premium-gradient-card::before {
+    content: "";
+    position: absolute;
+    inset: -20%;
+    background: radial-gradient(ellipse at 60% 22%, rgba(255,255,255,.95), rgba(255,255,255,.15) 58%, transparent 72%);
+    filter: blur(90px);
+    mix-blend-mode: screen;
+    pointer-events: none;
+    z-index: -1;
   }
-  .kivo-block-orange {
-    background: var(--grad-orange);
-    border-radius: var(--tl-radius-panel);
-    box-shadow: 0 16px 40px rgba(237, 143, 3, 0.3);
-    color: white;
-  }
-  .kivo-block-purple {
-    background: var(--grad-purple);
-    border-radius: var(--tl-radius-panel);
-    box-shadow: 0 16px 40px rgba(138, 35, 135, 0.3);
-    color: white;
+  
+  .premium-gradient-card::after {
+    content: "";
+    position: absolute;
+    inset: -10%;
+    background: radial-gradient(ellipse at 70% 18%, rgba(70,220,255,.45), transparent 45%);
+    filter: blur(60px);
+    mix-blend-mode: screen;
+    opacity: .9;
+    z-index: -1;
+    pointer-events: none;
   }
 
-  .kivo-btn-primary {
-    @apply bg-[#FF007A] text-white font-medium rounded-full px-8 py-3.5 hover:brightness-110 active:scale-[0.98] transition-all shadow-[0_8px_24px_rgba(255,0,122,0.4)];
+  .blob-base {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(90px);
+    pointer-events: none;
+    z-index: -2;
   }
 
+  .blob-1 { width: 420px; height: 250px; background: #ffffff; top: -70px; left: 120px; opacity: .95; }
+  .blob-2 { width: 180px; height: 180px; background: #6de4ff; top: -20px; right: 40px; opacity: .55; }
+  .blob-3 { width: 340px; height: 240px; background: #4e84bf; bottom: -80px; left: -60px; opacity: .38; }
+  .blob-4 { width: 300px; height: 180px; background: #88b4dd; bottom: 20px; right: -40px; opacity: .42; }
+
+  /* Input styles for light glass theme */
   .kivo-input {
-    @apply bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] text-white px-5 py-4 placeholder:text-white/30 focus-visible:ring-1 focus-visible:ring-[#FF007A] transition-all outline-none backdrop-blur-md rounded-[20px];
+    @apply bg-white/40 text-[#56779D] px-5 py-4 placeholder:text-[#56779D]/50 focus-visible:ring-2 focus-visible:ring-[#72E8FF] transition-all outline-none rounded-[16px] border border-white/40 shadow-sm backdrop-blur-sm;
   }
 }
