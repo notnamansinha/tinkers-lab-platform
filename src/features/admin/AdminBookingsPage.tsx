@@ -1,20 +1,24 @@
 import React, { useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { collection, query, orderBy, getDocs } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { COLLECTIONS } from '@/services/firebase/firestore'
 import { updateBookingStatus } from '@/services/firebase/bookings'
-import { Search, CheckCircle, XCircle, Clock } from 'lucide-react'
-import { formatDateTime } from '@/lib/utils'
+import { Search, Calendar, XCircle } from 'lucide-react'
+import { formatDateTime, cn } from '@/lib/utils'
 import { toast } from 'sonner'
-import { cn } from '@/lib/utils'
 import type { Booking } from '@/types'
-import { useAuth } from '@/contexts/AuthContext'
+import { PageHeader } from '@/components/common/PageHeader'
+import { FilterChip } from '@/components/common/FilterChip'
+import { DataPanel } from '@/components/common/DataPanel'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 
-const STATUS_COLOR = { pending: 'bg-orange-100 text-orange-700', approved: 'bg-green-100 text-green-700', rejected: 'bg-red-100 text-red-700', cancelled: 'bg-gray-100 text-gray-600', completed: 'bg-blue-100 text-blue-700' }
+const STATUS_COLOR: Record<string, string> = {
+  approved: 'bg-[rgba(221,242,55,0.15)] text-[#DDF237]',
+  rejected: 'bg-[rgba(236,104,216,0.15)] text-[#EC68D8]',
+  cancelled: 'bg-[rgba(255,255,255,0.1)] text-white/60',
+  completed: 'bg-[rgba(81,74,241,0.2)] text-[#9B97F7]',
+}
 
 export default function AdminBookingsPage() {
   const qc = useQueryClient()
@@ -34,7 +38,6 @@ export default function AdminBookingsPage() {
     const matchSearch = !search || b.machineName.toLowerCase().includes(search.toLowerCase()) || b.userName?.toLowerCase().includes(search.toLowerCase()) || b.userEmail.toLowerCase().includes(search.toLowerCase())
     return matchSearch && (filterStatus === 'all' || b.status === filterStatus)
   })
-  // ponytail: kept reject since admin might still reject approved bookings manually
 
   const reject = async (id: string) => {
     const reason = window.prompt('Rejection reason (optional):') ?? ''
@@ -44,74 +47,79 @@ export default function AdminBookingsPage() {
   }
 
   return (
-    <div className="space-y-5 animate-fade-in">
-      <div>
-        <p className="text-xs font-mono uppercase tracking-widest text-accent">Admin · Bookings</p>
-        <h1 className="text-2xl font-display font-bold mt-1">All Bookings</h1>
-        <p className="text-muted-foreground text-sm">{bookings.length} total · Latest to oldest</p>
-      </div>
-
-      <div className="flex gap-3">
-        <div className="relative flex-1 max-w-sm">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search bookings…" className="pl-9" />
-        </div>
-        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="px-3 py-2 text-sm border rounded-md bg-background outline-none">
-          <option value="all">All statuses</option>
-          {['pending','approved','rejected','cancelled','completed'].map(s => <option key={s} value={s}>{s}</option>)}
-        </select>
-      </div>
-
-      <div className="rounded-lg border bg-card overflow-hidden">
-        {isLoading ? <div className="py-16 text-center text-muted-foreground">Loading…</div> : (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>#</TableHead>
-                  <TableHead>Machine</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Time</TableHead>
-                  <TableHead>Booked By</TableHead>
-                  <TableHead>Purpose</TableHead>
-                  <TableHead>Submitted</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filtered.map((b, idx) => (
-                  <TableRow key={b.id}>
-                    <TableCell>{filtered.length - idx}</TableCell>
-                    <TableCell>{b.machineName}</TableCell>
-                    <TableCell>{b.date}</TableCell>
-                    <TableCell>{b.startTime}–{b.endTime}</TableCell>
-                    <TableCell>
-                      <div className="text-sm font-medium truncate max-w-36">{b.userName || '—'}</div>
-                      <div className="text-xs text-muted-foreground truncate max-w-36">{b.userEmail}</div>
-                    </TableCell>
-                    <TableCell>{b.purpose}</TableCell>
-                    <TableCell>{formatDateTime(b.createdAt)}</TableCell>
-                    <TableCell>
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLOR[b.status] || 'bg-gray-100'}`}>{b.status}</span>
-                    </TableCell>
-                    <TableCell>
-                       {b.status === 'approved' && (
-                        <div className="flex gap-1">
-                          <Button size="icon" variant="ghost" className="h-7 w-7 text-red-600 hover:text-red-700 hover:bg-red-100" onClick={() => reject(b.id)}><XCircle size={14} /></Button>
-                        </div>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-            <div className="px-4 py-2 bg-muted/20 text-xs text-muted-foreground border-t">
-              {filtered.length} of {bookings.length} bookings · Latest first · Pending rows highlighted
+    <div className="w-full max-w-7xl mx-auto pb-20 animate-fade-in mt-4">
+      <PageHeader
+        variant="dark"
+        title="Bookings"
+        description={`${bookings.length} total · Review and manage all machine reservations.`}
+        action={
+          <div className="w-12 h-12 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-full flex items-center justify-center">
+            <Calendar size={22} className="text-[#FFB13F]" />
+          </div>
+        }
+        filters={
+          <div className="flex flex-col lg:flex-row gap-5 items-start lg:items-center">
+            <div className="relative w-full lg:w-80 flex-shrink-0">
+              <Search size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-white/40" />
+              <input type="text" placeholder="Search bookings…" value={search} onChange={e => setSearch(e.target.value)} className="tl-input pl-12 w-full h-[44px]" />
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <FilterChip label="All statuses" active={filterStatus === 'all'} onClick={() => setFilterStatus('all')} />
+              {['approved', 'rejected', 'cancelled', 'completed'].map(s => (
+                <FilterChip key={s} label={s} active={filterStatus === s} onClick={() => setFilterStatus(s)} />
+              ))}
             </div>
           </div>
-        )}
-      </div>
+        }
+      />
+
+      <DataPanel title="All Bookings" description={`${filtered.length} of ${bookings.length} · Latest first`}>
+        <div className="overflow-hidden rounded-[16px] border border-[rgba(255,255,255,0.05)]">
+          <Table>
+            <TableHeader className="bg-[rgba(255,255,255,0.02)]">
+              <TableRow className="hover:bg-transparent border-[rgba(255,255,255,0.05)]">
+                <TableHead className="text-white/40 font-semibold">#</TableHead>
+                <TableHead className="text-white/40 font-semibold">Machine</TableHead>
+                <TableHead className="text-white/40 font-semibold">Date</TableHead>
+                <TableHead className="text-white/40 font-semibold">Time</TableHead>
+                <TableHead className="text-white/40 font-semibold">Booked By</TableHead>
+                <TableHead className="text-white/40 font-semibold">Purpose</TableHead>
+                <TableHead className="text-white/40 font-semibold">Submitted</TableHead>
+                <TableHead className="text-white/40 font-semibold">Status</TableHead>
+                <TableHead className="text-right text-white/40 font-semibold">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                <TableRow><TableCell colSpan={9} className="h-32 text-center text-white/40 border-0">Loading…</TableCell></TableRow>
+              ) : filtered.map((b, idx) => (
+                <TableRow key={b.id} className="border-[rgba(255,255,255,0.05)] hover:bg-[rgba(255,255,255,0.03)] transition-colors">
+                  <TableCell className="text-white/40 font-mono text-[12px]">{filtered.length - idx}</TableCell>
+                  <TableCell className="font-semibold text-white">{b.machineName}</TableCell>
+                  <TableCell className="text-white/70 text-[13px]">{b.date}</TableCell>
+                  <TableCell className="text-white/70 text-[13px]">{b.startTime}–{b.endTime}</TableCell>
+                  <TableCell>
+                    <div className="text-[13px] font-medium text-white">{b.userName || '—'}</div>
+                    <div className="text-[11px] text-white/40">{b.userEmail}</div>
+                  </TableCell>
+                  <TableCell className="text-white/60 text-[13px] max-w-[160px] truncate">{b.purpose}</TableCell>
+                  <TableCell className="text-white/40 text-[12px]">{formatDateTime(b.createdAt)}</TableCell>
+                  <TableCell>
+                    <span className={cn('text-[10px] px-2.5 py-1 rounded-[6px] font-bold uppercase tracking-widest border border-transparent', STATUS_COLOR[b.status] || 'bg-[rgba(255,255,255,0.05)] text-white/50')}>{b.status}</span>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {b.status === 'approved' && (
+                      <button onClick={() => reject(b.id)} className="p-2 rounded-full hover:bg-[rgba(236,104,216,0.1)] text-[#EC68D8] transition-colors" aria-label="Reject booking">
+                        <XCircle size={16} />
+                      </button>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </DataPanel>
     </div>
   )
 }

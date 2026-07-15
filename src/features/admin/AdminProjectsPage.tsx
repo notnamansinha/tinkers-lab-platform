@@ -1,19 +1,25 @@
 import React, { useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { collection, query, orderBy, getDocs, doc, updateDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { COLLECTIONS } from '@/services/firebase/firestore'
-import { Search, CheckCircle, XCircle } from 'lucide-react'
-import { formatDateTime } from '@/lib/utils'
+import { Search, FolderKanban, CheckCircle, XCircle } from 'lucide-react'
+import { formatDateTime, cn } from '@/lib/utils'
 import { toast } from 'sonner'
-import { cn } from '@/lib/utils'
 import type { Project } from '@/types'
 import { useAuth } from '@/contexts/AuthContext'
+import { PageHeader } from '@/components/common/PageHeader'
+import { FilterChip } from '@/components/common/FilterChip'
+import { DataPanel } from '@/components/common/DataPanel'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 
-const STATUS_COLOR = { pending: 'bg-orange-100 text-orange-700', active: 'bg-green-100 text-green-700', completed: 'bg-blue-100 text-blue-700', on_hold: 'bg-yellow-100 text-yellow-700', rejected: 'bg-red-100 text-red-700' }
+const STATUS_COLOR: Record<string, string> = {
+  pending: 'bg-orange text-white',
+  active: 'bg-lime text-white',
+  completed: 'bg-indigo text-white',
+  on_hold: 'bg-[rgba(255,255,255,0.05)] text-white',
+  rejected: 'bg-pink text-white',
+}
 
 export default function AdminProjectsPage() {
   const { profile } = useAuth()
@@ -45,76 +51,76 @@ export default function AdminProjectsPage() {
   }
 
   return (
-    <div className="space-y-5 animate-fade-in">
-      <div>
-        <p className="text-xs font-mono uppercase tracking-widest text-accent">Admin · Projects</p>
-        <h1 className="text-2xl font-display font-bold mt-1">All Projects</h1>
-        <p className="text-muted-foreground text-sm">{projects.length} total · Latest to oldest · Approve or reject submissions.</p>
-      </div>
-
-      <div className="flex gap-3">
-        <div className="relative flex-1 max-w-sm">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search projects…" className="pl-9" />
-        </div>
-        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="px-3 py-2 text-sm border rounded-md bg-background outline-none focus:ring-2 focus:ring-ring">
-          <option value="all">All statuses</option>
-          {['pending','active','completed','on_hold','rejected'].map(s => <option key={s} value={s}>{s.replace('_',' ')}</option>)}
-        </select>
-      </div>
-
-      <div className="rounded-lg border bg-card overflow-hidden">
-        {isLoading ? <div className="py-16 text-center text-muted-foreground">Loading…</div> : (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>#</TableHead>
-                  <TableHead>Project ID</TableHead>
-                  <TableHead>Title</TableHead>
-                  <TableHead>Submitted by</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Department</TableHead>
-                  <TableHead>Start</TableHead>
-                  <TableHead>Submitted</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filtered.map((p, idx) => (
-                  <TableRow>
-                    <TableCell>{filtered.length - idx}</TableCell>
-                    <TableCell>{(p as any).id || '—'}</TableCell>
-                    <TableCell>{p.title}</TableCell>
-                    <TableCell>
-                      <div className="text-sm font-medium">{p.userName}</div>
-                      <div className="text-xs text-muted-foreground">{p.userEmail}</div>
-                    </TableCell>
-                    <TableCell>{p.userType}</TableCell>
-                    <TableCell>{p.department}</TableCell>
-                    <TableCell>{p.startDate}</TableCell>
-                    <TableCell>{formatDateTime(p.createdAt)}</TableCell>
-                    <TableCell><span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLOR[p.status] || 'bg-gray-100'}`}>{p.status}</span></TableCell>
-                    <TableCell>
-                      {p.status === 'pending' && (
-                        <div className="flex gap-1">
-                          <Button size="icon" variant="ghost" className="h-7 w-7 text-green-600 hover:text-green-700 hover:bg-green-100" onClick={() => updateStatus(p.id, 'active')}><CheckCircle size={14} /></Button>
-                          <button onClick={() => { const r = window.prompt('Rejection reason:') || ''; updateStatus(p.id, 'rejected', r) }} className="p-1 rounded bg-red-100 text-red-700 hover:bg-red-200" title="Reject"><XCircle size={14} /></button>
-                        </div>
-                      )}
-                      {p.status !== 'pending' && <span className="text-xs text-muted-foreground">—</span>}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-            <div className="px-4 py-2 bg-muted/20 text-xs text-muted-foreground border-t">
-              {filtered.length} of {projects.length} projects · Latest first
+    <div className="w-full max-w-7xl mx-auto pb-20 animate-fade-in">
+      <PageHeader
+        variant="dark"
+        title="Projects"
+        description={`${projects.length} total · Approve or reject project submissions.`}
+        action={
+          <div className="w-12 h-12 bg-black rounded-full flex items-center justify-center">
+            <FolderKanban size={22} className="text-lime" />
+          </div>
+        }
+        filters={
+          <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center">
+            <div className="relative w-full lg:w-80 flex-shrink-0">
+              <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" />
+              <input type="text" placeholder="Search projects…" value={search} onChange={e => setSearch(e.target.value)} className="tl-input pl-11 w-full" />
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <FilterChip label="All statuses" active={filterStatus === 'all'} onClick={() => setFilterStatus('all')} tone="dark" />
+              {['pending', 'active', 'completed', 'on_hold', 'rejected'].map(s => (
+                <FilterChip key={s} label={s.replace('_', ' ')} active={filterStatus === s} onClick={() => setFilterStatus(s)} tone="dark" />
+              ))}
             </div>
           </div>
-        )}
-      </div>
+        }
+      />
+
+      <DataPanel title="All Projects" description={`${filtered.length} of ${projects.length} · Latest first`}>
+        <Table className="">
+          <TableHeader>
+            <TableRow className="hover:bg-transparent border-0">
+              <TableHead>#</TableHead>
+              <TableHead>Title</TableHead>
+              <TableHead>Submitted by</TableHead>
+              <TableHead>Type</TableHead>
+              <TableHead>Department</TableHead>
+              <TableHead>Start</TableHead>
+              <TableHead>Submitted</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              <TableRow><TableCell colSpan={9} className="h-32 text-center text-white/40">Loading…</TableCell></TableRow>
+            ) : filtered.map((p, idx) => (
+              <TableRow key={p.id} className={cn('border-0', p.status === 'pending' && 'bg-orange/5')}>
+                <TableCell className="text-white/40 font-mono text-xs">{filtered.length - idx}</TableCell>
+                <TableCell className="font-semibold text-white">{p.title}</TableCell>
+                <TableCell>
+                  <div className="text-sm font-medium text-white">{p.userName}</div>
+                  <div className="text-xs text-white/45">{p.userEmail}</div>
+                </TableCell>
+                <TableCell className="text-white/50 text-xs uppercase">{p.userType}</TableCell>
+                <TableCell className="text-white/60 text-sm">{p.department}</TableCell>
+                <TableCell className="text-white/60 text-sm">{p.startDate}</TableCell>
+                <TableCell className="text-white/50 text-sm">{formatDateTime(p.createdAt)}</TableCell>
+                <TableCell><span className={cn('text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider', STATUS_COLOR[p.status] || 'bg-[rgba(255,255,255,0.05)] text-white')}>{p.status}</span></TableCell>
+                <TableCell className="text-right">
+                  {p.status === 'pending' ? (
+                    <div className="flex gap-1 justify-end">
+                      <button onClick={() => updateStatus(p.id, 'active')} className="p-2 rounded-full hover:bg-lime/20 text-lime transition-colors" aria-label="Approve"><CheckCircle size={16} /></button>
+                      <button onClick={() => { const r = window.prompt('Rejection reason:') || ''; updateStatus(p.id, 'rejected', r) }} className="p-2 rounded-full hover:bg-pink/20 text-pink transition-colors" aria-label="Reject"><XCircle size={16} /></button>
+                    </div>
+                  ) : <span className="text-white/30 text-xs">—</span>}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </DataPanel>
     </div>
   )
 }

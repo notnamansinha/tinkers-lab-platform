@@ -186,32 +186,32 @@ export default function EquipmentDetailPage() {
           </div>
 
           {/* Details Panel */}
-          <div className="tl-panel-cream p-6 lg:p-8 rounded-[16px]">
+          <div className="bg-[rgba(255,255,255,0.02)] border border-[rgba(255,255,255,0.05)] text-white p-6 lg:p-8 rounded-[16px]">
             <div className="space-y-4">
-              <div className="grid grid-cols-[100px_1fr] gap-4 py-3 border-b-2 border-black/10">
-                <span className="font-bold text-black/50 uppercase tracking-[0.08em] text-xs">Location</span>
-                <span className="font-bold text-black">{equipment.location || 'Unknown'}</span>
+              <div className="grid grid-cols-[100px_1fr] gap-4 py-3 border-b-2 border-white/10">
+                <span className="font-bold text-white/50 uppercase tracking-[0.08em] text-xs">Location</span>
+                <span className="font-bold text-white">{equipment.location || 'Unknown'}</span>
               </div>
-              <div className="grid grid-cols-[100px_1fr] gap-4 py-3 border-b-2 border-black/10">
-                <span className="font-bold text-black/50 uppercase tracking-[0.08em] text-xs">Induction</span>
-                <span className="font-bold text-black">
+              <div className="grid grid-cols-[100px_1fr] gap-4 py-3 border-b-2 border-white/10">
+                <span className="font-bold text-white/50 uppercase tracking-[0.08em] text-xs">Induction</span>
+                <span className="font-bold text-white">
                   {equipment.requiresTraining ? (
                     <span className="flex items-center gap-2">Required <span className="inline-block h-2.5 w-2.5 rounded-full bg-lime" /> Cleared</span>
                   ) : 'No training required'}
                 </span>
               </div>
-              <div className="grid grid-cols-[100px_1fr] gap-4 py-3 border-b-2 border-black/10">
-                <span className="font-bold text-black/50 uppercase tracking-[0.08em] text-xs">Max session</span>
-                <span className="font-bold text-black">3 hrs</span>
+              <div className="grid grid-cols-[100px_1fr] gap-4 py-3 border-b-2 border-white/10">
+                <span className="font-bold text-white/50 uppercase tracking-[0.08em] text-xs">Max session</span>
+                <span className="font-bold text-white">3 hrs</span>
               </div>
-              <div className="grid grid-cols-[100px_1fr] gap-4 py-3 border-b-2 border-black/10">
-                <span className="font-bold text-black/50 uppercase tracking-[0.08em] text-xs">My bookings</span>
-                <span className="font-bold text-black">{myBookingsCount} session{myBookingsCount !== 1 ? 's' : ''} this month</span>
+              <div className="grid grid-cols-[100px_1fr] gap-4 py-3 border-b-2 border-white/10">
+                <span className="font-bold text-white/50 uppercase tracking-[0.08em] text-xs">My bookings</span>
+                <span className="font-bold text-white">{myBookingsCount} session{myBookingsCount !== 1 ? 's' : ''} this month</span>
               </div>
               {equipment.description && (
                 <div className="grid grid-cols-[100px_1fr] gap-4 py-3">
-                  <span className="font-bold text-black/50 uppercase tracking-[0.08em] text-xs">About</span>
-                  <span className="font-bold text-black leading-relaxed">{equipment.description}</span>
+                  <span className="font-bold text-white/50 uppercase tracking-[0.08em] text-xs">About</span>
+                  <span className="font-bold text-white leading-relaxed">{equipment.description}</span>
                 </div>
               )}
             </div>
@@ -221,7 +221,7 @@ export default function EquipmentDetailPage() {
         {/* Right Col: Booking Flow */}
         <div className="space-y-8">
           {/* Title & Status */}
-          <div className="tl-panel-indigo p-6 lg:p-8 rounded-[16px]">
+          <div className="bg-[rgba(81,74,241,0.15)] border border-[rgba(81,74,241,0.3)] text-white p-6 lg:p-8 rounded-[16px]">
             <div className="flex items-center gap-3 mb-4">
               <span className={cn('w-4 h-4 rounded-full border-2 border-black', si.pulse && 'animate-status-pulse')} style={{ background: si.color }} />
               <span className="font-bold text-white uppercase tracking-[0.08em] text-sm">{si.label}</span>
@@ -246,7 +246,7 @@ export default function EquipmentDetailPage() {
                       onClick={() => { setSelectedDay(d.date); setSelectedSlot(null) }}
                       className={cn(
                         "px-5 py-2 rounded-full font-bold uppercase tracking-[0.08em] text-xs whitespace-nowrap transition-colors border-2",
-                        isActiveD ? "bg-lime text-black border-lime" : "bg-transparent text-white/50 border-white/20 hover:border-white/50 hover:text-white"
+                        isActiveD ? "bg-lime text-white border-lime" : "bg-transparent text-white/50 border-white/20 hover:border-white/50 hover:text-white"
                       )}
                     >
                       {d.label}
@@ -272,7 +272,7 @@ export default function EquipmentDetailPage() {
                       className={cn(
                         "flex items-center gap-2 px-4 py-3 rounded-[16px] font-bold text-sm transition-all border-2",
                         selected
-                          ? "bg-pink text-black border-black shadow-[2px_2px_0_0_#000] -translate-y-0.5"
+                          ? "bg-pink text-white border-black shadow-[2px_2px_0_0_#000] -translate-y-0.5"
                           : mine
                             ? "bg-lime/20 text-lime border-lime/40"
                             : taken

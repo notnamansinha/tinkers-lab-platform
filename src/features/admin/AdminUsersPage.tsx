@@ -1,6 +1,4 @@
 import React, { useState } from 'react'
-import { Input } from '@/components/ui/input'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { collection, query, orderBy, getDocs, doc, updateDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
@@ -10,13 +8,18 @@ import { formatDateTime } from '@/lib/utils'
 import { toast } from 'sonner'
 import type { UserProfile, UserRole } from '@/types'
 import { useAuth } from '@/contexts/AuthContext'
+import { PageHeader } from '@/components/common/PageHeader'
+import { FilterChip } from '@/components/common/FilterChip'
+import { DataPanel } from '@/components/common/DataPanel'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { cn } from '@/lib/utils'
 
-const ROLES: UserRole[] = ['super_admin','faculty','lab_assistant','student']
+const ROLES: UserRole[] = ['super_admin', 'faculty', 'lab_assistant', 'student']
 const ROLE_COLOR: Record<UserRole, string> = {
-  super_admin: 'bg-red-100 text-red-700',
-  faculty: 'bg-blue-100 text-blue-700',
-  lab_assistant: 'bg-teal-100 text-teal-700',
-  student: 'bg-green-100 text-green-700',
+  super_admin: 'bg-pink text-white',
+  faculty: 'bg-indigo text-white',
+  lab_assistant: 'bg-lime text-white',
+  student: 'bg-[rgba(255,255,255,0.05)] text-white',
 }
 
 export default function AdminUsersPage() {
@@ -47,7 +50,6 @@ export default function AdminUsersPage() {
       toast.error('Cannot downgrade your own admin role')
       return
     }
-    await doc(db, COLLECTIONS.USERS, uid)
     await updateDoc(doc(db, COLLECTIONS.USERS, uid), { role, updatedAt: serverTimestamp() })
     toast.success('Role updated')
     qc.invalidateQueries({ queryKey: ['admin', 'users'] })
@@ -60,79 +62,104 @@ export default function AdminUsersPage() {
   }
 
   return (
-    <div className="space-y-5 animate-fade-in">
-      <div>
-        <p className="text-xs font-mono uppercase tracking-widest text-accent">Admin · Users</p>
-        <h1 className="text-2xl font-display font-bold mt-1">User Management</h1>
-        <p className="text-muted-foreground text-sm">{users.length} total users · Latest to oldest · Manage roles and access.</p>
-      </div>
-
-      <div className="flex gap-3">
-        <div className="relative flex-1 max-w-sm">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search users…" className="pl-9" />
-        </div>
-        <select value={filterRole} onChange={e => setFilterRole(e.target.value)} className="px-3 py-2 text-sm border rounded-md bg-background outline-none focus:ring-2 focus:ring-ring">
-          <option value="all">All roles</option>
-          {ROLES.map(r => <option key={r} value={r}>{r.replace('_',' ')}</option>)}
-        </select>
-      </div>
-
-      <div className="rounded-lg border bg-card overflow-hidden">
-        {isLoading ? <div className="py-16 text-center text-muted-foreground">Loading users…</div> : (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>#</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Department</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Joined</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filtered.map((u, idx) => (
-                  <TableRow>
-                    <TableCell>{filtered.length - idx}</TableCell>
-                    <TableCell>{u.displayName}</TableCell>
-                    <TableCell>{u.email}</TableCell>
-                    <TableCell>{u.userType}</TableCell>
-                    <TableCell>{u.department || '—'}</TableCell>
-                    <TableCell>
-                      <select
-                        value={u.role}
-                        onChange={e => updateRole(u.uid, e.target.value as UserRole)}
-                        className={`text-xs px-2 py-0.5 rounded-full font-medium border-0 outline-none cursor-pointer ${ROLE_COLOR[u.role]}`}
-                      >
-                        {ROLES.map(r => <option key={r} value={r}>{r.replace('_',' ')}</option>)}
-                      </select>
-                    </TableCell>
-                    <TableCell>{formatDateTime(u.createdAt)}</TableCell>
-                    <TableCell>
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${u.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
-                        {u.isActive ? 'Active' : 'Disabled'}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <button onClick={() => toggleActive(u.uid, u.isActive)} className={`text-xs px-2 py-1 rounded border transition-colors ${u.isActive ? 'hover:bg-red-50 hover:border-red-200 hover:text-red-700' : 'hover:bg-green-50 hover:border-green-200 hover:text-green-700'}`}>
-                        {u.isActive ? <UserX size={13} /> : <UserCheck size={13} />}
-                      </button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-            <div className="px-4 py-2 bg-muted/20 text-xs text-muted-foreground border-t">
-              Showing {filtered.length} of {users.length} users · Ordered latest registered first
+    <div className="w-full max-w-7xl mx-auto pb-20 animate-fade-in">
+      <PageHeader
+        variant="dark"
+        title="Users"
+        description={`${users.length} total users · Manage roles and access.`}
+        action={
+          <div className="w-12 h-12 bg-black rounded-full flex items-center justify-center">
+            <Shield size={22} className="text-lime" />
+          </div>
+        }
+        filters={
+          <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center">
+            <div className="relative w-full lg:w-80 flex-shrink-0">
+              <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" />
+              <input
+                type="text"
+                placeholder="Search users…"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="tl-input pl-11 w-full"
+              />
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <FilterChip label="All roles" active={filterRole === 'all'} onClick={() => setFilterRole('all')} />
+              {ROLES.map(r => (
+                <FilterChip
+                  key={r}
+                  label={r.replace('_', ' ')}
+                  active={filterRole === r}
+                  onClick={() => setFilterRole(r)}
+                />
+              ))}
             </div>
           </div>
-        )}
-      </div>
+        }
+      />
+
+      <DataPanel title="All Users" description={`Showing ${filtered.length} of ${users.length} · Latest first`}>
+        <Table className="">
+          <TableHeader>
+            <TableRow className="hover:bg-transparent border-0">
+              <TableHead>#</TableHead>
+              <TableHead>Name</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Type</TableHead>
+              <TableHead>Department</TableHead>
+              <TableHead>Role</TableHead>
+              <TableHead>Joined</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={9} className="h-32 text-center text-white/40">
+                  <div className="flex flex-col items-center justify-center gap-3">
+                    <div className="w-6 h-6 border-2 border-white/10 border-t-black/60 rounded-full animate-spin" />
+                    Loading users…
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : filtered.map((u, idx) => (
+              <TableRow key={u.uid} className="border-0">
+                <TableCell className="text-white/40 font-mono text-xs">{filtered.length - idx}</TableCell>
+                <TableCell className="font-semibold text-white">{u.displayName}</TableCell>
+                <TableCell className="text-white/60 text-sm">{u.email}</TableCell>
+                <TableCell className="text-white/50 text-xs uppercase">{u.userType}</TableCell>
+                <TableCell className="text-white/50 text-sm">{u.department || '—'}</TableCell>
+                <TableCell>
+                  <select
+                    value={u.role}
+                    onChange={e => updateRole(u.uid, e.target.value as UserRole)}
+                    className={cn('text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider border-0 outline-none cursor-pointer', ROLE_COLOR[u.role])}
+                  >
+                    {ROLES.map(r => <option key={r} value={r}>{r.replace('_', ' ')}</option>)}
+                  </select>
+                </TableCell>
+                <TableCell className="text-white/50 text-sm">{formatDateTime(u.createdAt)}</TableCell>
+                <TableCell>
+                  <span className={cn('text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider', u.isActive ? 'bg-lime text-white' : 'bg-pink text-white')}>
+                    {u.isActive ? 'Active' : 'Disabled'}
+                  </span>
+                </TableCell>
+                <TableCell className="text-right">
+                  <button
+                    onClick={() => toggleActive(u.uid, u.isActive)}
+                    className="p-2 rounded-full hover:bg-black/5 transition-colors text-white/50 hover:text-white"
+                    aria-label={u.isActive ? 'Deactivate user' : 'Activate user'}
+                  >
+                    {u.isActive ? <UserX size={16} /> : <UserCheck size={16} />}
+                  </button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </DataPanel>
     </div>
   )
 }

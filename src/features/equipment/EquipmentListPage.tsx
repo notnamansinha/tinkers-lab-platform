@@ -8,14 +8,17 @@ import { useAuth } from '@/contexts/AuthContext'
 import { Search, Plus } from 'lucide-react'
 import type { Equipment, EquipmentCategory } from '@/types'
 import { cn } from '@/lib/utils'
+import { PageHeader } from '@/components/common/PageHeader'
+import { FilterChip } from '@/components/common/FilterChip'
+import { EntityCard } from '@/components/common/EntityCard'
 
 const STATUS_CONFIG = {
-  available:         { label: 'Available',      chip: 'bg-lime text-black' },
-  reserved:          { label: 'Reserved',       chip: 'bg-orange text-black' },
-  in_use:            { label: 'In Use',         chip: 'bg-orange text-black' },
-  under_maintenance: { label: 'Maintenance',    chip: 'bg-cream/30 text-white' },
-  out_of_service:    { label: 'Out of Service', chip: 'bg-pink text-black' },
-  retired:           { label: 'Retired',        chip: 'bg-white/20 text-white' },
+  available:         { label: 'Available',      chip: 'bg-[#DDF237] text-white' },
+  reserved:          { label: 'Reserved',       chip: 'bg-[#FFB13F] text-white' },
+  in_use:            { label: 'In Use',         chip: 'bg-[#FFB13F] text-white' },
+  under_maintenance: { label: 'Maintenance',    chip: 'bg-white/10 text-white/50' },
+  out_of_service:    { label: 'Out of Service', chip: 'bg-[#EC68D8] text-white' },
+  retired:           { label: 'Retired',        chip: 'bg-[rgba(255,255,255,0.05)] text-white/40' },
 } as const
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -60,84 +63,67 @@ export default function EquipmentListPage() {
     return matchSearch && matchCat && matchStatus
   })
 
-  // ── Pill chip helper ──
-  function Chip({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
-    return (
-      <button
-        onClick={onClick}
-        className={cn(
-          "px-4 py-2 rounded-full font-bold uppercase tracking-widest text-xs transition-colors border-2",
-          active ? "bg-indigo text-white border-indigo" : "bg-black/5 text-black/55 border-black/10 hover:border-black/35 hover:text-black"
-        )}
-      >
-        {label}
-      </button>
-    )
-  }
-
   return (
-    <div className="w-full max-w-7xl mx-auto pb-20 animate-in fade-in duration-300">
-      
-      {/* ── Page header & Filters ── */}
-      <div className="tl-panel-cream p-6 lg:p-8 rounded-[32px] mb-8">
-        <div className="flex flex-col lg:flex-row justify-between lg:items-end gap-6 mb-8 border-b-4 border-black/10 pb-6">
-          <div>
-            <h1 className="font-display uppercase text-4xl lg:text-5xl font-black text-black leading-[0.95] mb-2">
-              Machines & Equipment
-            </h1>
-            <p className="text-black/60 font-bold max-w-md">
-              Browse the catalog. Tier-1 equipment requires induction and booking.
-            </p>
-          </div>
-          {isStaff && (
-            <button
-              onClick={() => navigate('/equipment/new')}
-              className="tl-pill-button flex items-center gap-2 px-6"
-            >
+    <div className="w-full max-w-7xl mx-auto pb-20 animate-fade-in mt-4">
+      <PageHeader
+        variant="dark"
+        title="Machines"
+        description="Browse the catalog. Tier-1 equipment requires induction and booking."
+        action={
+          isStaff ? (
+            <button onClick={() => navigate('/equipment/new')} className="tl-pill-button-secondary flex items-center gap-2 px-6">
               <Plus size={18} /> Add Equipment
             </button>
-          )}
-        </div>
-
-        {/* ── Filter bar ── */}
-        <div className="flex flex-col lg:flex-row gap-6 items-start lg:items-center">
-          {/* Search input */}
-          <div className="relative w-full lg:w-72 flex-shrink-0">
-            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-black/40" />
-            <input
-              type="text"
-              placeholder="Search by name or ID..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              className="w-full rounded-[8px] border border-black/10 bg-white/45 py-3 pl-11 pr-4 text-black placeholder:text-black/40 font-bold outline-none transition focus:border-indigo focus:ring-2 focus:ring-indigo/20"
-            />
+          ) : undefined
+        }
+        filters={
+          <div className="flex flex-col gap-6">
+            <div className="flex flex-col lg:flex-row gap-5 items-start lg:items-center">
+              <div className="relative w-full lg:w-80 flex-shrink-0">
+                <Search size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-white/40" />
+                <input
+                  type="text"
+                  placeholder="Search by name or ID..."
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  className="tl-input pl-12 w-full h-[44px]"
+                />
+              </div>
+              <div className="flex flex-wrap gap-2 flex-1">
+                <FilterChip label="All Categories" active={filterCat === 'all'} onClick={() => setFilterCat('all')} />
+                {CATEGORIES.map(c => (
+                  <FilterChip
+                    key={c}
+                    label={CATEGORY_LABELS[c] ?? c}
+                    active={filterCat === c}
+                    onClick={() => setFilterCat(c)}
+                  />
+                ))}
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2 pt-5 border-t border-[rgba(255,255,255,0.06)]">
+              <FilterChip label="Any Status" active={filterStatus === 'all'} onClick={() => setFilterStatus('all')} />
+              {STATUS_FILTERS.map(s => (
+                <FilterChip
+                  key={s}
+                  label={STATUS_CONFIG[s].label}
+                  active={filterStatus === s}
+                  onClick={() => setFilterStatus(s)}
+                />
+              ))}
+            </div>
           </div>
+        }
+      />
 
-          <div className="flex flex-wrap gap-2 flex-1">
-            <Chip label="All Categories" active={filterCat === 'all'} onClick={() => setFilterCat('all')} />
-            {CATEGORIES.map(c => (
-              <Chip key={c} label={CATEGORY_LABELS[c] ?? c} active={filterCat === c} onClick={() => setFilterCat(c)} />
-            ))}
-          </div>
-        </div>
-
-        <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t-2 border-black/10">
-           <Chip label="Any Status" active={filterStatus === 'all'} onClick={() => setFilterStatus('all')} />
-            {STATUS_FILTERS.map(s => (
-              <Chip key={s} label={STATUS_CONFIG[s].label} active={filterStatus === s} onClick={() => setFilterStatus(s)} />
-            ))}
-        </div>
-      </div>
-
-      {/* ── Equipment Grid ── */}
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="h-[280px] rounded-[24px] bg-[#101010] border-4 border-[#191919] animate-pulse" />
+            <div key={i} className="h-[300px] rounded-[24px] bg-[rgba(255,255,255,0.02)] border border-[rgba(255,255,255,0.03)] animate-pulse" />
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="py-20 text-center text-white/40 font-bold uppercase tracking-widest">
+        <div className="py-24 text-center text-white/30 text-[14px]">
           No equipment found matching your filters.
         </div>
       ) : (
@@ -146,50 +132,47 @@ export default function EquipmentListPage() {
             const cfg  = STATUS_CONFIG[e.status] ?? STATUS_CONFIG.available
             const pulse = e.status === 'in_use' || e.status === 'reserved'
             const isDown = e.status === 'under_maintenance' || e.status === 'out_of_service' || e.status === 'retired'
-            const dotColorClass = isDown ? 'bg-white/40' : pulse ? 'bg-orange animate-pulse' : 'bg-lime'
+            const dotColorClass = isDown ? 'bg-white/30' : pulse ? 'bg-[#FFB13F] animate-pulse shadow-[0_0_8px_rgba(255,177,63,0.8)]' : 'bg-[#DDF237] shadow-[0_0_8px_rgba(221,242,55,0.8)]'
 
             return (
-              <button
-                key={e.id}
-                onClick={() => navigate(`/equipment/${e.id}`)}
-                className="group text-left w-full bg-[#101010] rounded-[24px] border-4 border-[#191919] hover:border-pink transition-colors overflow-hidden flex flex-col shadow-2xl"
-              >
-                {/* Photo */}
-                <div className="aspect-[16/10] relative bg-black border-b-4 border-[#191919] overflow-hidden flex-shrink-0">
+              <EntityCard key={e.id} as="button" onClick={() => navigate(`/equipment/${e.id}`)}>
+                <div className="aspect-[16/10] relative bg-[rgba(0,0,0,0.5)] overflow-hidden flex-shrink-0">
                   {e.imageUrls?.[0] ? (
-                    <img src={e.imageUrls[0]} alt={e.name} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
+                    <img src={e.imageUrls[0]} alt={e.name} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity duration-300 group-hover:scale-[1.02]" />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center font-bold text-white/20 text-xs tracking-widest uppercase">
-                      NO IMAGE
+                    <div className="w-full h-full flex items-center justify-center text-white/20 text-[12px] uppercase tracking-widest font-semibold">
+                      No Image
                     </div>
                   )}
+                  {/* Status Overlay */}
+                  <div className="absolute top-3 left-3 bg-[rgba(0,0,0,0.4)] backdrop-blur-md border border-[rgba(255,255,255,0.1)] px-2.5 py-1 rounded-full flex items-center gap-2">
+                    <span className={cn('w-2 h-2 rounded-full', dotColorClass)} />
+                    <span className="text-white/80 font-medium text-[10px] uppercase tracking-widest leading-none">
+                      {cfg.label}
+                    </span>
+                  </div>
                 </div>
 
-                {/* Info */}
-                <div className="p-5 flex-1 flex flex-col">
-                  <span className="font-bold text-white/40 text-[10px] uppercase tracking-widest mb-2">
+                <div className="p-6 flex-1 flex flex-col">
+                  <span className="text-[11px] font-semibold text-white/30 uppercase tracking-[0.1em] mb-1.5 block">
                     {CATEGORY_LABELS[e.category] ?? e.category}
                   </span>
-                  <h3 className="font-bold text-white text-lg leading-tight mb-4 group-hover:text-pink transition-colors">
+                  <h3 className="text-[18px] font-semibold text-white mb-2 leading-tight group-hover:text-[#514AF1] transition-colors">
                     {e.name}
                   </h3>
                   
-                  <div className="mt-auto flex items-center gap-3">
-                    <span className={cn("w-3 h-3 rounded-full border-2 border-black flex-shrink-0", dotColorClass)} />
-                    <span className="text-white/60 font-bold text-xs uppercase tracking-[0.08em]">
-                      {cfg.label}
-                    </span>
+                  <div className="mt-auto flex items-center justify-end gap-3 pt-4">
                     {e.status === 'available' && (
                       <span
                         onClick={ev => { ev.stopPropagation(); navigate(`/bookings/new?machine=${e.id}`) }}
-                        className="ml-auto bg-indigo text-white px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-pink transition-colors border-2 border-black"
+                        className="bg-[rgba(255,255,255,0.08)] text-white/80 hover:text-white px-4 py-2 rounded-full text-[11px] font-bold uppercase tracking-wider hover:bg-[#514AF1] transition-all border border-[rgba(255,255,255,0.1)]"
                       >
                         Book
                       </span>
                     )}
                   </div>
                 </div>
-              </button>
+              </EntityCard>
             )
           })}
         </div>

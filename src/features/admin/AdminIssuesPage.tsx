@@ -1,19 +1,31 @@
 import React, { useState } from 'react'
-import { Input } from '@/components/ui/input'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { collection, query, orderBy, getDocs, doc, updateDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { COLLECTIONS } from '@/services/firebase/firestore'
-import { Search } from 'lucide-react'
-import { formatDateTime } from '@/lib/utils'
+import { Search, AlertTriangle } from 'lucide-react'
+import { formatDateTime, cn } from '@/lib/utils'
 import { toast } from 'sonner'
-import { cn } from '@/lib/utils'
 import type { Issue } from '@/types'
 import { useAuth } from '@/contexts/AuthContext'
+import { PageHeader } from '@/components/common/PageHeader'
+import { FilterChip } from '@/components/common/FilterChip'
+import { DataPanel } from '@/components/common/DataPanel'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 
-const SEVERITY_COLOR = { low: 'bg-blue-100 text-blue-700', medium: 'bg-orange-100 text-orange-700', high: 'bg-red-100 text-red-700', urgent: 'bg-red-600 text-white' }
-const STATUS_COLOR: Record<string, string> = { open: 'bg-orange-100 text-orange-700', in_progress: 'bg-yellow-100 text-yellow-700', resolved: 'bg-green-100 text-green-700', closed: 'bg-gray-100 text-gray-600' }
+const SEVERITY_COLOR: Record<string, string> = {
+  low: 'bg-indigo text-white',
+  medium: 'bg-orange text-white',
+  high: 'bg-pink text-white',
+  urgent: 'bg-pink text-white',
+}
+const STATUS_COLOR: Record<string, string> = {
+  open: 'bg-orange text-white',
+  investigating: 'bg-[rgba(255,255,255,0.05)] text-white',
+  in_progress: 'bg-[rgba(255,255,255,0.05)] text-white',
+  resolved: 'bg-lime text-white',
+  closed: 'bg-[rgba(0,0,0,0.4)] text-white',
+}
 
 export default function AdminIssuesPage() {
   const { profile } = useAuth()
@@ -47,74 +59,79 @@ export default function AdminIssuesPage() {
   }
 
   return (
-    <div className="space-y-5 animate-fade-in">
-      <div>
-        <p className="text-xs font-mono uppercase tracking-widest text-accent">Admin · Issues</p>
-        <h1 className="text-2xl font-display font-bold mt-1">Issue Tracker</h1>
-        <p className="text-muted-foreground text-sm">{issues.length} total · {issues.filter(i=>i.status==='open').length} open · Latest to oldest.</p>
-      </div>
-
-      <div className="flex gap-3 flex-wrap">
-        <div className="relative flex-1 min-w-48">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search issues…" className="pl-9" />
-        </div>
-        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="px-3 py-2 text-sm border rounded-md bg-background outline-none focus:ring-2 focus:ring-ring">
-          <option value="all">All statuses</option>
-          {['open','investigating','resolved','closed'].map(s => <option key={s} value={s}>{s}</option>)}
-        </select>
-        <select value={filterSeverity} onChange={e => setFilterSeverity(e.target.value)} className="px-3 py-2 text-sm border rounded-md bg-background outline-none focus:ring-2 focus:ring-ring">
-          <option value="all">All severities</option>
-          {['low','medium','high','urgent'].map(s => <option key={s} value={s}>{s}</option>)}
-        </select>
-      </div>
-
-      <div className="rounded-lg border bg-card overflow-hidden">
-        {isLoading ? <div className="py-16 text-center text-muted-foreground">Loading…</div> : (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>#</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Severity</TableHead>
-                  <TableHead>Machine</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Reported by</TableHead>
-                  <TableHead>Submitted</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filtered.map((i, idx) => (
-                  <TableRow key={i.id}>
-                    <TableCell>{filtered.length - idx}</TableCell>
-                    <TableCell>{i.type.replace('_',' ')}</TableCell>
-                    <TableCell><span className={`text-xs px-2 py-0.5 rounded-full font-medium ${SEVERITY_COLOR[i.severity]}`}>{i.severity}</span></TableCell>
-                    <TableCell>{i.relatedMachine || '—'}</TableCell>
-                    <TableCell>{i.description}</TableCell>
-                    <TableCell>
-                      <div className="text-sm">{i.userName}</div>
-                      <div className="text-xs text-muted-foreground">{i.userEmail}</div>
-                    </TableCell>
-                    <TableCell>{formatDateTime(i.createdAt)}</TableCell>
-                    <TableCell><span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLOR[i.status]}`}>{i.status}</span></TableCell>
-                    <TableCell>
-                      <select value={i.status} onChange={e => updateStatus(i.id, e.target.value)} className="text-xs border rounded px-1.5 py-0.5 outline-none">
-                        {['open','investigating','resolved','closed'].map(s => <option key={s} value={s}>{s}</option>)}
-                      </select>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-            <div className="px-4 py-2 bg-muted/20 text-xs text-muted-foreground border-t">
-              {filtered.length} of {issues.length} issues · Latest first · Urgent rows highlighted
+    <div className="w-full max-w-7xl mx-auto pb-20 animate-fade-in">
+      <PageHeader
+        variant="dark"
+        title="Issues"
+        description={`${issues.length} total · ${issues.filter(i => i.status === 'open').length} open · Track and resolve lab issues.`}
+        action={
+          <div className="w-12 h-12 bg-black rounded-full flex items-center justify-center">
+            <AlertTriangle size={22} className="text-pink" />
+          </div>
+        }
+        filters={
+          <div className="flex flex-col gap-4">
+            <div className="relative w-full lg:w-80">
+              <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" />
+              <input type="text" placeholder="Search issues…" value={search} onChange={e => setSearch(e.target.value)} className="tl-input pl-11 w-full" />
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <FilterChip label="All statuses" active={filterStatus === 'all'} onClick={() => setFilterStatus('all')} />
+              {['open', 'investigating', 'resolved', 'closed'].map(s => (
+                <FilterChip key={s} label={s} active={filterStatus === s} onClick={() => setFilterStatus(s)} />
+              ))}
+            </div>
+            <div className="flex flex-wrap gap-2 pt-2 border-t border-white/10">
+              <FilterChip label="All severities" active={filterSeverity === 'all'} onClick={() => setFilterSeverity('all')} />
+              {['low', 'medium', 'high', 'urgent'].map(s => (
+                <FilterChip key={s} label={s} active={filterSeverity === s} onClick={() => setFilterSeverity(s)} />
+              ))}
             </div>
           </div>
-        )}
-      </div>
+        }
+      />
+
+      <DataPanel title="Issue Tracker" description={`${filtered.length} of ${issues.length} · Latest first`}>
+        <Table className="">
+          <TableHeader>
+            <TableRow className="hover:bg-transparent border-0">
+              <TableHead>#</TableHead>
+              <TableHead>Type</TableHead>
+              <TableHead>Severity</TableHead>
+              <TableHead>Machine</TableHead>
+              <TableHead>Description</TableHead>
+              <TableHead>Reported by</TableHead>
+              <TableHead>Submitted</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              <TableRow><TableCell colSpan={9} className="h-32 text-center text-white/40">Loading…</TableCell></TableRow>
+            ) : filtered.map((i, idx) => (
+              <TableRow key={i.id} className={cn('border-0', i.severity === 'urgent' && 'bg-pink/5')}>
+                <TableCell className="text-white/40 font-mono text-xs">{filtered.length - idx}</TableCell>
+                <TableCell className="text-white/60 text-xs uppercase">{i.type.replace('_', ' ')}</TableCell>
+                <TableCell><span className={cn('text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider', SEVERITY_COLOR[i.severity])}>{i.severity}</span></TableCell>
+                <TableCell className="text-white/70 text-sm">{i.relatedMachine || '—'}</TableCell>
+                <TableCell className="text-white max-w-[200px] truncate">{i.description}</TableCell>
+                <TableCell>
+                  <div className="text-sm font-medium text-white">{i.userName}</div>
+                  <div className="text-xs text-white/45">{i.userEmail}</div>
+                </TableCell>
+                <TableCell className="text-white/50 text-sm">{formatDateTime(i.createdAt)}</TableCell>
+                <TableCell><span className={cn('text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider', STATUS_COLOR[i.status])}>{i.status}</span></TableCell>
+                <TableCell>
+                  <select value={i.status} onChange={e => updateStatus(i.id, e.target.value)} className="text-xs border border-white/10 rounded-full px-3 py-1 outline-none bg-white/50 font-medium">
+                    {['open', 'investigating', 'resolved', 'closed'].map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </DataPanel>
     </div>
   )
 }

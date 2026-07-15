@@ -2,27 +2,27 @@ import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/contexts/AuthContext'
-import { getUserCheckoutHistory, getAllActiveCheckouts, isCheckoutOverdue } from '@/services/firebase/toolCheckouts'
-import { returnTool } from '@/services/firebase/toolCheckouts'
+import { getUserCheckoutHistory, getAllActiveCheckouts, isCheckoutOverdue, returnTool } from '@/services/firebase/toolCheckouts'
 import { ArrowLeft, Package, AlertTriangle, CheckCircle2, Clock } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import type { ToolCheckout } from '@/types'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
+import { PageHeader } from '@/components/common/PageHeader'
+import { FilterChip } from '@/components/common/FilterChip'
+import { KpiTile } from '@/components/common/KpiTile'
+import { DataPanel } from '@/components/common/DataPanel'
 
 type FilterMode = 'all' | 'active' | 'overdue' | 'returned'
 
 function statusBadge(c: ToolCheckout) {
-  if (c.returnedAt)      return { label: 'Returned', className: 'bg-green-500/10 text-green-600 border-green-500/30' }
-  if (isCheckoutOverdue(c)) return { label: 'Overdue',   className: 'bg-destructive/10 text-destructive border-destructive/30' }
-  return { label: 'Active', className: 'bg-primary/10 text-primary border-primary/30' }
+  if (c.returnedAt) return { label: 'Returned', className: 'bg-lime text-white' }
+  if (isCheckoutOverdue(c)) return { label: 'Overdue', className: 'bg-pink text-white' }
+  return { label: 'Active', className: 'bg-indigo text-white' }
 }
 
 export default function ToolCheckoutListPage() {
   const navigate = useNavigate()
-  const { isStaff } = useAuth()
-  const { data: user } = useAuth() as any
+  const { isStaff, user } = useAuth()
   const qc = useQueryClient()
   const [filter, setFilter] = React.useState<FilterMode>('all')
   const [returningId, setReturningId] = React.useState<string | null>(null)
@@ -35,14 +35,14 @@ export default function ToolCheckoutListPage() {
   })
 
   const filtered = checkouts.filter(c => {
-    if (filter === 'active')   return !c.returnedAt && !isCheckoutOverdue(c)
-    if (filter === 'overdue')  return !c.returnedAt && isCheckoutOverdue(c)
+    if (filter === 'active') return !c.returnedAt && !isCheckoutOverdue(c)
+    if (filter === 'overdue') return !c.returnedAt && isCheckoutOverdue(c)
     if (filter === 'returned') return !!c.returnedAt
     return true
   })
 
-  const overdueCount  = checkouts.filter(c => !c.returnedAt && isCheckoutOverdue(c)).length
-  const activeCount   = checkouts.filter(c => !c.returnedAt && !isCheckoutOverdue(c)).length
+  const overdueCount = checkouts.filter(c => !c.returnedAt && isCheckoutOverdue(c)).length
+  const activeCount = checkouts.filter(c => !c.returnedAt && !isCheckoutOverdue(c)).length
   const returnedCount = checkouts.filter(c => !!c.returnedAt).length
 
   const handleQuickReturn = async (checkoutId: string) => {
@@ -59,153 +59,128 @@ export default function ToolCheckoutListPage() {
   }
 
   const FILTERS: { key: FilterMode; label: string; count: number }[] = [
-    { key: 'all',      label: 'All',      count: checkouts.length },
-    { key: 'active',   label: 'Active',   count: activeCount },
-    { key: 'overdue',  label: 'Overdue',  count: overdueCount },
+    { key: 'all', label: 'All', count: checkouts.length },
+    { key: 'active', label: 'Active', count: activeCount },
+    { key: 'overdue', label: 'Overdue', count: overdueCount },
     { key: 'returned', label: 'Returned', count: returnedCount },
   ]
 
   return (
-    <div className="space-y-6 container py-6 mx-auto max-w-3xl animate-fade-in">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <div className="flex-1">
-          <h1 className="text-3xl font-bold tracking-tight">
-            {isStaff ? 'All Checkouts' : 'My Checkouts'}
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            {isStaff ? 'Staff view — all active tool checkouts across all users.' : 'Your tool checkout and return history.'}
-          </p>
-        </div>
-        <Button onClick={() => navigate('/checkout')} className="gap-2">
-          <Package className="w-4 h-4" /> Checkout a Tool
-        </Button>
-      </div>
+    <div className="w-full max-w-4xl mx-auto pb-20 animate-fade-in">
+      <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-white/50 hover:text-white mb-6 transition-colors text-sm font-medium">
+        <ArrowLeft size={16} /> Back
+      </button>
 
-      {/* Overdue alert banner */}
+      <PageHeader
+        variant="dark"
+        title={isStaff ? 'All Checkouts' : 'My Checkouts'}
+        description={isStaff ? 'Staff view — all active tool checkouts across users.' : 'Your tool checkout and return history.'}
+        action={
+          <button onClick={() => navigate('/checkout')} className="tl-pill-button flex items-center gap-2 px-6">
+            <Package size={18} /> Checkout Tool
+          </button>
+        }
+      />
+
       {overdueCount > 0 && (
-        <div className="flex items-start gap-3 p-4 rounded-xl border-2 border-destructive/40 bg-destructive/10">
-          <AlertTriangle className="h-5 w-5 text-destructive mt-0.5 shrink-0" />
+        <div className="bg-[rgba(236,104,216,0.15)] border border-[rgba(236,104,216,0.3)] text-white p-5 mb-6 flex items-start gap-3 rounded-[20px]">
+          <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" />
           <div>
-            <p className="font-bold text-sm text-destructive">{overdueCount} overdue tool{overdueCount > 1 ? 's' : ''}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              These items are past their expected return date. Please return them immediately.
-            </p>
+            <p className="font-bold text-white">{overdueCount} overdue tool{overdueCount > 1 ? 's' : ''}</p>
+            <p className="text-white/70 text-sm mt-1">Return them immediately to avoid penalties.</p>
           </div>
         </div>
       )}
 
-      {/* Stats row */}
-      <div className="grid grid-cols-3 gap-3">
-        {[
-          { label: 'Active',   count: activeCount,   icon: <Clock className="w-5 h-5 text-primary" /> },
-          { label: 'Overdue',  count: overdueCount,  icon: <AlertTriangle className="w-5 h-5 text-destructive" /> },
-          { label: 'Returned', count: returnedCount, icon: <CheckCircle2 className="w-5 h-5 text-green-500" /> },
-        ].map(s => (
-          <Card key={s.label} className="text-center">
-            <CardContent className="pt-4 pb-4">
-              <div className="flex justify-center mb-1">{s.icon}</div>
-              <p className="text-2xl font-bold text-foreground">{s.count}</p>
-              <p className="text-xs text-muted-foreground">{s.label}</p>
-            </CardContent>
-          </Card>
-        ))}
+      <div className="grid grid-cols-3 gap-4 mb-6">
+        <KpiTile label="Active" value={activeCount} color="#514AF1" textColor="light" icon={Clock} />
+        <KpiTile label="Overdue" value={overdueCount} color={overdueCount > 0 ? '#EC68D8' : '#181818'} textColor={overdueCount > 0 ? 'dark' : 'light'} icon={AlertTriangle} />
+        <KpiTile label="Returned" value={returnedCount} color="#DDF237" icon={CheckCircle2} />
       </div>
 
-      {/* Filter tabs */}
-      <div className="flex gap-2 flex-wrap">
+      <div className="flex flex-wrap gap-2 mb-6">
         {FILTERS.map(f => (
-          <button
+          <FilterChip
             key={f.key}
+            label={`${f.label} (${f.count})`}
+            active={filter === f.key}
             onClick={() => setFilter(f.key)}
-            className={cn(
-              'px-4 py-2 rounded-xl text-sm font-medium border-2 transition-all',
-              filter === f.key
-                ? 'bg-foreground text-background border-foreground'
-                : 'bg-background border-border text-muted-foreground hover:border-foreground/40'
-            )}
-          >
-            {f.label}
-            <span className={cn('ml-1.5 text-xs font-bold', f.key === 'overdue' && f.count > 0 ? 'text-destructive' : '')}>
-              {f.count}
-            </span>
-          </button>
+            tone="dark"
+          />
         ))}
       </div>
 
-      {/* Checkout list */}
-      {isLoading ? (
-        <div className="text-center py-12 text-muted-foreground">Loading checkouts…</div>
-      ) : filtered.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <Package className="w-10 h-10 mx-auto text-muted-foreground mb-3" />
-            <p className="font-medium text-foreground">No {filter === 'all' ? '' : filter} checkouts</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              {filter === 'all' ? 'Start by checking out a tool.' : 'Nothing matches this filter.'}
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-3">
-          {filtered.map(c => {
-            const badge   = statusBadge(c)
-            const overdue = isCheckoutOverdue(c)
-            return (
-              <Card key={c.id} className={cn('transition-all', overdue && !c.returnedAt && 'border-destructive/40')}>
-                <CardContent className="p-4">
+      <DataPanel title="Checkout History">
+        {isLoading ? (
+          <div className="py-12 text-center text-white/40">Loading checkouts…</div>
+        ) : filtered.length === 0 ? (
+          <div className="py-12 text-center flex flex-col items-center gap-3 text-white/40">
+            <Package className="w-10 h-10 opacity-30" />
+            <p className="font-medium text-white/60">No {filter === 'all' ? '' : filter} checkouts</p>
+            <p className="text-sm">{filter === 'all' ? 'Start by checking out a tool.' : 'Nothing matches this filter.'}</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {filtered.map(c => {
+              const badge = statusBadge(c)
+              const overdue = isCheckoutOverdue(c)
+              return (
+                <div
+                  key={c.id}
+                  className={cn(
+                    'rounded-[20px] p-4 border transition-all',
+                    overdue && !c.returnedAt ? 'bg-pink/10 border-pink/30' : 'bg-black/[0.03] border-black/[0.06]',
+                  )}
+                >
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap mb-1">
-                        <p className="font-bold text-base text-foreground">{c.toolName}</p>
-                        <span className={cn('text-xs px-2 py-0.5 rounded-full border font-medium', badge.className)}>
+                      <div className="flex items-center gap-2 flex-wrap mb-2">
+                        <p className="font-semibold text-base text-white">{c.toolName}</p>
+                        <span className={cn('text-xs px-3 py-0.5 rounded-full font-bold uppercase tracking-wider', badge.className)}>
                           {badge.label}
                         </span>
                         {c.locationOfUse === 'taking_outside' && (
-                          <span className="text-xs px-2 py-0.5 rounded-full border border-amber-500/30 bg-amber-500/10 text-amber-600 font-medium">
-                            📍 Off-premises
+                          <span className="text-xs px-3 py-0.5 rounded-full bg-orange/20 text-orange font-bold uppercase tracking-wider">
+                            Off-premises
                           </span>
                         )}
                       </div>
-                      <div className="text-xs text-muted-foreground space-y-0.5">
+                      <div className="text-xs text-white/55 space-y-0.5">
                         <p>{c.toolCategory} · Qty: {c.quantity} · Condition: <span className="capitalize">{c.conditionAtCheckout}</span></p>
                         <p>Project: {c.projectTitle || c.projectId}</p>
                         <p>
-                          Checked out: {new Date(c.createdAt?.toDate?.()).toLocaleDateString()} ·
-                          Due: <span className={cn('font-medium', overdue && !c.returnedAt ? 'text-destructive' : 'text-foreground')}>
+                          Checked out: {new Date(c.createdAt?.toDate?.()).toLocaleDateString()} · Due:{' '}
+                          <span className={cn('font-semibold', overdue && !c.returnedAt ? 'text-pink' : 'text-white')}>
                             {c.expectedReturnDate}
                           </span>
                         </p>
                         {c.outsideLocation && <p>Location: {c.outsideLocation}</p>}
                         {c.returnedAt && c.conditionAtReturn && (
-                          <p>Returned in: <span className="capitalize font-medium">{c.conditionAtReturn}</span> condition</p>
+                          <p>Returned in: <span className="capitalize font-semibold">{c.conditionAtReturn}</span> condition</p>
                         )}
                       </div>
                     </div>
-                    {/* Quick return for staff or own active item */}
                     {!c.returnedAt && (
-                      <Button
-                        variant="outline"
-                        size="sm"
+                      <button
                         onClick={() => handleQuickReturn(c.id)}
                         disabled={returningId === c.id}
-                        className={cn('shrink-0', overdue && 'border-destructive text-destructive hover:bg-destructive/10')}
+                        className={cn(
+                          'shrink-0 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider border-2 transition-all',
+                          overdue ? 'border-pink text-pink hover:bg-pink/10' : 'border-white/10 text-white hover:bg-black/5',
+                        )}
                       >
                         {returningId === c.id
                           ? <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                          : 'Return'
-                        }
-                      </Button>
+                          : 'Return'}
+                      </button>
                     )}
                   </div>
-                </CardContent>
-              </Card>
-            )
-          })}
-        </div>
-      )}
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </DataPanel>
     </div>
   )
 }

@@ -1,17 +1,8 @@
 @font-face {
-  font-family: 'PP Mori';
-  src: url('/fonts/PPMori-Regular.otf') format('opentype');
+  font-family: 'Outfit';
+  src: url('/node_modules/@fontsource/outfit/files/outfit-latin-400-normal.woff2') format('woff2');
   font-weight: 400;
   font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'PP Mori';
-  src: url('/fonts/PPMori-SemiBold.otf') format('opentype');
-  font-weight: 600 900;
-  font-style: normal;
-  font-display: swap;
 }
 
 @tailwind base;
@@ -20,47 +11,42 @@
 
 @layer base {
   :root {
-    /* ── Canvas & surfaces ────────────────────────────────────── */
-    --canvas:   0 0% 0%;           /* #000000 */
-    --surface:  0 0% 6%;           /* #101010 */
-
-    /* shadcn aliases pointing to our tokens */
-    --background: 0 0% 0%;         /* canvas */
-    --foreground: 0 0% 100%;       /* #FFFFFF */
-
-    --card: 0 0% 6%;               /* surface */
+    --canvas:   255 27% 6%;        /* #0E0C15 */
+    --surface:  255 24% 10%;       /* #16141D */
+    --background: 255 27% 6%;
+    --foreground: 0 0% 100%;
+    --card: 255 24% 10%;
     --card-foreground: 0 0% 100%;
-
-    --popover: 0 0% 6%;
+    --popover: 255 24% 10%;
     --popover-foreground: 0 0% 100%;
 
-    /* ── Accent — Hot Pink ───────────────────────────────────── */
-    --primary: 309 81% 67%;        /* #EC68D8 (Hot Pink) */
-    --primary-foreground: 0 0% 0%;
-
-    --secondary: 243 85% 62%;      /* #514AF1 (Indigo) */
+    --primary: 331 100% 50%;       /* #FF007A */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 252 83% 60%;      /* Purple/Blue */
     --secondary-foreground: 0 0% 100%;
+    --muted: 255 20% 20%;          
+    --muted-foreground: 255 10% 70%;
+    --accent: 331 100% 50%;        
+    --accent-foreground: 0 0% 100%;
+    --destructive: 331 100% 50%;
+    --destructive-foreground: 0 0% 100%;
 
-    --muted: 0 0% 10%;             /* #191919 (Charcoal) */
-    --muted-foreground: 0 0% 60%;
+    --border: 0 0% 100% / 0.08;
+    --input:  0 0% 100% / 0.05;
+    --ring:   331 100% 50%;
 
-    --accent: 67 87% 58%;          /* #DDF237 (Acid Lime) */
-    --accent-foreground: 0 0% 0%;
+    --radius: 28px;
+    --tl-radius-panel: 32px;
+    --tl-radius-control: 16px;
+    --tl-radius-pill: 999px;
 
-    --destructive: 309 81% 67%;    /* Hot pink for destructive/attention */
-    --destructive-foreground: 0 0% 0%;
+    /* KIVO gradients */
+    --grad-magenta: linear-gradient(135deg, #FF6B9E 0%, #D81B60 100%);
+    --grad-lime: linear-gradient(135deg, #A8E063 0%, #56AB2F 100%);
+    --grad-orange: linear-gradient(135deg, #FFB75E 0%, #ED8F03 100%);
+    --grad-purple: linear-gradient(135deg, #C471ED 0%, #8A2387 100%);
+    --grad-nav: linear-gradient(90deg, rgba(85,50,255,0.7), rgba(150,50,255,0.7));
 
-    /* ── Borders ────────────────────────────────────────────────── */
-    --border: 0 0% 100% / 0.10;
-    --input:  244 86% 64% / 0.5;   /* indigo tint for inputs */
-    --ring:   309 81% 67%;         /* Hot pink ring */
-
-    --radius: 0.5rem;
-    --tl-radius-panel: 16px;
-    --tl-radius-control: 8px;
-    --tl-gap: clamp(14px, 1.8vw, 24px);
-
-    /* ── Spring easing ──────────────────────────────────────────── */
     --spring: cubic-bezier(0.32, 0.72, 0, 1);
   }
 }
@@ -78,31 +64,29 @@
   }
 
   body {
-    background: #000000;
+    background: #0E0C15;
     color: #FFFFFF;
-    font-family: 'Inter', 'PP Mori', Arial, sans-serif;
+    font-family: 'Outfit', 'Inter', Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    font-size: 16px;
+    font-size: 15px;
     line-height: 1.5;
+    font-weight: 400;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Inter', 'PP Mori', Arial, sans-serif;
-    font-weight: 700;
-    letter-spacing: 0;
-    line-height: 1.1;
+    font-family: 'Outfit', 'Inter', Arial, sans-serif;
+    font-weight: 500;
+    letter-spacing: -0.01em;
     color: #FFFFFF;
   }
 
-  /* Brand wordmark: Fredoka ExtraBold */
   .font-brand {
-    font-family: 'Fredoka', 'PP Mori', 'Arial Black', Arial, sans-serif;
-    font-weight: 800;
+    font-family: 'Zen Dots', monospace;
   }
 
-  code, pre, kbd, samp, .font-mono {
-    font-family: ui-monospace, 'SF Mono', 'JetBrains Mono', 'Courier New', monospace;
+  .font-mono {
+    font-family: 'Zen Dots', 'Space Mono', monospace;
   }
 
   #root {
@@ -114,141 +98,73 @@
   }
 }
 
-/* ── Keyframes ──────────────────────────────────────────────────── */
 @layer utilities {
-
-  /* Fredoka brand font — for wordmarks and large display headlines */
   .font-brand {
-    font-family: 'Fredoka', 'PP Mori', 'Arial Black', Arial, sans-serif !important;
-    font-weight: 800 !important;
+    font-family: 'Zen Dots', monospace !important;
+  }
+  .font-data {
+    font-family: 'Zen Dots', monospace !important;
+    letter-spacing: 0.05em;
   }
 
-
-
-  /* Status dot — starting-soon pulse, once every 2 s */
-  @keyframes status-pulse {
-    0%, 100% { opacity: 1; }
-    50%       { opacity: 0.35; }
-  }
-
-  /* Accordion (shadcn) */
-  @keyframes accordion-down {
-    from { height: 0; }
-    to   { height: var(--radix-accordion-content-height); }
-  }
-  @keyframes accordion-up {
-    from { height: var(--radix-accordion-content-height); }
-    to   { height: 0; }
-  }
-
-  /* Generic fade-in */
   @keyframes fade-in {
     from { opacity: 0; transform: translateY(6px); }
     to   { opacity: 1; transform: translateY(0); }
   }
 
-  /* Button press scale */
-  @keyframes press {
-    0%   { transform: scale(1); }
-    50%  { transform: scale(0.96); }
-    100% { transform: scale(1); }
+  .animate-fade-in { animation: fade-in 0.4s var(--spring) both; }
+
+  /* KIVO Specific UI Utilities */
+  .kivo-shell {
+    @apply bg-[#0E0C15] min-h-screen text-white relative overflow-x-hidden;
   }
 
-  /* ── Utility classes ────────────────────────────────────────── */
-  .animate-status-pulse {
-    animation: status-pulse 2s ease-in-out infinite;
+  .kivo-nav-bar {
+    background: var(--grad-nav);
+    backdrop-filter: blur(20px) saturate(150%);
+    -webkit-backdrop-filter: blur(20px) saturate(150%);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 10px 40px rgba(130, 50, 255, 0.4);
   }
 
-  .animate-fade-in {
-    animation: fade-in 0.35s var(--spring) both;
+  .kivo-glass-panel {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(24px) saturate(120%);
+    -webkit-backdrop-filter: blur(24px) saturate(120%);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: var(--tl-radius-panel);
   }
 
-  .animate-press:active {
-    animation: press 0.15s var(--spring) both;
+  .kivo-block-magenta {
+    background: var(--grad-magenta);
+    border-radius: var(--tl-radius-panel);
+    box-shadow: 0 16px 40px rgba(216, 27, 96, 0.3);
+    color: white;
+  }
+  .kivo-block-lime {
+    background: var(--grad-lime);
+    border-radius: var(--tl-radius-panel);
+    box-shadow: 0 16px 40px rgba(86, 171, 47, 0.3);
+    color: white;
+  }
+  .kivo-block-orange {
+    background: var(--grad-orange);
+    border-radius: var(--tl-radius-panel);
+    box-shadow: 0 16px 40px rgba(237, 143, 3, 0.3);
+    color: white;
+  }
+  .kivo-block-purple {
+    background: var(--grad-purple);
+    border-radius: var(--tl-radius-panel);
+    box-shadow: 0 16px 40px rgba(138, 35, 135, 0.3);
+    color: white;
   }
 
-  /* Thin custom scrollbar */
-  .scrollbar-thin {
-    scrollbar-width: thin;
-    scrollbar-color: rgba(255,255,255,0.12) transparent;
-  }
-  .scrollbar-thin::-webkit-scrollbar { width: 5px; height: 5px; }
-  .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
-  .scrollbar-thin::-webkit-scrollbar-thumb {
-    background: rgba(255,255,255,0.12);
-    border-radius: 99px;
+  .kivo-btn-primary {
+    @apply bg-[#FF007A] text-white font-medium rounded-full px-8 py-3.5 hover:brightness-110 active:scale-[0.98] transition-all shadow-[0_8px_24px_rgba(255,0,122,0.4)];
   }
 
-  /* Grain overlay helper — use on ::after of gradient cards */
-  .grain::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    pointer-events: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
-    opacity: 1;
-    z-index: 1;
+  .kivo-input {
+    @apply bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] text-white px-5 py-4 placeholder:text-white/30 focus-visible:ring-1 focus-visible:ring-[#FF007A] transition-all outline-none backdrop-blur-md rounded-[20px];
   }
-
-  /* ── FigJam Tinkerer Utility Classes ────────────────────────── */
-
-  .tl-shell {
-    @apply bg-black min-h-screen text-white flex flex-col md:flex-row;
-  }
-
-  .tl-rail {
-    @apply hidden md:flex flex-col bg-[#151515] border-r border-white/5 w-[88px] lg:w-[220px] h-screen sticky top-0;
-  }
-
-  .tl-panel-indigo {
-    @apply bg-indigo rounded-[16px] p-6 text-white;
-  }
-
-  .tl-panel-cream {
-    @apply bg-cream rounded-[16px] p-6 text-near-black;
-  }
-
-  .tl-panel-pink {
-    @apply bg-pink rounded-[16px] p-6 text-black;
-  }
-
-  .tl-stat-strip {
-    @apply bg-cream rounded-full px-6 py-4 flex items-center gap-8 text-near-black font-semibold;
-  }
-
-  .tl-pill-button {
-    @apply rounded-full bg-pink text-black font-bold px-8 py-3 uppercase tracking-wide hover:brightness-110 active:scale-95 transition-all text-sm;
-  }
-  .tl-pill-button-secondary {
-    @apply rounded-full bg-charcoal text-white font-bold px-8 py-3 uppercase tracking-wide hover:brightness-110 active:scale-95 transition-all text-sm;
-  }
-
-  .tl-input {
-    @apply bg-[#675FF3] border border-white/5 text-white rounded-[8px] px-4 py-3 placeholder:text-white/45 focus-visible:ring-2 focus-visible:ring-pink transition-all;
-  }
-  .tl-input-label {
-    @apply uppercase text-[10px] font-bold text-white/70 mb-1 block tracking-[0.08em];
-  }
-
-  .tl-modal-overlay {
-    @apply fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4;
-  }
-  
-  .tl-modal-content {
-    @apply bg-indigo rounded-[12px] p-8 w-full max-w-md shadow-2xl;
-  }
-
-  .tl-chart-card {
-    @apply bg-cream rounded-[16px] p-6 flex flex-col text-near-black;
-  }
-
-  /* Status chips */
-  .tl-chip {
-    @apply rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-black inline-flex items-center;
-  }
-  .tl-chip-lime { @apply bg-lime; }
-  .tl-chip-orange { @apply bg-orange; }
-  .tl-chip-pink { @apply bg-pink; }
-  .tl-chip-charcoal { @apply bg-charcoal text-white; }
 }

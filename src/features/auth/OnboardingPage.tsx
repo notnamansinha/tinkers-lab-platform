@@ -197,7 +197,7 @@ export default function OnboardingPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-black text-white p-4 py-8 md:p-12 relative overflow-hidden">
       {/* Profile Wizard Panel */}
-      <div className="w-full max-w-[560px] tl-panel-indigo shadow-2xl border-4 border-black/20 p-8 rounded-2xl relative z-10">
+      <div className="w-full max-w-[560px] bg-[rgba(81,74,241,0.15)] border border-[rgba(81,74,241,0.3)] text-white shadow-2xl border-4 border-white/10 p-8 rounded-2xl relative z-10">
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-9 h-9 bg-white flex items-center justify-center rounded-[8px] shadow-sm overflow-hidden">
@@ -224,8 +224,8 @@ export default function OnboardingPage() {
                   <div className="flex items-center gap-2">
                     <div className={cn(
                       'w-8 h-8 rounded-full text-sm font-black flex items-center justify-center transition-colors shadow-lg border-2',
-                      isActive ? 'bg-pink text-black border-pink' :
-                      isDone ? 'bg-pink text-black border-pink' : 'bg-black/20 text-white/40 border-transparent'
+                      isActive ? 'bg-pink text-white border-pink' :
+                      isDone ? 'bg-pink text-white border-pink' : 'bg-white/5 text-white/40 border-transparent'
                     )}>
                       {isDone ? '✓' : idx}
                     </div>
@@ -233,7 +233,7 @@ export default function OnboardingPage() {
                       {label}
                     </span>
                   </div>
-                  {i < STEPS.length - 1 && <div className={cn('flex-1 h-1 rounded-full', step > idx ? 'bg-pink' : 'bg-black/20')} />}
+                  {i < STEPS.length - 1 && <div className={cn('flex-1 h-1 rounded-full', step > idx ? 'bg-pink' : 'bg-white/5')} />}
                 </React.Fragment>
               )
             })}
@@ -260,7 +260,7 @@ export default function OnboardingPage() {
                       'flex items-center gap-4 p-4 rounded-xl border-4 cursor-pointer transition-all',
                       watch('userType') === value
                         ? 'border-pink bg-pink/10'
-                        : 'border-black/20 bg-black/10 hover:border-white/20 hover:bg-black/20'
+                        : 'border-white/10 bg-black/10 hover:border-white/20 hover:bg-white/5'
                     )}
                   >
                     <input type="radio" value={value} {...register('userType')} className="w-5 h-5 accent-pink" />
@@ -293,7 +293,7 @@ export default function OnboardingPage() {
 
               {/* Conditional Fields based on User Type */}
               {userType === 'Student' && (
-                <div className="space-y-4 pt-4 border-t-2 border-black/20">
+                <div className="space-y-4 pt-4 border-t-2 border-white/10">
                   <p className="text-xs font-black text-pink uppercase tracking-widest">Student Details</p>
                   <div className="grid grid-cols-2 gap-4">
                     <Field label="University ID" required error={errors.universityId?.message}>
@@ -313,7 +313,7 @@ export default function OnboardingPage() {
               )}
 
               {userType === 'Professor or Faculty' && (
-                <div className="space-y-4 pt-4 border-t-2 border-black/20">
+                <div className="space-y-4 pt-4 border-t-2 border-white/10">
                   <p className="text-xs font-black text-pink uppercase tracking-widest">Faculty Details</p>
                   <div className="grid grid-cols-2 gap-4">
                     <Field label="Department" required error={errors.department?.message}>
@@ -333,7 +333,7 @@ export default function OnboardingPage() {
               )}
 
               {userType === 'Venture Studio Startup' && (
-                <div className="space-y-4 pt-4 border-t-2 border-black/20">
+                <div className="space-y-4 pt-4 border-t-2 border-white/10">
                   <p className="text-xs font-black text-pink uppercase tracking-widest">Startup Details</p>
                   <div className="grid grid-cols-2 gap-4">
                     <Field label="Startup Name" required error={errors.startupName?.message}>
@@ -353,7 +353,7 @@ export default function OnboardingPage() {
               )}
 
               {userType === 'External Visitor' && (
-                <div className="space-y-4 pt-4 border-t-2 border-black/20">
+                <div className="space-y-4 pt-4 border-t-2 border-white/10">
                   <p className="text-xs font-black text-pink uppercase tracking-widest">Visitor Details</p>
                   <div className="grid grid-cols-2 gap-4">
                     <Field label="Organization / Institution" required error={errors.organization?.message}>
@@ -375,7 +375,7 @@ export default function OnboardingPage() {
               <p className="text-[11px] text-white/40 text-center mt-6">
                 Please finalize your profile details to book machines, track checkouts, and access Tinkerers' Lab features
               </p>
-              <div className="flex gap-4 pt-4 mt-2 border-t-2 border-black/20">
+              <div className="flex gap-4 pt-4 mt-2 border-t-2 border-white/10">
                 <button type="button" onClick={() => setStep(1)} className="tl-pill-button-secondary flex-1 flex justify-center items-center gap-2">
                   <ChevronLeft size={18} /> Back
                 </button>
@@ -393,7 +393,7 @@ export default function OnboardingPage() {
               
               <label className={cn(
                 'flex items-start gap-4 p-5 rounded-xl border-4 cursor-pointer transition-colors',
-                errors.safetyAgreementAccepted ? 'border-pink bg-pink/10' : 'border-black/20 bg-black/10 hover:border-white/20'
+                errors.safetyAgreementAccepted ? 'border-pink bg-pink/10' : 'border-white/10 bg-black/10 hover:border-white/20'
               )}>
                 <input type="checkbox" {...register('safetyAgreementAccepted')} className="mt-1 w-5 h-5 accent-pink" />
                 <div>
@@ -405,7 +405,7 @@ export default function OnboardingPage() {
               
               <label className={cn(
                 'flex items-start gap-4 p-5 rounded-xl border-4 cursor-pointer transition-colors',
-                errors.termsAccepted ? 'border-pink bg-pink/10' : 'border-black/20 bg-black/10 hover:border-white/20'
+                errors.termsAccepted ? 'border-pink bg-pink/10' : 'border-white/10 bg-black/10 hover:border-white/20'
               )}>
                 <input type="checkbox" {...register('termsAccepted')} className="mt-1 w-5 h-5 accent-pink" />
                 <div>
@@ -418,7 +418,7 @@ export default function OnboardingPage() {
               <p className="text-[11px] text-white/40 text-center mt-6">
                 Please finalize your profile details to book machines, track checkouts, and access Tinkerers' Lab features
               </p>
-              <div className="flex gap-4 pt-4 mt-2 border-t-2 border-black/20">
+              <div className="flex gap-4 pt-4 mt-2 border-t-2 border-white/10">
                 <button type="button" onClick={() => setStep(2)} className="tl-pill-button-secondary flex-1 flex justify-center items-center gap-2">
                   <ChevronLeft size={18} /> Back
                 </button>
