@@ -17,51 +17,50 @@ const config = {
     },
     extend: {
       fontFamily: {
-        // Brand/display: Fredoka ExtraBold for wordmark and large headlines
-        brand:   ['Fredoka', 'PP Mori', 'Arial Black', 'sans-serif'],
-        // Body/labels: Inter for all UI text, inputs, numbers, helper text
-        sans:    ['Inter', 'PP Mori', 'Arial', 'sans-serif'],
-        // Legacy display fallback
-        display: ['PP Mori', 'Arial Black', 'Arial', 'sans-serif'],
+        brand:   ['Outfit', 'Inter', 'Arial Black', 'sans-serif'],
+        sans:    ['Outfit', 'Inter', 'Arial', 'sans-serif'],
+        display: ['Outfit', 'Inter', 'Arial Black', 'sans-serif'],
         mono:    ['ui-monospace', 'SF Mono', 'JetBrains Mono', 'Courier New', 'monospace'],
       },
 
       colors: {
         // ── FigJam Palette Tokens ──────────────────────────────
-        black: '#000000',
-        'near-black': '#101010',
-        charcoal: '#191919',
-        pink: '#EC68D8',
-        indigo: '#514AF1',
-        'electric-blue': '#4C48F2',
-        lime: '#DDF237',
-        orange: '#FFB13F',
-        cream: '#FFF4BE',
-        sand: '#A9957A',
-        beige: '#E1D7A8',
-        'modal-blue': '#5A53F4',
-        'track-purple': '#746EF8',
-        white: '#FFFFFF',
+        black: 'rgb(var(--color-ink-rgb) / <alpha-value>)',
+        'near-black': 'rgb(var(--color-surface-dark-rgb) / <alpha-value>)',
+        charcoal: 'rgb(var(--color-surface-dark-alt-rgb) / <alpha-value>)',
+        pink: 'rgb(var(--color-accent-pink-rgb) / <alpha-value>)',
+        'pink-deep': 'rgb(var(--color-accent-pink-deep-rgb) / <alpha-value>)',
+        indigo: 'rgb(var(--color-brand-indigo-rgb) / <alpha-value>)',
+        'indigo-light': 'rgb(var(--color-brand-indigo-light-rgb) / <alpha-value>)',
+        'electric-blue': 'rgb(var(--color-brand-indigo-rgb) / <alpha-value>)',
+        lime: 'rgb(var(--color-accent-lime-rgb) / <alpha-value>)',
+        orange: 'rgb(var(--color-accent-orange-rgb) / <alpha-value>)',
+        cream: 'rgb(var(--color-cream-rgb) / <alpha-value>)',
+        sand: 'rgb(var(--color-tan-rgb) / <alpha-value>)',
+        beige: 'rgb(var(--color-chart-muted-rgb) / <alpha-value>)',
+        'modal-blue': 'rgb(var(--color-brand-indigo-rgb) / <alpha-value>)',
+        'track-purple': 'rgb(var(--color-brand-indigo-light-rgb) / <alpha-value>)',
+        white: 'rgb(var(--color-paper-rgb) / <alpha-value>)',
 
         // Legacy compatibility
-        canvas:  '#08090B',
-        surface: '#141518',
-        'accent-blue': '#0A84FF',
-        graphite: '#08090B',
-        steel:    '#141518',
-        hairline: 'rgba(255,255,255,0.10)',
-        chalk:    '#F5F5F7',
-        hazard:   '#FF9500',
-        'signal-green': '#34C759',
-        'signal-amber': '#FF9500',
-        'signal-red':   '#FF3B30',
-        'signal-grey':  '#8E8E93',
+        canvas: 'rgb(var(--color-ink-rgb) / <alpha-value>)',
+        surface: 'rgb(var(--color-surface-dark-rgb) / <alpha-value>)',
+        'accent-blue': 'rgb(var(--color-brand-indigo-rgb) / <alpha-value>)',
+        graphite: 'rgb(var(--color-ink-rgb) / <alpha-value>)',
+        steel: 'rgb(var(--color-surface-dark-alt-rgb) / <alpha-value>)',
+        hairline: 'rgb(var(--color-line-dark-rgb) / <alpha-value>)',
+        chalk: 'rgb(var(--color-paper-rgb) / <alpha-value>)',
+        hazard: 'rgb(var(--color-accent-orange-rgb) / <alpha-value>)',
+        'signal-green': 'rgb(var(--color-accent-lime-rgb) / <alpha-value>)',
+        'signal-amber': 'rgb(var(--color-accent-orange-rgb) / <alpha-value>)',
+        'signal-red': 'rgb(var(--color-accent-pink-deep-rgb) / <alpha-value>)',
+        'signal-grey': 'rgb(var(--color-neutral-mid-rgb) / <alpha-value>)',
 
         // Status dots
-        'status-green':  '#DDF237', // lime for available/success
-        'status-orange': '#FFB13F', // orange for pending/warning
-        'status-red':    '#EC68D8', // pink for destructive/attention
-        'status-grey':   '#191919', // charcoal for disabled
+        'status-green': 'rgb(var(--color-accent-lime-rgb) / <alpha-value>)',
+        'status-orange': 'rgb(var(--color-accent-orange-rgb) / <alpha-value>)',
+        'status-red': 'rgb(var(--color-accent-pink-rgb) / <alpha-value>)',
+        'status-grey': 'rgb(var(--color-surface-dark-alt-rgb) / <alpha-value>)',
 
         // ── shadcn/ui CSS-var tokens ──────────────────────────────
         border:     'hsl(var(--border))',
@@ -100,13 +99,13 @@ const config = {
       },
 
       borderRadius: {
-        tile: '32px',
-        card: '24px',
-        panel: '12px',
-        chip:  '999px',
+        tile: 'var(--radius-lg)',
+        card: 'var(--radius-lg)',
+        panel: 'var(--radius-md)',
+        chip: 'var(--radius-full)',
         lg:   'var(--radius)',
-        md:   'calc(var(--radius) - 2px)',
-        sm:   'calc(var(--radius) - 4px)',
+        md:   'var(--radius-md)',
+        sm:   'var(--radius-sm)',
       },
 
       // 8px grid spacing tokens: 1u = 8px, 2u = 16px, etc.
