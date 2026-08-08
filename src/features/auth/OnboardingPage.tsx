@@ -8,10 +8,10 @@ import { createUserProfile } from '@/services/firebase/auth'
 import { useAuth } from '@/contexts/AuthContext'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
-import logoMark from '@/assets/tinkerer-figjam/tinkerer-lab-board.webp'
+import { AgreementCard, BrandLockup, FullBleedQuestionCard } from '@/components/visual'
 
 import { Label } from '@/components/ui/label'
-import type { UserType, UserProfile } from '@/types'
+import type { UserType } from '@/types'
 
 const USER_TYPES: { value: UserType; label: string; description: string }[] = [
   { value: 'Student', label: 'Student', description: 'University student working on coursework or personal projects' },
@@ -195,21 +195,18 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-black text-[#56779D] p-4 py-8 md:p-12 relative overflow-hidden">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-black p-4 py-8 text-white md:p-12">
       {/* Profile Wizard Panel */}
-      <div className="w-full max-w-[560px] bg-[rgba(81,74,241,0.15)] border border-[rgba(81,74,241,0.3)] text-[#56779D] shadow-2xl border-4 border-white/10 p-8 rounded-2xl relative z-10">
+      <div className="relative z-10 w-full max-w-3xl rounded-card border border-hairline bg-near-black p-6 text-white md:p-8">
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-9 h-9 bg-white flex items-center justify-center rounded-[8px] shadow-sm overflow-hidden">
-              <img src={logoMark} alt="Logo" className="w-full h-full object-contain" />
-            </div>
+            <BrandLockup compact />
             <div>
-              <h1 className="font-display uppercase text-2xl font-black leading-none">Tinkerers Lab</h1>
-              <p className="text-[#7D9FC2] text-[10px] font-bold uppercase tracking-wider mt-0.5">Ahmedabad University</p>
+              <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wider text-white/45">Ahmedabad University</p>
             </div>
           </div>
           <h2 className="font-display uppercase text-xl font-black mb-1">Complete your profile</h2>
-          <p className="text-[#7D9FC2] text-xs font-semibold">
+          <p className="text-xs font-semibold text-white/50">
             Logged in as <span className="text-pink font-bold">{user?.email}</span>
           </p>
 
@@ -224,16 +221,16 @@ export default function OnboardingPage() {
                   <div className="flex items-center gap-2">
                     <div className={cn(
                       'w-8 h-8 rounded-full text-sm font-black flex items-center justify-center transition-colors shadow-lg border-2',
-                      isActive ? 'bg-pink text-[#56779D] border-pink' :
-                      isDone ? 'bg-pink text-[#56779D] border-pink' : 'bg-white/5 text-[#7D9FC2] border-transparent'
+                      isActive ? 'bg-pink text-black border-pink' :
+                      isDone ? 'bg-lime text-black border-lime' : 'bg-charcoal text-white/40 border-transparent'
                     )}>
                       {isDone ? '✓' : idx}
                     </div>
-                    <span className={cn('text-xs uppercase font-bold tracking-wider hidden sm:block', isActive ? 'text-[#56779D]' : 'text-[#7D9FC2]')}>
+                    <span className={cn('text-xs uppercase font-bold tracking-wider hidden sm:block', isActive ? 'text-white' : 'text-white/40')}>
                       {label}
                     </span>
                   </div>
-                  {i < STEPS.length - 1 && <div className={cn('flex-1 h-1 rounded-full', step > idx ? 'bg-pink' : 'bg-white/5')} />}
+                  {i < STEPS.length - 1 && <div className={cn('flex-1 h-1 rounded-full', step > idx ? 'bg-lime' : 'bg-charcoal')} />}
                 </React.Fragment>
               )
             })}
@@ -241,7 +238,7 @@ export default function OnboardingPage() {
         </div>
 
         {error && (
-          <div className="mb-6 p-4 rounded-xl bg-pink/20 border-2 border-pink text-[#56779D] flex items-center gap-3 font-bold text-sm">
+          <div className="mb-6 flex items-center gap-3 rounded-md border border-pink bg-pink/15 p-4 text-sm font-bold text-white">
             <AlertCircle size={20} className="text-pink" />
             {error}
           </div>
@@ -265,13 +262,13 @@ export default function OnboardingPage() {
                   >
                     <input type="radio" value={value} {...register('userType')} className="w-5 h-5 accent-pink" />
                     <div>
-                      <p className="font-bold text-[#56779D] uppercase tracking-wider">{label}</p>
-                      <p className="text-xs font-semibold text-[#7D9FC2] mt-1">{description}</p>
+                      <p className="font-bold uppercase tracking-wider text-white">{label}</p>
+                      <p className="mt-1 text-xs font-semibold text-white/50">{description}</p>
                     </div>
                   </label>
                 ))}
               </div>
-              <p className="text-[11px] text-[#7D9FC2] text-center mt-6">
+              <p className="mt-6 text-center text-[11px] text-white/40">
                 Please finalize your profile details to book machines, track checkouts, and access Tinkerers' Lab features
               </p>
               <button type="button" onClick={handleNextStep} className="tl-pill-button w-full mt-2 flex justify-center items-center gap-2">
@@ -372,7 +369,7 @@ export default function OnboardingPage() {
                 </div>
               )}
 
-              <p className="text-[11px] text-[#7D9FC2] text-center mt-6">
+              <p className="mt-6 text-center text-[11px] text-white/40">
                 Please finalize your profile details to book machines, track checkouts, and access Tinkerers' Lab features
               </p>
               <div className="flex gap-4 pt-4 mt-2 border-t-2 border-white/10">
@@ -388,46 +385,39 @@ export default function OnboardingPage() {
 
           {/* STEP 3: Agreements */}
           {step === 3 && (
-            <div className="space-y-4 animate-in fade-in duration-300 slide-in-from-right-4">
-              <p className="text-sm font-bold text-white/70 uppercase tracking-widest">Please read and confirm.</p>
-              
-              <label className={cn(
-                'flex items-start gap-4 p-5 rounded-xl border-4 cursor-pointer transition-colors',
-                errors.safetyAgreementAccepted ? 'border-pink bg-pink/10' : 'border-white/10 bg-black/10 hover:border-white/20'
-              )}>
-                <input type="checkbox" {...register('safetyAgreementAccepted')} className="mt-1 w-5 h-5 accent-pink" />
-                <div>
-                  <p className="font-bold text-[#56779D] uppercase tracking-wider">Safety Agreement <span className="text-pink">*</span></p>
-                  <p className="text-xs font-semibold text-[#7D9FC2] mt-1">I agree to follow lab safety guidelines and return all tools and equipment after use.</p>
-                  {errors.safetyAgreementAccepted && <p className="text-xs text-pink mt-2 font-bold">{errors.safetyAgreementAccepted.message}</p>}
-                </div>
-              </label>
-              
-              <label className={cn(
-                'flex items-start gap-4 p-5 rounded-xl border-4 cursor-pointer transition-colors',
-                errors.termsAccepted ? 'border-pink bg-pink/10' : 'border-white/10 bg-black/10 hover:border-white/20'
-              )}>
-                <input type="checkbox" {...register('termsAccepted')} className="mt-1 w-5 h-5 accent-pink" />
-                <div>
-                  <p className="font-bold text-[#56779D] uppercase tracking-wider">Terms Agreement <span className="text-pink">*</span></p>
-                  <p className="text-xs font-semibold text-[#7D9FC2] mt-1">I understand that equipment booking is subject to availability and coordinator approval.</p>
-                  {errors.termsAccepted && <p className="text-xs text-pink mt-2 font-bold">{errors.termsAccepted.message}</p>}
-                </div>
-              </label>
-
-              <p className="text-[11px] text-[#7D9FC2] text-center mt-6">
-                Please finalize your profile details to book machines, track checkouts, and access Tinkerers' Lab features
-              </p>
-              <div className="flex gap-4 pt-4 mt-2 border-t-2 border-white/10">
-                <button type="button" onClick={() => setStep(2)} className="tl-pill-button-secondary flex-1 flex justify-center items-center gap-2">
-                  <ChevronLeft size={18} /> Back
-                </button>
-                <button type="submit" disabled={isSubmitting} className="tl-pill-button flex-1 flex justify-center items-center gap-2">
-                  {isSubmitting ? <div className="w-5 h-5 border-4 border-black/30 border-t-black rounded-full animate-spin" /> : <UserPlus size={18} />}
-                  Complete Profile
-                </button>
-              </div>
-            </div>
+            <FullBleedQuestionCard
+              eyebrow="Final step"
+              title="Two promises before you enter the lab."
+              description="Confirm the safety and booking terms that protect you, the equipment, and everyone sharing the space."
+              className="min-h-[34rem]"
+              controls={(
+                <>
+                  <AgreementCard
+                    title="Safety Agreement"
+                    description="I agree to follow lab safety guidelines and return all tools and equipment after use."
+                    inputProps={register('safetyAgreementAccepted')}
+                    error={errors.safetyAgreementAccepted?.message}
+                    required
+                  />
+                  <AgreementCard
+                    title="Terms Agreement"
+                    description="I understand that equipment booking is subject to availability and coordinator approval."
+                    inputProps={register('termsAccepted')}
+                    error={errors.termsAccepted?.message}
+                    required
+                  />
+                  <div className="flex gap-4 border-t border-white/15 pt-4 sm:col-span-2">
+                    <button type="button" onClick={() => setStep(2)} className="tl-pill-button-secondary flex-1 gap-2">
+                      <ChevronLeft size={18} /> Back
+                    </button>
+                    <button type="submit" disabled={isSubmitting} className="tl-pill-button flex-1 gap-2">
+                      {isSubmitting ? <div className="h-5 w-5 animate-spin rounded-full border-4 border-black/30 border-t-black" /> : <UserPlus size={18} />}
+                      Complete Profile
+                    </button>
+                  </div>
+                </>
+              )}
+            />
           )}
         </form>
       </div>
