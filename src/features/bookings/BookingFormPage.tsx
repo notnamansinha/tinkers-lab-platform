@@ -8,18 +8,19 @@ import { collection, query, orderBy, getDocs, where } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { COLLECTIONS } from '@/services/firebase/firestore'
 import { createBooking, getBookingsForSlot } from '@/services/firebase/bookings'
-import { getUserProjects, userHasActiveProject } from '@/services/firebase/projects'
+import { getUserProjects } from '@/services/firebase/projects'
 import { useAuth } from '@/contexts/AuthContext'
-import { ArrowLeft, AlertTriangle, CheckCircle2, Info } from 'lucide-react'
+import { ArrowLeft, AlertTriangle, CheckCircle2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn, todayStr } from '@/lib/utils'
-import type { Equipment, Project } from '@/types'
+import type { Equipment } from '@/types'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { AgreementCard, FullBleedQuestionCard } from '@/components/visual'
 
 // ── Hourly time slots (9am–6pm) ──────────────────────────────────────────────
 const TIME_SLOTS = [
@@ -165,7 +166,7 @@ export default function BookingFormPage() {
   const hasNoProjects = !projectsLoading && projects.length === 0
 
   return (
-    <div className="space-y-6 container py-6 mx-auto max-w-2xl animate-fade-in">
+    <div className="container mx-auto max-w-5xl space-y-6 py-6 animate-fade-in">
 
       {/* Header */}
       <div className="flex items-center gap-4">
@@ -180,8 +181,8 @@ export default function BookingFormPage() {
 
       {/* No project guard */}
       {hasNoProjects && (
-        <div className="flex items-start gap-3 p-4 rounded-xl border-2 border-amber-500/40 bg-amber-500/10">
-          <AlertTriangle className="h-5 w-5 text-amber-500 mt-0.5 shrink-0" />
+        <div className="flex items-start gap-3 rounded-card border border-orange/40 bg-orange/10 p-4">
+          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-orange" />
           <div>
             <p className="font-semibold text-sm text-foreground">You need a registered project first</p>
             <p className="text-xs text-muted-foreground mt-1">
@@ -195,18 +196,18 @@ export default function BookingFormPage() {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
 
         {/* ── Machine & Project ─────────────────────────────────────── */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Machine & Project</CardTitle>
-            <CardDescription>Select the machine and which project this booking is for.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Field label="Machine" required error={errors.equipmentId?.message}>
+        <FullBleedQuestionCard
+          eyebrow="New machine booking"
+          title="What will you build next?"
+          description="Choose the machine and registered project first. Available times will appear as soon as the machine is selected."
+          controls={(
+            <>
+              <Field label="Machine" required error={errors.equipmentId?.message}>
               <select
                 {...register('equipmentId')}
                 className={cn(
-                  'flex h-10 w-full rounded-xl border-2 border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                  errors.equipmentId && 'border-destructive'
+                  'tl-input',
+                  errors.equipmentId && 'border-pink'
                 )}
               >
                 <option value="">— Select a machine —</option>
@@ -215,7 +216,7 @@ export default function BookingFormPage() {
                 ))}
               </select>
               {machines.length === 0 && (
-                <p className="text-xs text-muted-foreground mt-1">No confirmed machines available. Contact a coordinator.</p>
+                <p className="mt-1 text-xs text-white/55">No confirmed machines available. Contact a coordinator.</p>
               )}
             </Field>
 
@@ -224,8 +225,8 @@ export default function BookingFormPage() {
                 {...register('projectId')}
                 disabled={hasNoProjects}
                 className={cn(
-                  'flex h-10 w-full rounded-xl border-2 border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50',
-                  errors.projectId && 'border-destructive'
+                  'tl-input disabled:opacity-50',
+                  errors.projectId && 'border-pink'
                 )}
               >
                 <option value="">— Select a project —</option>
@@ -234,8 +235,9 @@ export default function BookingFormPage() {
                 ))}
               </select>
             </Field>
-          </CardContent>
-        </Card>
+            </>
+          )}
+        />
 
         {/* ── Date & Time ───────────────────────────────────────────── */}
         {watchEquipmentId && (
@@ -403,19 +405,13 @@ export default function BookingFormPage() {
 
         {/* ── Safety Agreement (Spec 2 required checkbox) ───────────── */}
         {watchEquipmentId && (
-          <label className={cn(
-            'flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-colors',
-            errors.safetyAgreementAccepted ? 'border-destructive bg-destructive/5' : 'border-border hover:border-primary/40'
-          )}>
-            <input type="checkbox" {...register('safetyAgreementAccepted')} className="mt-0.5 w-4 h-4 accent-primary rounded" />
-            <div>
-              <p className="text-sm font-semibold text-foreground">Safety Agreement <span className="text-destructive">*</span></p>
-              <p className="text-xs text-muted-foreground mt-1">
-                I have received or will receive proper training for this machine, and I agree to follow all lab safety guidelines.
-              </p>
-              {errors.safetyAgreementAccepted && <p className="text-xs text-destructive mt-1">{errors.safetyAgreementAccepted.message}</p>}
-            </div>
-          </label>
+          <AgreementCard
+            title="Safety Agreement"
+            description="I have received or will receive proper training for this machine, and I agree to follow all lab safety guidelines."
+            inputProps={register('safetyAgreementAccepted')}
+            error={errors.safetyAgreementAccepted?.message}
+            required
+          />
         )}
 
         {/* ── Submit ────────────────────────────────────────────────── */}

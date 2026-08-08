@@ -2,11 +2,11 @@ import React from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { COLLECTIONS } from '@/services/firebase/firestore'
-import { doc, getDoc, collection, addDoc, updateDoc } from 'firebase/firestore'
+import { doc, getDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { updateBookingStatus } from '@/services/firebase/bookings'
 import { useAuth } from '@/contexts/AuthContext'
-import { ArrowLeft, CheckCircle, XCircle, Trash2 } from 'lucide-react'
+import { ArrowLeft, XCircle, Trash2 } from 'lucide-react'
 import { formatDateTime } from '@/lib/utils'
 import { toast } from 'sonner'
 import type { Booking } from '@/types'
@@ -19,7 +19,7 @@ import { Badge } from '@/components/ui/badge'
 export default function BookingDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { isStaff, user, profile } = useAuth()
+  const { isStaff, user } = useAuth()
   const qc = useQueryClient()
 
   const { data: booking, isLoading } = useQuery({
@@ -35,14 +35,6 @@ export default function BookingDetailPage() {
   if (isLoading) return <LoadingSpinner text="Loading booking…" />
   if (!booking) return <div className="py-16 text-center text-muted-foreground">Booking not found. <Link to="/bookings" className="text-primary hover:underline">← Back</Link></div>
 
-  const canManage = isStaff || booking.userId === user?.uid
-
-  const approve = async () => {
-    await updateBookingStatus(id!, 'approved')
-    toast.success('Approved')
-    qc.invalidateQueries({ queryKey: ['bookings'] })
-  }
-  
   const reject = async () => {
     const reason = window.prompt('Rejection reason:') || ''
     await updateBookingStatus(id!, 'rejected', { rejectionReason: reason })
@@ -65,14 +57,15 @@ export default function BookingDetailPage() {
   }[booking.status] as any || 'outline'
 
   return (
-    <div className="container py-6 mx-auto max-w-3xl space-y-6 animate-fade-in">
-      <div className="flex items-center gap-4">
+    <div className="container mx-auto max-w-4xl space-y-6 py-6 animate-fade-in">
+      <div className="flex items-center gap-4 rounded-card bg-indigo p-6 md:p-8">
         <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div className="flex-1">
-          <p className="text-sm font-mono text-muted-foreground">Booking #{id?.slice(-8).toUpperCase()}</p>
-          <h1 className="text-3xl font-bold tracking-tight">{booking.machineName}</h1>
+          <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-white/55">Booking #{id?.slice(-8).toUpperCase()}</p>
+          <h1 className="mt-2 text-4xl font-extrabold tracking-[-0.05em] text-white md:text-5xl">{booking.machineName}</h1>
+          <p className="mt-3 text-sm font-medium text-white/65">Your booking details, safety acknowledgement, and approval status.</p>
         </div>
         <Badge variant={badgeVariant} className="text-sm px-3 py-1 capitalize">
           {booking.status}
@@ -105,7 +98,7 @@ export default function BookingDetailPage() {
             <p className="font-medium font-mono">{booking.projectId || '—'}</p>
           </div>
 
-          <div className="col-span-full space-y-1 bg-muted/30 p-4 rounded-lg border">
+          <div className="col-span-full space-y-1 rounded-md border border-hairline bg-charcoal p-4">
             <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Purpose</p>
             <p className="font-medium mt-1">{booking.purpose}</p>
           </div>
@@ -121,13 +114,13 @@ export default function BookingDetailPage() {
           </div>
 
           {booking.status === 'rejected' && (
-            <div className="col-span-full space-y-1 bg-destructive/10 border-destructive/20 border p-4 rounded-lg">
+            <div className="col-span-full space-y-1 rounded-md border border-pink/30 bg-pink/10 p-4">
               <p className="text-xs text-destructive font-medium uppercase tracking-wider">Rejection Reason</p>
               <p className="font-medium text-sm text-destructive mt-1">{booking.rejectionReason || 'No reason provided.'}</p>
             </div>
           )}
         </CardContent>
-        <CardFooter className="bg-muted/30 border-t px-6 py-4 flex flex-wrap gap-3">
+        <CardFooter className="flex flex-wrap gap-3 border-t border-hairline bg-charcoal px-6 py-4">
           {booking.status === 'approved' && (
             <>
               {isStaff && (
