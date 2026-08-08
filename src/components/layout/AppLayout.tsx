@@ -1,17 +1,17 @@
-import React from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { Box, Calendar, LayoutDashboard, LogOut, MessageSquare, Wrench, ShieldCheck, Asterisk } from 'lucide-react'
+import { Box, Calendar, LayoutDashboard, LogOut, MessageSquare, ShieldCheck, Wrench } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { signOut } from '@/services/firebase/auth'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
+import { BrandLockup, FlowerMark } from '@/components/visual'
 
 const NAV_LINKS = [
-  { name: 'HOME',     icon: LayoutDashboard, path: '/' },
-  { name: 'MACHINES', icon: Wrench,          path: '/equipment' },
-  { name: 'BOOKINGS', icon: Calendar,        path: '/bookings' },
-  { name: 'INVENTORY',icon: Box,             path: '/inventory' },
-  { name: 'PROJECTS', icon: MessageSquare,   path: '/projects' },
+  { name: 'Dashboard', shortName: 'Home', icon: LayoutDashboard, path: '/' },
+  { name: 'Machines', shortName: 'Machines', icon: Wrench, path: '/equipment' },
+  { name: 'Bookings', shortName: 'Bookings', icon: Calendar, path: '/bookings' },
+  { name: 'Inventory', shortName: 'Inventory', icon: Box, path: '/inventory' },
+  { name: 'Projects', shortName: 'Projects', icon: MessageSquare, path: '/projects' },
 ]
 
 export default function AppLayout() {
@@ -36,75 +36,127 @@ export default function AppLayout() {
     .toUpperCase()
 
   return (
-    <div className="kivo-shell">
-      {/* Light Frosted Header */}
-      <header className="flex flex-col md:flex-row md:items-center justify-between p-6 max-w-6xl mx-auto w-full gap-6">
-        <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
-          <Asterisk size={32} className="text-[#6FA9FF]" strokeWidth={2.5} />
-          <span className="font-brand text-[#56779D] font-medium text-[24px] tracking-tight lowercase mt-1">tinkerer</span>
-        </div>
-        
-        {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center gap-8 bg-white/40 backdrop-blur-xl px-8 py-3 rounded-full border border-white/40 shadow-sm">
-          {NAV_LINKS.map(link => (
+    <div className="min-h-screen bg-black text-white">
+      <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-hairline bg-black px-4 md:hidden">
+        <button type="button" onClick={() => navigate('/')} aria-label="Go to dashboard">
+          <BrandLockup compact />
+        </button>
+        <button
+          type="button"
+          onClick={() => navigate('/onboarding')}
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-pink text-xs font-extrabold text-black"
+          aria-label="Open profile"
+        >
+          {initials}
+        </button>
+      </header>
+
+      <div className="mx-auto flex min-h-screen w-full max-w-[1440px] gap-0 md:p-6">
+        <aside className="hidden w-60 shrink-0 flex-col rounded-card bg-charcoal p-4 md:flex md:min-h-[calc(100vh-3rem)] md:sticky md:top-6">
+          <button
+            type="button"
+            onClick={() => navigate('/')}
+            className="mb-8 flex items-center gap-3 rounded-md px-3 py-2 text-left"
+            aria-label="Go to dashboard"
+          >
+            <FlowerMark className="h-9 w-9" />
+            <span className="font-brand text-xl lowercase text-pink">tinkerers lab</span>
+          </button>
+
+          <nav className="flex flex-col gap-2" aria-label="Main navigation">
+            {NAV_LINKS.map(link => {
+              const active = isActive(link.path)
+              return (
+                <button
+                  key={link.path}
+                  type="button"
+                  onClick={() => navigate(link.path)}
+                  aria-current={active ? 'page' : undefined}
+                  className={cn(
+                    'flex h-12 items-center gap-3 rounded-md px-4 text-sm font-semibold transition-colors',
+                    active ? 'bg-indigo text-white' : 'text-white/55 hover:bg-near-black hover:text-white',
+                  )}
+                >
+                  <link.icon className="h-5 w-5" aria-hidden="true" />
+                  {link.name}
+                </button>
+              )
+            })}
+            {isStaff && (
+              <button
+                type="button"
+                onClick={() => navigate('/admin')}
+                aria-current={location.pathname.startsWith('/admin') ? 'page' : undefined}
+                className={cn(
+                  'flex h-12 items-center gap-3 rounded-md px-4 text-sm font-semibold transition-colors',
+                  location.pathname.startsWith('/admin')
+                    ? 'bg-indigo text-white'
+                    : 'text-white/55 hover:bg-near-black hover:text-white',
+                )}
+              >
+                <ShieldCheck className="h-5 w-5" aria-hidden="true" />
+                Admin
+              </button>
+            )}
+          </nav>
+
+          <div className="mt-auto flex items-center gap-3 rounded-md bg-near-black p-3">
+            <button
+              type="button"
+              onClick={() => navigate('/onboarding')}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-pink text-xs font-extrabold text-black"
+              aria-label="Open profile"
+            >
+              {initials}
+            </button>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-bold text-white">{profile?.displayName || 'Lab member'}</p>
+              <button type="button" onClick={handleSignOut} className="mt-0.5 text-xs font-semibold text-pink hover:underline">
+                Sign out
+              </button>
+            </div>
+            <LogOut className="h-4 w-4 text-white/35" aria-hidden="true" />
+          </div>
+        </aside>
+
+        <main className="min-w-0 flex-1 pb-24 md:pb-0">
+          <div className="relative hidden h-20 items-center justify-between px-8 md:flex">
+            <BrandLockup compact className="mx-auto" />
+            <button
+              type="button"
+              onClick={() => navigate('/onboarding')}
+              className="absolute right-8 flex h-9 w-9 items-center justify-center rounded-full bg-pink text-xs font-extrabold text-black"
+              aria-label="Open profile"
+            >
+              {initials}
+            </button>
+          </div>
+          <div className="w-full px-4 py-6 md:px-8 md:pb-8 md:pt-0">
+            <Outlet />
+          </div>
+        </main>
+      </div>
+
+      <nav className="fixed inset-x-3 bottom-3 z-50 flex items-center justify-around rounded-full border border-hairline bg-charcoal px-2 py-3 md:hidden" aria-label="Mobile navigation">
+        {NAV_LINKS.map(link => {
+          const active = isActive(link.path)
+          return (
             <button
               key={link.path}
+              type="button"
               onClick={() => navigate(link.path)}
+              aria-current={active ? 'page' : undefined}
+              aria-label={link.shortName}
               className={cn(
-                "font-brand text-[14px] font-medium tracking-wide transition-colors",
-                isActive(link.path) ? "text-[#56779D] font-bold" : "text-[#7D9FC2] hover:text-[#56779D]"
+                'flex h-11 w-11 items-center justify-center rounded-full transition-colors',
+                active ? 'bg-indigo text-white' : 'text-white/45',
               )}
             >
-              {link.name}
+              <link.icon className="h-5 w-5" aria-hidden="true" />
             </button>
-          ))}
-        </nav>
-
-        <div className="flex items-center gap-4">
-          {isStaff && (
-            <button
-              className="font-brand text-[#7D9FC2] hover:text-[#56779D] text-[14px] font-medium uppercase tracking-wide transition-colors flex items-center gap-1.5"
-              onClick={() => navigate('/admin')}
-            >
-              <ShieldCheck size={18} strokeWidth={2} />
-              ADMIN
-            </button>
-          )}
-          <button 
-            className="w-10 h-10 rounded-full bg-white/50 flex items-center justify-center border border-white hover:border-[#6FA9FF] transition-all shadow-sm"
-            onClick={() => navigate('/onboarding')}
-          >
-             <span className="text-[#56779D] text-xs font-bold">{initials}</span>
-          </button>
-          <button
-            className="text-[#7D9FC2] hover:text-[#56779D] transition-colors"
-            onClick={handleSignOut}
-          >
-            <LogOut size={20} strokeWidth={2} />
-          </button>
-        </div>
-      </header>
-      
-      {/* Mobile Navigation */}
-      <nav className="md:hidden fixed bottom-6 left-6 right-6 bg-white/60 backdrop-blur-2xl border border-white/50 shadow-lg rounded-full z-50 flex items-center justify-around px-2 py-4 pb-safe">
-        {NAV_LINKS.map(link => (
-          <button
-            key={link.path}
-            onClick={() => navigate(link.path)}
-            className={cn(
-              "flex flex-col items-center justify-center w-full h-full gap-1.5 transition-colors",
-              isActive(link.path) ? "text-[#56779D]" : "text-[#7D9FC2]"
-            )}
-          >
-            <link.icon size={22} strokeWidth={isActive(link.path) ? 2.5 : 2} />
-          </button>
-        ))}
+          )
+        })}
       </nav>
-
-      {/* Main Content Area */}
-      <main className="flex-1 w-full max-w-6xl mx-auto px-4 pb-28 md:pb-12 z-10 relative">
-        <Outlet />
-      </main>
     </div>
   )
 }
