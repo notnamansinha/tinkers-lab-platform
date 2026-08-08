@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { COLLECTIONS } from '@/services/firebase/firestore'
-import { doc, getDoc, collection, addDoc, updateDoc } from 'firebase/firestore'
+import { doc, getDoc, updateDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { createProject } from '@/services/firebase/projects'
 import { useAuth } from '@/contexts/AuthContext'
@@ -20,6 +20,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { AgreementCard } from '@/components/visual'
 
 // ── Equipment checkboxes per Spec 1 Form 1 Section 6 ────────────────────────
 const EQUIPMENT_NEEDS: ExpectedEquipmentNeed[] = [
@@ -274,33 +275,21 @@ export default function ProjectFormPage() {
               <CardDescription>Please read and confirm before submitting.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-              <label className={cn(
-                'flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-colors',
-                errors.safetyAgreementAccepted ? 'border-destructive bg-destructive/5' : 'border-border hover:border-primary/30'
-              )}>
-                <input type="checkbox" {...register('safetyAgreementAccepted')} className="mt-0.5 w-4 h-4 accent-primary rounded" />
-                <div>
-                  <p className="text-sm font-medium">Safety Agreement <span className="text-destructive">*</span></p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    I agree to follow lab safety guidelines and return all tools and equipment after use.
-                  </p>
-                  {errors.safetyAgreementAccepted && <p className="text-xs text-destructive mt-1">{errors.safetyAgreementAccepted.message}</p>}
-                </div>
-              </label>
+              <AgreementCard
+                title="Safety Agreement"
+                description="I agree to follow lab safety guidelines and return all tools and equipment after use."
+                inputProps={register('safetyAgreementAccepted')}
+                error={errors.safetyAgreementAccepted?.message}
+                required
+              />
 
-              <label className={cn(
-                'flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-colors',
-                errors.termsAccepted ? 'border-destructive bg-destructive/5' : 'border-border hover:border-primary/30'
-              )}>
-                <input type="checkbox" {...register('termsAccepted')} className="mt-0.5 w-4 h-4 accent-primary rounded" />
-                <div>
-                  <p className="text-sm font-medium">Terms Agreement <span className="text-destructive">*</span></p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    I understand that equipment booking is subject to availability and coordinator approval.
-                  </p>
-                  {errors.termsAccepted && <p className="text-xs text-destructive mt-1">{errors.termsAccepted.message}</p>}
-                </div>
-              </label>
+              <AgreementCard
+                title="Terms Agreement"
+                description="I understand that equipment booking is subject to availability and coordinator approval."
+                inputProps={register('termsAccepted')}
+                error={errors.termsAccepted?.message}
+                required
+              />
             </CardContent>
           </Card>
         )}
