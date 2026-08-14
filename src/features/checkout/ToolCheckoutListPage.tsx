@@ -40,10 +40,14 @@ export default function ToolCheckoutListPage() {
     return true
   })
 
-  const handleQuickReturn = async (id: string) => {
-    setReturningId(id)
+  const handleQuickReturn = async (c: ToolCheckout) => {
+    setReturningId(c.id)
     try {
-      await returnTool(id, 'good')
+      await returnTool(c.projectId, c.id, 'good', undefined, {
+        uid: c.userId,
+        name: c.userName,
+        email: c.userEmail,
+      })
       toast.success('Tool marked as returned!')
       queryClient.invalidateQueries({ queryKey: ['toolCheckouts'] })
     } catch {
@@ -165,7 +169,7 @@ export default function ToolCheckoutListPage() {
                     </div>
                     {!c.returnedAt && (
                       <button
-                        onClick={() => handleQuickReturn(c.id)}
+                        onClick={() => handleQuickReturn(c)}
                         disabled={returningId === c.id}
                         className={cn(
                           'shrink-0 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider border transition-all',

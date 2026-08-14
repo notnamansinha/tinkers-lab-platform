@@ -151,7 +151,7 @@ export default function BookingFormPage() {
     if (!user || !profile) { toast.error('Please sign in'); return }
     if (!selectedMachine)  { toast.error('Machine not found'); return }
 
-    const selectedProject = projects.find(p => p.id === data.projectId)
+    const selectedProject = projects.find(p => p.docId === data.projectId)
 
     try {
       await createBooking({
@@ -246,7 +246,7 @@ export default function BookingFormPage() {
               >
                 <option value="">— Select a project —</option>
                 {projects.map(p => (
-                  <option key={p.id} value={p.id}>{p.id} — {p.title}</option>
+                  <option key={p.docId} value={p.docId}>{p.projectCode} — {p.title}</option>
                 ))}
               </select>
               <button

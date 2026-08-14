@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { collection, query, orderBy, getDocs, getCountFromServer, where, limit } from 'firebase/firestore'
+import { collection, collectionGroup, query, orderBy, getDocs, getCountFromServer, where, limit } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { COLLECTIONS } from '@/services/firebase/firestore'
 import { useAuth } from '@/contexts/AuthContext'
@@ -10,7 +10,7 @@ import {
   ResponsiveContainer, PieChart, Pie, Cell, Legend,
 } from 'recharts'
 import { BarChart3, Package, AlertTriangle, Layers3, Calendar, TrendingUp } from 'lucide-react'
-import type { Booking, ToolCheckout, Equipment } from '@/types'
+import type { Booking, Equipment } from '@/types'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 
 // ── Colour palette ────────────────────────────────────────────────────────────
@@ -71,7 +71,7 @@ export default function ReportsPage() {
     queryFn: async () => {
       const statuses = ['approved', 'rejected', 'cancelled', 'completed']
       const counts = await Promise.all(statuses.map(async s => {
-        const q = query(collection(db, COLLECTIONS.BOOKINGS), where('status', '==', s))
+        const q = query(collectionGroup(db, 'bookings'), where('status', '==', s))
         return { name: s, value: (await getCountFromServer(q)).data().count }
       }))
       return counts.filter(c => c.value > 0)
@@ -84,7 +84,7 @@ export default function ReportsPage() {
   const { data: bookingsPerMachine = [] } = useQuery({
     queryKey: ['reports', 'bookings-per-machine'],
     queryFn: async () => {
-      const snap = await getDocs(query(collection(db, COLLECTIONS.BOOKINGS), orderBy('createdAt', 'desc'), limit(200)))
+      const snap = await getDocs(query(collectionGroup(db, 'bookings'), orderBy('createdAt', 'desc'), limit(200)))
       const bookings = snap.docs.map(d => d.data() as Booking)
       const counts: Record<string, { name: string; count: number }> = {}
       for (const b of bookings) {
@@ -120,13 +120,12 @@ export default function ReportsPage() {
 
   // Off-premises vs in-lab
   const offPremises = allCheckouts.filter(c => c.locationOfUse === 'taking_outside' && !c.returnedAt).length
-  const inLab       = allCheckouts.filter(c => c.locationOfUse === 'in_lab'         && !c.returnedAt).length
 
   // ── 4. Filament/material consumables (from bookings) ─────────────────────
   const { data: consumableBookings = [] } = useQuery({
     queryKey: ['reports', 'consumables'],
     queryFn: async () => {
-      const snap = await getDocs(query(collection(db, COLLECTIONS.BOOKINGS), orderBy('createdAt', 'desc'), limit(300)))
+      const snap = await getDocs(query(collectionGroup(db, 'bookings'), orderBy('createdAt', 'desc'), limit(300)))
       return snap.docs.map(d => d.data() as Booking).filter(b => !!b.consumables)
     },
     enabled: isStaff,

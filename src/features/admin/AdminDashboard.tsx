@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { getCountFromServer, collection, query, where, doc, setDoc, serverTimestamp } from 'firebase/firestore'
+import { getCountFromServer, collection, collectionGroup, query, where, doc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { toast } from 'sonner'
 import { COLLECTIONS } from '@/services/firebase/firestore'
@@ -13,11 +13,11 @@ import { DataPanel } from '@/components/common/DataPanel'
 import { KpiTile } from '@/components/common/KpiTile'
 import { ConfirmDialog } from '@/components/common/ConfirmDialog'
 
-function useCount(collectionName: string, field?: string, value?: string) {
+function useCount(collectionName: string, field?: string, value?: string, group = false) {
   return useQuery({
-    queryKey: ['count', collectionName, field, value],
+    queryKey: ['count', collectionName, field, value, group],
     queryFn: async () => {
-      const ref  = collection(db, collectionName)
+      const ref = group ? collectionGroup(db, collectionName) : collection(db, collectionName)
       const q    = field ? query(ref, where(field, '==', value)) : ref
       const snap = await getCountFromServer(q as ReturnType<typeof collection>)
       return snap.data().count
@@ -28,7 +28,8 @@ function useCount(collectionName: string, field?: string, value?: string) {
 
 export default function AdminDashboard() {
   const { data: totalUsers     = 0 } = useCount(COLLECTIONS.USERS)
-  const { data: totalBookings  = 0 } = useCount(COLLECTIONS.BOOKINGS)
+  // Bookings now live under projects/{projectId}/bookings — count via collection group
+  const { data: totalBookings  = 0 } = useCount('bookings', undefined, undefined, true)
   const { data: totalProjects  = 0 } = useCount(COLLECTIONS.PROJECTS)
   const { data: openIssues     = 0 } = useCount(COLLECTIONS.ISSUES,    'status', 'open')
   const { data: lowStock       = 0 } = useCount(COLLECTIONS.INVENTORY, 'status', 'low_stock')

@@ -2,7 +2,7 @@
   "indexes": [
     {
       "collectionGroup": "bookings",
-      "queryScope": "COLLECTION",
+      "queryScope": "COLLECTION_GROUP",
       "fields": [
         { "fieldPath": "date", "order": "ASCENDING" },
         { "fieldPath": "startTime", "order": "ASCENDING" }
@@ -10,7 +10,7 @@
     },
     {
       "collectionGroup": "bookings",
-      "queryScope": "COLLECTION",
+      "queryScope": "COLLECTION_GROUP",
       "fields": [
         { "fieldPath": "userId", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
@@ -18,7 +18,7 @@
     },
     {
       "collectionGroup": "bookings",
-      "queryScope": "COLLECTION",
+      "queryScope": "COLLECTION_GROUP",
       "fields": [
         { "fieldPath": "date", "order": "ASCENDING" },
         { "fieldPath": "status", "order": "ASCENDING" },
@@ -27,7 +27,16 @@
     },
     {
       "collectionGroup": "bookings",
-      "queryScope": "COLLECTION",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "date", "order": "ASCENDING" },
+        { "fieldPath": "startTime", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "bookings",
+      "queryScope": "COLLECTION_GROUP",
       "fields": [
         { "fieldPath": "equipmentId", "order": "ASCENDING" },
         { "fieldPath": "date", "order": "ASCENDING" },
@@ -36,7 +45,7 @@
     },
     {
       "collectionGroup": "bookings",
-      "queryScope": "COLLECTION",
+      "queryScope": "COLLECTION_GROUP",
       "fields": [
         { "fieldPath": "machineId", "order": "ASCENDING" },
         { "fieldPath": "date", "order": "ASCENDING" },
@@ -45,42 +54,66 @@
     },
     {
       "collectionGroup": "bookings",
-      "queryScope": "COLLECTION",
+      "queryScope": "COLLECTION_GROUP",
       "fields": [
         { "fieldPath": "userId", "order": "ASCENDING" },
         { "fieldPath": "date", "order": "ASCENDING" }
       ]
     },
     {
-      "collectionGroup": "toolCheckouts",
-      "queryScope": "COLLECTION",
+      "collectionGroup": "bookings",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "checkouts",
+      "queryScope": "COLLECTION_GROUP",
       "fields": [
         { "fieldPath": "userId", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
     },
     {
-      "collectionGroup": "toolCheckouts",
-      "queryScope": "COLLECTION",
+      "collectionGroup": "checkouts",
+      "queryScope": "COLLECTION_GROUP",
       "fields": [
         { "fieldPath": "action", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
     },
     {
-      "collectionGroup": "toolCheckouts",
-      "queryScope": "COLLECTION",
+      "collectionGroup": "checkouts",
+      "queryScope": "COLLECTION_GROUP",
       "fields": [
         { "fieldPath": "isOverdue", "order": "ASCENDING" },
         { "fieldPath": "expectedReturnDate", "order": "ASCENDING" }
       ]
     },
     {
-      "collectionGroup": "toolCheckouts",
-      "queryScope": "COLLECTION",
+      "collectionGroup": "checkouts",
+      "queryScope": "COLLECTION_GROUP",
       "fields": [
         { "fieldPath": "userId", "order": "ASCENDING" },
         { "fieldPath": "action", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "activityLog",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "type", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "activityLog",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
     },
