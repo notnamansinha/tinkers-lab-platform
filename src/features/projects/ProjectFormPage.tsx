@@ -71,7 +71,7 @@ export default function ProjectFormPage() {
     queryFn: async () => {
       const snap = await getDoc(doc(db, COLLECTIONS.PROJECTS, id!))
       if (!snap.exists()) return null
-      return { id: snap.id, ...snap.data() } as Project
+      return { docId: snap.id, ...snap.data() } as Project & { docId: string }
     },
     enabled: isEdit,
   })

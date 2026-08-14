@@ -4,13 +4,15 @@ import {
   where,
   getDocs,
   getCountFromServer,
-  addDoc,
-  updateDoc,
   doc,
+  runTransaction,
+  updateDoc,
   serverTimestamp,
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { COLLECTIONS } from './firestore'
+import { logProjectActivity } from './activityLog'
+import { cleanFirestoreData } from '@/lib/utils'
 import type { Project, ProjectStatus } from '@/types'
 
 // ============================================================
@@ -20,34 +22,22 @@ import type { Project, ProjectStatus } from '@/types'
 // ============================================================
 
 /**
- * Generate a sequential project ID in "TL-001" format.
- * Uses getCountFromServer() — a single aggregation read (1 Firestore read).
- * Thread-safety note: in very low concurrency this is fine. For high concurrency
- * a transaction with a counter document would be needed.
- */
-export async function generateProjectId(): Promise<string> {
-  const ref = collection(db, COLLECTIONS.PROJECTS)
-  const snap = await getCountFromServer(ref)
-  const count = snap.data().count + 1
-  return `TL-${String(count).padStart(3, '0')}` // TL-001, TL-002, etc.
-}
-
-/**
  * Create a new project registration (Form 1).
  * Status starts as 'pending' — admin reviews and approves/rejects.
- * Auto-generates a sequential project ID.
+ * projectCode (TL-XXX) is generated atomically from counters/projects.
+ * The Firestore document ID stays auto-generated (separate from projectCode).
  */
-import { cleanFirestoreData } from '@/lib/utils'
-
 export async function createProject(
-  data: Omit<Project, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'imageUrls' | 'documentUrls'>
+  data: Omit<Project, 'id' | 'projectCode' | 'createdAt' | 'updatedAt' | 'status' | 'imageUrls' | 'documentUrls'>
 ): Promise<string> {
-  const projectId = await generateProjectId()
-  const ref = collection(db, COLLECTIONS.PROJECTS)
+  const projectsCol = collection(db, COLLECTIONS.PROJECTS)
+  const counterRef = doc(db, COLLECTIONS.COUNTERS, 'projects')
+
+  // Pre-generate a random document ID (Firestore auto-ID), used inside the transaction.
+  const projectDocRef = doc(projectsCol)
 
   const payload = cleanFirestoreData({
     ...data,
-    id: projectId,
     status: 'pending',
     imageUrls: [],
     documentUrls: [],
@@ -57,8 +47,20 @@ export async function createProject(
     updatedAt: serverTimestamp(),
   })
 
-  const docRef = await addDoc(ref, payload)
-  return docRef.id
+  await runTransaction(db, async (tx) => {
+    const counterSnap = await tx.get(counterRef)
+    const nextId = counterSnap.exists() && typeof counterSnap.data().nextId === 'number'
+      ? counterSnap.data().nextId
+      : 1
+    const projectCode = `TL-${String(nextId).padStart(3, '0')}`
+
+    // 1. Increment the counter (atomic)
+    tx.set(counterRef, { nextId: nextId + 1 }, { merge: true })
+    // 2. Write the project doc with its business code (atomic with counter)
+    tx.set(projectDocRef, { ...payload, projectCode })
+  })
+
+  return projectDocRef.id
 }
 
 /**
@@ -66,15 +68,18 @@ export async function createProject(
  * Used to populate the project selector in booking/checkout forms.
  * Only returns active/pending projects (not rejected/completed).
  * React Query caches this — only fetched once per session.
+ *
+ * Returns `docId` (Firestore doc ID) alongside `projectCode` (TL-XXX) so
+ * callers can display the code while storing the doc ID as the FK.
  */
-export async function getUserProjects(userId: string, statusFilter?: string): Promise<Project[]> {
+export async function getUserProjects(userId: string, statusFilter?: string): Promise<(Project & { docId: string })[]> {
   const ref = collection(db, COLLECTIONS.PROJECTS)
   const constraints: any[] = [where('userId', '==', userId)]
   if (statusFilter) constraints.push(where('status', '==', statusFilter))
   const q = query(ref, ...constraints)
   const snap = await getDocs(q)
   return snap.docs
-    .map((d) => ({ id: d.id, ...d.data() }) as Project)
+    .map((d) => ({ docId: d.id, ...d.data() }) as Project & { docId: string })
     .sort((a, b) => b.createdAt?.toMillis?.() - a.createdAt?.toMillis?.())
 }
 
@@ -97,26 +102,36 @@ export async function userHasActiveProject(userId: string): Promise<boolean> {
 /**
  * Get all projects (admin view) with optional status filter.
  */
-export async function getProjectsByStatus(status?: ProjectStatus): Promise<Project[]> {
+export async function getProjectsByStatus(status?: ProjectStatus): Promise<(Project & { docId: string })[]> {
   const ref = collection(db, COLLECTIONS.PROJECTS)
   const constraints = status ? [where('status', '==', status)] : []
   const q = query(ref, ...constraints)
   const snap = await getDocs(q)
   return snap.docs
-    .map((d) => ({ id: d.id, ...d.data() }) as Project)
+    .map((d) => ({ docId: d.id, ...d.data() }) as Project & { docId: string })
     .sort((a, b) => b.createdAt?.toMillis?.() - a.createdAt?.toMillis?.())
 }
 
 /**
  * Admin: approve or reject a project registration.
+ * Also writes a status_change entry to the project's activityLog subcollection.
  */
 export async function updateProjectStatus(
   firestoreDocId: string,
   status: 'active' | 'rejected' | 'on_hold' | 'completed',
-  rejectionReason?: string
+  rejectionReason?: string,
+  actor?: { uid: string; name: string; email: string }
 ): Promise<void> {
   const updates: Record<string, unknown> = { status, updatedAt: serverTimestamp() }
   if (rejectionReason) updates.rejectionReason = rejectionReason
   const ref = doc(db, COLLECTIONS.PROJECTS, firestoreDocId)
   await updateDoc(ref, updates)
+
+  await logProjectActivity(firestoreDocId, {
+    type: 'status_change',
+    summary: `Project marked as ${status}${rejectionReason ? ` — ${rejectionReason}` : ''}`,
+    userId: actor?.uid ?? 'system',
+    userName: actor?.name ?? 'Coordinator',
+    userEmail: actor?.email ?? '',
+  })
 }

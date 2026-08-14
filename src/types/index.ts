@@ -386,7 +386,9 @@ export type ExpectedEquipmentNeed =
   | 'Other'
 
 export interface Project {
-  id: string                    // Sequential: "TL-001", "TL-002", etc.
+  // Business code: "TL-001", "TL-002", etc. — generated atomically from counters/projects.
+  // NOTE: this is a *separate field* from the Firestore document ID (mapped as `docId`/`d.id`).
+  projectCode: string
   title: string
   abstract: string
   userId: string
@@ -501,6 +503,27 @@ export interface AuditLog {
   resource: string
   resourceId: string
   details?: string
+  createdAt: Timestamp
+}
+
+// ============================================================
+// PROJECT ACTIVITY LOG TYPES  (projects/{projectId}/activityLog)
+// ============================================================
+export type ActivityLogType = 'booking' | 'checkout' | 'return' | 'status_change'
+
+/**
+ * Unified chronological timeline entry stored under each project.
+ * Gives a single place to see everything that happened on a project
+ * without cross-collection joins.
+ */
+export interface ActivityLogEntry {
+  id: string
+  type: ActivityLogType
+  summary: string
+  resourceId?: string         // bookingId / checkoutId if applicable
+  userId: string
+  userName: string
+  userEmail: string
   createdAt: Timestamp
 }
 

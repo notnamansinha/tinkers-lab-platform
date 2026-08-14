@@ -62,15 +62,34 @@ service cloud.firestore {
     }
 
     // ================================================================
-    // BOOKINGS COLLECTION  (Form 2A — Tier 1 machines only)
+    // COUNTERS COLLECTION  (atomic project code counter)
+    // counters/projects → { nextId: N }
+    // Writes happen inside a runTransaction in createProject.
     // ================================================================
-    match /bookings/{bookingId} {
-      allow read: if isAuth() && (resource.data.userId == request.auth.uid || isStaff());
+    match /counters/{counterId} {
+      allow read: if isActiveUser();
+      // Only the system increments counters via transaction — but the client
+      // must be an active user to trigger it (createProject runs it).
+      allow write: if isActiveUser();
+    }
+
+    // ================================================================
+    // BOOKINGS — PROJECT SUBCOLLECTION  (Form 2A — Tier 1 machines)
+    // projects/{projectId}/bookings/{bookingId}
+    // ================================================================
+    match /projects/{projectId}/bookings/{bookingId} {
+      // Readable by the project owner or staff (collection-group reads included)
+      allow read: if isAuth() && (
+        get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid
+        || isStaff()
+      );
       // Auto-confirm model (Spec 2): status must be 'approved' on create.
       // Server-side validation: active user, own booking, valid time window, and the
       // machine must be a confirmed, bookable (Tier 1) machine that is available/reserved.
       allow create: if isActiveUser()
+                    && get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid
                     && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.projectId == projectId
                     && request.resource.data.keys().hasAll(['equipmentId', 'machineId', 'date', 'startTime', 'endTime', 'purpose', 'projectId', 'status', 'safetyAgreementAccepted'])
                     && request.resource.data.keys().hasOnly(['equipmentId', 'machineId', 'machineName', 'userId', 'userEmail', 'userName', 'projectId', 'projectTitle', 'date', 'startTime', 'endTime', 'purpose', 'consumables', 'safetyAgreementAccepted', 'status', 'rejectionReason', 'cancelledBy', 'createdAt', 'updatedAt'])
                     && request.resource.data.status == 'approved'
@@ -97,14 +116,20 @@ service cloud.firestore {
     }
 
     // ================================================================
-    // TOOL CHECKOUTS COLLECTION  (Form 2B — Tier 2 tools only)
+    // TOOL CHECKOUTS — PROJECT SUBCOLLECTION  (Form 2B — Tier 2 tools)
+    // projects/{projectId}/checkouts/{checkoutId}
     // ================================================================
-    match /toolCheckouts/{checkoutId} {
-      allow read: if isAuth() && (resource.data.userId == request.auth.uid || isStaff());
+    match /projects/{projectId}/checkouts/{checkoutId} {
+      allow read: if isAuth() && (
+        get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid
+        || isStaff()
+      );
       // Server-enforced schema: new checkouts must be 'checking_out', not overdue, with
       // valid enums and no extra/injected fields.
       allow create: if isActiveUser()
+                    && get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid
                     && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.projectId == projectId
                     && request.resource.data.keys().hasAll(['toolName', 'toolCategory', 'action', 'projectId', 'locationOfUse', 'conditionAtCheckout', 'quantity', 'expectedReturnDate'])
                     && request.resource.data.keys().hasOnly(['userId', 'userEmail', 'userName', 'universityId', 'projectId', 'projectTitle', 'action', 'toolCategory', 'toolName', 'quantity', 'locationOfUse', 'outsideLocation', 'expectedReturnDate', 'expectedReturnTime', 'conditionAtCheckout', 'notes', 'isOverdue', 'createdAt', 'updatedAt'])
                     && request.resource.data.action == 'checking_out'
@@ -125,6 +150,32 @@ service cloud.firestore {
       );
       allow delete: if isAdmin();
     }
+
+    // ================================================================
+    // PROJECT ACTIVITY LOG  (projects/{projectId}/activityLog/{logId})
+    // Immutable unified timeline — appended by the app on bookings,
+    // checkouts, returns, and project status changes.
+    // ================================================================
+    match /projects/{projectId}/activityLog/{logId} {
+      allow read: if isAuth() && (
+        get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid
+        || isStaff()
+      );
+      // The app appends entries as the project owner (bookings/checkouts) or as
+      // staff (status changes). Restrict create to those actors.
+      allow create: if isActiveUser()
+                    && (
+                      get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid
+                      || isStaff()
+                    )
+                    && request.resource.data.keys().hasOnly(['type', 'summary', 'resourceId', 'userId', 'userName', 'userEmail', 'createdAt'])
+                    && request.resource.data.type in ['booking', 'checkout', 'return', 'status_change']
+                    && request.resource.data.summary is string
+                    && request.resource.data.summary.size() > 0
+                    && request.resource.data.summary.size() <= 300;
+      allow update, delete: if false; // Immutable log
+    }
+
 
     // ================================================================
     // INVENTORY COLLECTION  (admin stock management)
