@@ -17,9 +17,9 @@ const config = {
     },
     extend: {
       fontFamily: {
-        brand:   ['Outfit', 'Inter', 'Arial Black', 'sans-serif'],
-        sans:    ['Outfit', 'Inter', 'Arial', 'sans-serif'],
-        display: ['Outfit', 'Inter', 'Arial Black', 'sans-serif'],
+        brand:   ['Gavency', 'Outfit', 'Inter', 'Arial Black', 'sans-serif'],
+        sans:    ['Gavency', 'Outfit', 'Inter', 'Arial', 'sans-serif'],
+        display: ['Gavency', 'Outfit', 'Inter', 'Arial Black', 'sans-serif'],
         mono:    ['ui-monospace', 'SF Mono', 'JetBrains Mono', 'Courier New', 'monospace'],
       },
 
