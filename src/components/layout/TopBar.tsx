@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { signOut } from '@/services/firebase/auth'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { BrandMark } from '@/components/visual'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -59,22 +60,22 @@ export default function TopBar() {
       >
         {/* Left — Logo + Nav */}
         <div className="flex items-center gap-8">
-          {/* Logo */}
           <button
             onClick={() => navigate('/')}
             className="flex items-center gap-2.5 shrink-0 group"
           >
-            <div
-              className="w-7 h-7 rounded-lg flex items-center justify-center text-white font-bold text-xs shrink-0"
-              style={{ background: '#514AF1' }}
-            >
-              TL
-            </div>
+            <BrandMark className="h-8 w-8" />
             <span
-              className="font-bold text-sm tracking-tight text-white hidden sm:block"
-              style={{ fontFamily: 'Fredoka, Arial, sans-serif' }}
+              className="hidden sm:inline uppercase leading-none"
+              style={{
+                fontFamily: "'Gavency', 'Outfit', sans-serif",
+                fontWeight: 900,
+                fontSize: '1.0rem',
+                letterSpacing: '0.14em',
+                color: '#FFFFFF',
+              }}
             >
-              Tinkerers' Lab
+              TINKERERS LAB
             </span>
           </button>
 
