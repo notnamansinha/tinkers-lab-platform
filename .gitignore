@@ -38,3 +38,6 @@ ui-debug.log
 
 implementation_plan.md
 UI
+.env.local.backup
+.antigravity/
+.docs

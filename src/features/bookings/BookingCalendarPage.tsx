@@ -14,13 +14,18 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { PageHeader } from '@/components/common/PageHeader'
 import { DataPanel } from '@/components/common/DataPanel'
 
+function startOfWeek(date: Date): Date {
+  const d = new Date(date)
+  d.setDate(d.getDate() - (d.getDay() + 6) % 7)
+  return d
+}
+
 function getWeekDays(startDate: Date): string[] {
   const days = []
-  const date = new Date(startDate)
-  date.setDate(date.getDate() - date.getDay() + 1)
+  const date = startOfWeek(startDate)
 
   for (let index = 0; index < 7; index += 1) {
-    days.push(date.toISOString().slice(0, 10))
+    days.push(`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`)
     date.setDate(date.getDate() + 1)
   }
 
@@ -32,11 +37,7 @@ const HOURS = Array.from({ length: 12 }, (_, index) => `${String(index + 8).padS
 export default function BookingCalendarPage() {
   const { user } = useAuth()
   const navigate = useNavigate()
-  const [weekStart, setWeekStart] = useState(() => {
-    const date = new Date()
-    date.setDate(date.getDate() - date.getDay() + 1)
-    return date
-  })
+  const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date()))
 
   const weekDays = getWeekDays(weekStart)
 
@@ -58,7 +59,7 @@ export default function BookingCalendarPage() {
     staleTime: 2 * 60 * 1000,
   })
 
-  const { data: myBookings = [] } = useQuery({
+  const { data: myBookings = [], isLoading: myBookingsLoading } = useQuery({
     queryKey: ['bookings', 'mine'],
     queryFn: async () => {
       const reference = collection(db, COLLECTIONS.BOOKINGS)
@@ -77,123 +78,180 @@ export default function BookingCalendarPage() {
   }
 
   const showCurrentWeek = () => {
-    const date = new Date()
-    date.setDate(date.getDate() - date.getDay() + 1)
-    setWeekStart(date)
+    setWeekStart(startOfWeek(new Date()))
   }
 
   return (
-    <div className="w-full max-w-7xl mx-auto pb-20 animate-fade-in space-y-6 mt-4">
+    <div className="mx-auto mt-2 w-full max-w-[1440px] min-w-0 space-y-5 animate-fade-in sm:space-y-6">
       <PageHeader
         variant="dark"
-        title="Bookings"
-        description="Reserve machines and view the lab schedule."
+        title="Bookings & Calendar"
+        description="Reserve machines, manage slot requests, and view the lab schedule."
         action={
-          <button onClick={() => navigate('/bookings/new')} className="tl-pill-button-secondary flex items-center gap-2 px-6 shrink-0">
-            <Plus size={18} /> New Booking
+          <button
+            onClick={() => navigate('/bookings/new')}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-lime text-black font-bold text-xs hover:bg-lime/90 transition-all shadow-sm shrink-0"
+          >
+            <Plus size={16} /> New Booking
           </button>
         }
       />
 
-      <div className="bg-white/40 border border-white/20 shadow-sm border border-white/20 flex flex-row items-center gap-4 px-5 py-4 text-[#56779D] rounded-[24px]">
-        <Button aria-label="Previous week" variant="ghost" size="icon" onClick={() => shiftWeek(-7)} className="rounded-full hover:bg-[rgba(255,255,255,0.1)] text-white/70">
-          <ChevronLeft className="h-5 w-5" />
-        </Button>
-        <div className="flex flex-1 flex-col text-center text-[14px] font-semibold tracking-wide sm:block">
-          <span>{new Date(weekDays[0]).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}</span>
-          <span className="hidden sm:inline mx-3 text-white/30">—</span>
-          <span>{new Date(weekDays[6]).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-hairline bg-near-black p-3 text-white shadow-sm sm:p-4">
+        <div className="flex items-center gap-2">
+          <Button
+            aria-label="Previous week"
+            variant="ghost"
+            size="icon"
+            onClick={() => shiftWeek(-7)}
+            className="h-8 w-8 rounded-lg text-white/60 hover:text-white hover:bg-white/10"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <Button
+            aria-label="Next week"
+            variant="ghost"
+            size="icon"
+            onClick={() => shiftWeek(7)}
+            className="h-8 w-8 rounded-lg text-white/60 hover:text-white hover:bg-white/10"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
         </div>
-        <Button aria-label="Next week" variant="ghost" size="icon" onClick={() => shiftWeek(7)} className="rounded-full hover:bg-[rgba(255,255,255,0.1)] text-white/70">
-          <ChevronRight className="h-5 w-5" />
-        </Button>
-        <Button variant="outline" size="sm" onClick={showCurrentWeek} className="ml-3 hidden rounded-full border-[#6FA9FF]/50 bg-white/40 border border-white/20 shadow-sm text-[11px] font-bold uppercase tracking-widest text-[#56779D] hover:bg-[rgba(255,255,255,0.1)] sm:flex">
+
+        <div className="order-3 w-full text-center text-xs font-bold tracking-tight text-white sm:order-none sm:w-auto sm:text-sm">
+          <span>{new Date(weekDays[0] + 'T00:00:00').toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}</span>
+          <span className="mx-2 text-white/30">—</span>
+          <span>{new Date(weekDays[6] + 'T00:00:00').toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+        </div>
+
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={showCurrentWeek}
+          className="rounded-full border border-hairline bg-white/5 text-white/80 hover:text-white hover:bg-white/10 text-xs font-bold px-4 h-8"
+        >
           Today
         </Button>
       </div>
 
       <DataPanel title="My Bookings" description="Your personal machine reservations.">
-          {myBookings.length === 0 ? (
-            <div className="flex flex-col items-center gap-4 py-16 text-center text-[14px] text-white/30">
-              <FileText className="h-10 w-10 opacity-20 mb-2" />
-              <p>No bookings yet.</p>
-              <button onClick={() => navigate('/bookings/new')} className="font-semibold text-[#514AF1] hover:text-[#EC68D8] transition-colors">Make your first booking</button>
-            </div>
-          ) : (
-            <div className="overflow-hidden rounded-[16px] border border-white/20">
-              <Table>
-                <TableHeader className="bg-[rgba(255,255,255,0.02)]">
-                  <TableRow className="border-white/20 hover:bg-transparent">
-                    <TableHead className="text-[#7D9FC2]">Machine</TableHead>
-                    <TableHead className="text-[#7D9FC2]">Date &amp; Time</TableHead>
-                    <TableHead className="hidden md:table-cell text-[#7D9FC2]">Purpose</TableHead>
-                    <TableHead className="text-[#7D9FC2]">Status</TableHead>
-                    <TableHead />
+        {myBookingsLoading ? (
+          <div className="flex flex-col items-center gap-3 py-12 text-center text-xs text-white/40">
+            Loading your bookings…
+          </div>
+        ) : myBookings.length === 0 ? (
+          <div className="flex flex-col items-center gap-3 py-12 text-center text-xs text-white/40">
+            <FileText className="h-8 w-8 opacity-30" />
+            <p>No bookings yet.</p>
+            <button onClick={() => navigate('/bookings/new')} className="font-bold text-lime hover:underline">
+              Make your first booking
+            </button>
+          </div>
+        ) : (
+          <div className="overflow-hidden rounded-xl border border-hairline bg-near-black">
+            <Table>
+              <TableHeader className="bg-white/[0.03]">
+                <TableRow className="border-hairline hover:bg-transparent">
+                  <TableHead className="text-white/40 text-[10px] uppercase font-bold tracking-widest">Machine</TableHead>
+                  <TableHead className="text-white/40 text-[10px] uppercase font-bold tracking-widest">Date &amp; Time</TableHead>
+                  <TableHead className="hidden md:table-cell text-white/40 text-[10px] uppercase font-bold tracking-widest">Purpose</TableHead>
+                  <TableHead className="text-white/40 text-[10px] uppercase font-bold tracking-widest">Status</TableHead>
+                  <TableHead />
+                </TableRow>
+              </TableHeader>
+              <TableBody className="divide-y divide-hairline">
+                {myBookings.map(booking => (
+                  <TableRow key={booking.id} className="border-hairline hover:bg-white/[0.04] transition-colors">
+                    <TableCell className="font-bold text-white text-xs sm:text-sm">{booking.machineName}</TableCell>
+                    <TableCell className="text-xs text-white/60">
+                      <div className="font-bold text-white">{booking.date}</div>
+                      <div className="text-white/50 text-[11px]">{booking.startTime} - {booking.endTime}</div>
+                    </TableCell>
+                    <TableCell className="hidden max-w-[200px] truncate text-white/60 md:table-cell text-xs">{booking.purpose}</TableCell>
+                    <TableCell>
+                      <Badge 
+                        variant="outline" 
+                        className={cn(
+                          "capitalize font-bold text-[9px] tracking-wider border",
+                          booking.status === 'approved' ? "bg-lime/15 text-lime border-lime/30" :
+                          booking.status === 'rejected' ? "bg-pink/15 text-pink border-pink/30" :
+                          booking.status === 'cancelled' ? "bg-white/10 text-white/50 border-hairline" :
+                          "bg-orange/15 text-orange border-orange/30"
+                        )}
+                      >
+                        {booking.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => navigate(`/bookings/${booking.id}`)}
+                        className="text-white/40 hover:text-white hover:bg-white/10 rounded-full text-xs"
+                      >
+                        View
+                      </Button>
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {myBookings.map(booking => (
-                    <TableRow key={booking.id} className="border-white/20 hover:bg-[rgba(255,255,255,0.02)] transition-colors">
-                      <TableCell className="font-medium text-[#56779D]">{booking.machineName}</TableCell>
-                      <TableCell className="text-[12px] text-[#7D9FC2]">
-                        <div className="text-white/80">{booking.date}</div>
-                        <div className="text-[#7D9FC2]">{booking.startTime} - {booking.endTime}</div>
-                      </TableCell>
-                      <TableCell className="hidden max-w-[200px] truncate text-[#7D9FC2] md:table-cell text-[13px]">{booking.purpose}</TableCell>
-                      <TableCell>
-                        <Badge 
-                          variant="outline" 
-                          className={cn(
-                            "capitalize font-medium text-[10px] tracking-wider border-0",
-                            booking.status === 'approved' ? "bg-[rgba(221,242,55,0.15)] text-[#DDF237]" :
-                            booking.status === 'rejected' ? "bg-[rgba(236,104,216,0.15)] text-[#EC68D8]" :
-                            booking.status === 'cancelled' ? "bg-[rgba(255,255,255,0.1)] text-[#7D9FC2]" :
-                            "bg-[rgba(81,74,241,0.2)] text-[#9B97F7]"
-                          )}
-                        >
-                          {booking.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="ghost" size="sm" onClick={() => navigate(`/bookings/${booking.id}`)} className="text-[#7D9FC2] hover:text-white hover:bg-[rgba(255,255,255,0.1)] rounded-full">View</Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
       </DataPanel>
 
-      <DataPanel title="Schedule" description="Lab machine availability for the selected week.">
-          <div className="overflow-x-auto rounded-[16px] border border-white/20 bg-[rgba(0,0,0,0.2)]">
-            <div className="grid min-w-[800px] grid-cols-8 text-[11px]">
-              <div className="col-span-1 border-r border-white/20 bg-[rgba(255,255,255,0.02)] p-2" />
-              {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, index) => (
-                <div key={day} className={cn('flex flex-col gap-1 border-r border-white/20 p-3 text-center tracking-widest', weekDays[index] === todayStr() ? 'bg-[rgba(81,74,241,0.15)] text-[#9B97F7]' : 'bg-[rgba(255,255,255,0.02)] text-[#7D9FC2]')}>
-                  <div className="uppercase font-semibold">{day}</div>
-                  <div className="text-[#7D9FC2] font-medium text-[13px]">{new Date(weekDays[index]).getDate()}</div>
+      <DataPanel title="Weekly Schedule" description="Lab machine availability for the selected week.">
+        <div className="overflow-x-auto rounded-xl border border-hairline bg-near-black">
+          <div className="grid min-w-[800px] grid-cols-8 text-xs">
+            <div className="col-span-1 border-r border-hairline bg-white/[0.02] p-2" />
+            {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, index) => (
+              <div
+                key={day}
+                className={cn(
+                  'flex flex-col gap-0.5 border-r border-hairline p-3 text-center tracking-wider',
+                  weekDays[index] === todayStr() ? 'bg-lime/10 text-lime font-bold' : 'bg-white/[0.02] text-white/50'
+                )}
+              >
+                <div className="uppercase font-bold text-[10px]">{day}</div>
+                <div className="text-white font-extrabold text-sm">{new Date(weekDays[index] + 'T00:00:00').getDate()}</div>
+              </div>
+            ))}
+            {HOURS.map(hour => (
+              <React.Fragment key={hour}>
+                <div className="col-span-1 border-r border-t border-hairline bg-white/[0.01] p-2.5 text-[10px] text-white/40 font-mono flex items-center justify-center tracking-wider">
+                  {hour}
                 </div>
-              ))}
-              {HOURS.map(hour => (
-                <React.Fragment key={hour}>
-                  <div className="col-span-1 border-r border-t border-white/20 bg-[rgba(255,255,255,0.01)] p-3 text-[10px] text-white/30 font-medium flex items-center justify-center tracking-wider">{hour}</div>
-                  {weekDays.map(day => {
-                    const slotBookings = bookings.filter(booking => booking.date === day && booking.startTime <= hour && booking.endTime > hour)
-                    return (
-                      <div key={day} className={cn('relative flex min-h-[50px] flex-col gap-1.5 border-r border-t border-white/20 p-1.5', weekDays.indexOf(day) + 1 === new Date().getDay() && 'bg-[rgba(81,74,241,0.05)]')}>
-                        {slotBookings.map(booking => (
-                          <div key={booking.id} className={cn('truncate rounded-[6px] px-2 py-1 text-[9px] font-semibold tracking-wide border', booking.status === 'approved' ? 'bg-[rgba(221,242,55,0.1)] text-[#DDF237] border-[rgba(221,242,55,0.2)]' : 'bg-[rgba(255,177,63,0.1)] text-[#FFB13F] border-[rgba(255,177,63,0.2)]')}>
-                            {booking.machineName}
-                          </div>
-                        ))}
-                      </div>
-                    )
-                  })}
-                </React.Fragment>
-              ))}
-            </div>
+                {weekDays.map((day, index) => {
+                  const slotBookings = bookings.filter(booking => booking.date === day && booking.startTime <= hour && booking.endTime > hour)
+                  return (
+                    <div
+                      key={day}
+                      className={cn(
+                        'relative flex min-h-[48px] flex-col gap-1 border-r border-t border-hairline p-1.5',
+                        weekDays[index] === todayStr() ? 'bg-white/[0.02]' : ''
+                      )}
+                    >
+                      {slotBookings.map(booking => (
+                        <div
+                          key={booking.id}
+                          className={cn(
+                            'truncate rounded-md px-2 py-1 text-[9px] font-bold tracking-wide border',
+                            booking.status === 'approved'
+                              ? 'bg-lime/15 text-lime border-lime/30'
+                              : 'bg-orange/15 text-orange border-orange/30'
+                          )}
+                        >
+                          {booking.machineName}
+                        </div>
+                      ))}
+                    </div>
+                  )
+                })}
+              </React.Fragment>
+            ))}
           </div>
+        </div>
       </DataPanel>
     </div>
   )

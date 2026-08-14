@@ -51,7 +51,7 @@ export default function WorkshopListPage() {
   }
 
   return (
-    <div className="space-y-6 container py-6 mx-auto animate-fade-in">
+    <div className="mx-auto max-w-[1440px] space-y-5 py-4 animate-fade-in sm:space-y-6 sm:py-6">
       <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Workshops & Training</h1>
@@ -75,17 +75,17 @@ export default function WorkshopListPage() {
       </div>
 
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {Array.from({length:3}).map((_,i) => <Card key={i} className="h-48 animate-pulse" />)}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {Array.from({length:3}).map((_,i) => <Card key={i} className="min-h-40 animate-pulse" />)}
         </div>
       ) : filtered.length === 0 ? (
-        <Card className="py-24 text-center">
+        <Card className="py-10 text-center">
           <CardContent>
             <p className="text-muted-foreground">No workshops scheduled.</p>
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {filtered.map(w => {
             const isFull = w.registeredCount >= w.capacity
             return (

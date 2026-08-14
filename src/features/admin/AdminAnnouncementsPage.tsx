@@ -72,7 +72,7 @@ export default function AdminAnnouncementsPage() {
   }
 
   return (
-    <div className="w-full max-w-7xl mx-auto pb-20 animate-fade-in">
+    <div className="mx-auto w-full max-w-[1440px] min-w-0 animate-fade-in">
       <PageHeader
         variant="dark"
         title="Announcements"
@@ -86,14 +86,14 @@ export default function AdminAnnouncementsPage() {
 
       {showForm && (
         <form onSubmit={handleSubmit(onSubmit)} className="tl-form-panel mb-8 space-y-4">
-          <h2 className="tl-page-title text-xl text-[#56779D]">Create Announcement</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="md:col-span-2">
+          <h2 className="tl-page-title text-xl text-white">Create Announcement</h2>
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <div className="lg:col-span-2">
               <label className="tl-input-label-dark">Title *</label>
               <input className={cn('tl-input w-full', errors.title && 'ring-2 ring-pink')} {...register('title')} />
               {errors.title && <p className="text-xs text-pink mt-1 font-medium">{errors.title.message}</p>}
             </div>
-            <div className="md:col-span-2">
+            <div className="lg:col-span-2">
               <label className="tl-input-label-dark">Body *</label>
               <textarea rows={3} className={cn('tl-input w-full resize-none', errors.body && 'ring-2 ring-pink')} {...register('body')} />
               {errors.body && <p className="text-xs text-pink mt-1 font-medium">{errors.body.message}</p>}
@@ -121,9 +121,9 @@ export default function AdminAnnouncementsPage() {
 
       <DataPanel title="All Announcements">
         {isLoading ? (
-          <div className="py-16 text-center text-[#7D9FC2]">Loading…</div>
+          <div className="py-10 text-center text-white/50">Loading…</div>
         ) : announcements.length === 0 ? (
-          <div className="py-16 text-center text-[#7D9FC2] flex flex-col items-center gap-3">
+          <div className="flex flex-col items-center gap-3 py-10 text-center text-white/50">
             <Bell size={32} className="opacity-30" />
             No announcements yet.
           </div>
@@ -133,24 +133,24 @@ export default function AdminAnnouncementsPage() {
               <TableRow className="hover:bg-transparent border-0">
                 <TableHead>#</TableHead>
                 <TableHead>Title</TableHead>
-                <TableHead>Body</TableHead>
+               <TableHead className="hidden md:table-cell">Body</TableHead>
                 <TableHead>Priority</TableHead>
-                <TableHead>Author</TableHead>
+               <TableHead className="hidden lg:table-cell">Author</TableHead>
                 <TableHead>Status</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {announcements.map((a, idx) => (
                 <TableRow key={a.id} className="border-0">
-                  <TableCell className="text-[#7D9FC2] font-mono text-xs">{announcements.length - idx}</TableCell>
-                  <TableCell className="font-semibold text-[#56779D]">{a.title}</TableCell>
-                  <TableCell className="text-[#7D9FC2] text-sm max-w-[240px] truncate">{a.body}</TableCell>
+                  <TableCell className="font-mono text-xs text-white/50">{announcements.length - idx}</TableCell>
+                  <TableCell className="font-semibold text-white">{a.title}</TableCell>
+                    <TableCell className="hidden max-w-[240px] truncate text-sm text-white/50 md:table-cell">{a.body}</TableCell>
                   <TableCell><span className={cn('text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider', PRIORITY_COLOR[a.priority])}>{a.priority}</span></TableCell>
-                  <TableCell className="text-[#7D9FC2] text-sm">{a.authorName}</TableCell>
+                    <TableCell className="hidden text-sm text-white/50 lg:table-cell">{a.authorName}</TableCell>
                   <TableCell>
                     <button
                       onClick={() => toggleActive(a.id, a.isActive)}
-                      className={cn('text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider cursor-pointer transition-colors', a.isActive ? 'bg-lime text-[#56779D] hover:brightness-110' : 'bg-[rgba(0,0,0,0.4)] text-[#56779D] hover:bg-[rgba(0,0,0,0.4)]/80')}
+                      className={cn('cursor-pointer rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider transition-colors', a.isActive ? 'bg-lime text-black hover:brightness-110' : 'bg-black/40 text-white/70 hover:bg-black/60')}
                     >
                       {a.isActive ? 'Active' : 'Inactive'}
                     </button>

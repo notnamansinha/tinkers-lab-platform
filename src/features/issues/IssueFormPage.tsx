@@ -4,12 +4,12 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { COLLECTIONS } from '@/services/firebase/firestore'
-import { doc, getDoc, collection, addDoc, updateDoc } from 'firebase/firestore'
+import { doc, getDoc, collection, addDoc, updateDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { useAuth } from '@/contexts/AuthContext'
 import { ArrowLeft, AlertTriangle, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
-import { cn } from '@/lib/utils'
+import { cn, cleanFirestoreData, debugLog } from '@/lib/utils'
 import type { Issue } from '@/types'
 
 import { Button } from '@/components/ui/button'
@@ -38,19 +38,29 @@ export default function IssueFormPage() {
   const onSubmit = async (data: FormData) => {
     if (!user || !profile) { toast.error('Sign in required'); return }
     try {
-      await addDoc(collection(db, COLLECTIONS.ISSUES), {
-        ...data, userId: user.uid, userName: profile.displayName, userEmail: user.email!,
+      const now = serverTimestamp()
+      const payload = cleanFirestoreData({
+        ...data,
+        userId: user.uid,
+        userName: profile.displayName || user.displayName || user.email!,
+        userEmail: user.email!,
         status: 'open',
-      } as Omit<Issue,'id'|'createdAt'|'updatedAt'>)
+        createdAt: now,
+        updatedAt: now,
+      })
+      await addDoc(collection(db, COLLECTIONS.ISSUES), payload)
       toast.success('Issue reported. Thank you!')
       navigate('/')
-    } catch (e) { toast.error(e instanceof Error ? e.message : 'Failed to submit') }
+    } catch (e) {
+      debugLog('Failed to submit report:', e)
+      toast.error('Failed to submit report. Please try again.')
+    }
   }
 
   const selectClasses = "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
 
   return (
-    <div className="space-y-6 container py-6 mx-auto max-w-2xl animate-fade-in">
+    <div className="mx-auto max-w-2xl space-y-5 py-4 animate-fade-in sm:space-y-6 sm:py-6">
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
           <ArrowLeft className="h-5 w-5" />
@@ -109,11 +119,11 @@ export default function IssueFormPage() {
           </CardContent>
         </Card>
 
-        <div className="flex justify-end gap-4 pb-12">
-          <Button type="button" variant="outline" onClick={() => navigate(-1)}>
+        <div className="flex flex-col-reverse gap-3 pb-6 sm:flex-row sm:justify-end sm:gap-4">
+          <Button type="button" variant="outline" onClick={() => navigate(-1)} className="w-full sm:w-auto">
             Cancel
           </Button>
-          <Button type="submit" disabled={isSubmitting} variant="destructive" className="gap-2">
+          <Button type="submit" disabled={isSubmitting} variant="destructive" className="w-full gap-2 sm:w-auto">
             {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <AlertTriangle className="h-4 w-4" />}
             Submit Report
           </Button>

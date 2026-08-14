@@ -9,8 +9,9 @@ import {
   addDoc,
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
+import { cleanFirestoreData } from '@/lib/utils'
 import { COLLECTIONS } from './firestore'
-import type { Booking, BookingStatus, BookingConsumables } from '@/types'
+import type { Booking, BookingStatus } from '@/types'
 
 // ============================================================
 // BOOKING SERVICE
@@ -69,14 +70,14 @@ export async function createBooking(
       `Time slot conflicts with an existing booking (${conflict.startTime}–${conflict.endTime}). Please choose a different time.`
     )
   }
-  // Auto-confirm: status = 'approved' on creation (Spec 2 decision)
   const ref = collection(db, COLLECTIONS.BOOKINGS)
-  const docRef = await addDoc(ref, {
+  const payload = cleanFirestoreData({
     ...data,
     status: 'approved',
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   })
+  const docRef = await addDoc(ref, payload)
   return docRef.id
 }
 

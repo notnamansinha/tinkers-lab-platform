@@ -39,8 +39,7 @@ const MENU_ITEMS = [
 export default function AppSidebar() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { isStaff } = useAuth()
-  const isAdmin = isStaff
+  const { isAdmin } = useAuth()
 
   return (
     <Sidebar className="border-r border-hairline bg-graphite text-chalk">

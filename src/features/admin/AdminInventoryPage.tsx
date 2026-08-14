@@ -42,7 +42,7 @@ export default function AdminInventoryPage() {
   const attentionCount = items.filter(i => i.status !== 'in_stock').length
 
   return (
-    <div className="w-full max-w-7xl mx-auto pb-20 animate-fade-in">
+    <div className="mx-auto w-full max-w-[1440px] min-w-0 animate-fade-in">
       <PageHeader
         variant="dark"
         title="Inventory"
@@ -55,7 +55,7 @@ export default function AdminInventoryPage() {
         filters={
           <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center">
             <div className="relative w-full lg:w-80 flex-shrink-0">
-              <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#7D9FC2]" />
+              <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/50" />
               <input type="text" placeholder="Search inventory…" value={search} onChange={e => setSearch(e.target.value)} className="tl-input pl-11 w-full" />
             </div>
             <div className="flex flex-wrap gap-2">
@@ -74,30 +74,30 @@ export default function AdminInventoryPage() {
             <TableRow className="hover:bg-transparent border-0">
               <TableHead>#</TableHead>
               <TableHead>Name</TableHead>
-              <TableHead>Category</TableHead>
+               <TableHead className="hidden lg:table-cell">Category</TableHead>
               <TableHead className="text-right">Qty</TableHead>
-              <TableHead className="text-right">Min</TableHead>
-              <TableHead>Unit</TableHead>
-              <TableHead>Location</TableHead>
+               <TableHead className="hidden text-right sm:table-cell">Min</TableHead>
+               <TableHead className="hidden md:table-cell">Unit</TableHead>
+               <TableHead className="hidden lg:table-cell">Location</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>Added</TableHead>
+               <TableHead className="hidden xl:table-cell">Added</TableHead>
               <TableHead className="text-right">Edit</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow><TableCell colSpan={10} className="h-32 text-center text-[#7D9FC2]">Loading…</TableCell></TableRow>
+              <TableRow><TableCell colSpan={10} className="h-24 text-center text-white/50">Loading…</TableCell></TableRow>
             ) : filtered.map((item, idx) => (
               <TableRow key={item.id} className="border-0">
-                <TableCell className="text-[#7D9FC2] font-mono text-xs">{filtered.length - idx}</TableCell>
-                <TableCell className="font-semibold text-[#56779D]">{item.name}</TableCell>
-                <TableCell className="text-[#7D9FC2] text-xs uppercase">{item.category}</TableCell>
-                <TableCell className={cn('font-mono text-right font-bold', item.quantity === 0 ? 'text-pink' : item.quantity <= item.minQuantity ? 'text-orange' : 'text-[#56779D]')}>{item.quantity}</TableCell>
-                <TableCell className="font-mono text-xs text-[#7D9FC2] text-right">{item.minQuantity}</TableCell>
-                <TableCell className="text-[#7D9FC2] text-sm">{item.unit}</TableCell>
-                <TableCell className="text-[#7D9FC2] text-sm">{item.location || '—'}</TableCell>
+                <TableCell className="font-mono text-xs text-white/50">{filtered.length - idx}</TableCell>
+                <TableCell className="font-semibold text-white">{item.name}</TableCell>
+                 <TableCell className="hidden text-xs uppercase text-white/50 lg:table-cell">{item.category}</TableCell>
+                <TableCell className={cn('font-mono text-right font-bold', item.quantity === 0 ? 'text-pink' : item.quantity <= item.minQuantity ? 'text-orange' : 'text-white')}>{item.quantity}</TableCell>
+                 <TableCell className="hidden font-mono text-right text-xs text-white/50 sm:table-cell">{item.minQuantity}</TableCell>
+                 <TableCell className="hidden text-sm text-white/50 md:table-cell">{item.unit}</TableCell>
+                 <TableCell className="hidden text-sm text-white/50 lg:table-cell">{item.location || '—'}</TableCell>
                 <TableCell><span className={cn('text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider', STATUS_COLOR[item.status])}>{item.status.replace('_', ' ')}</span></TableCell>
-                <TableCell className="text-[#7D9FC2] text-sm">{formatDateTime(item.createdAt)}</TableCell>
+                 <TableCell className="hidden text-sm text-white/50 xl:table-cell">{formatDateTime(item.createdAt)}</TableCell>
                 <TableCell className="text-right">
                   <Link to={`/inventory/${item.id}/edit`} className="text-xs font-bold text-indigo hover:text-pink uppercase tracking-wider">Edit</Link>
                 </TableCell>

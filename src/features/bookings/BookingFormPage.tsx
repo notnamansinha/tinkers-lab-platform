@@ -1,16 +1,16 @@
 import React from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { useForm, Controller } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
+import { useForm, Controller, type SubmitErrorHandler } from 'react-hook-form'
+import { typedZodResolver } from '@/lib/form'
 import { z } from 'zod'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { collection, query, orderBy, getDocs, where } from 'firebase/firestore'
+import { collection, query, orderBy, getDocs } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { COLLECTIONS } from '@/services/firebase/firestore'
 import { createBooking, getBookingsForSlot } from '@/services/firebase/bookings'
 import { getUserProjects } from '@/services/firebase/projects'
 import { useAuth } from '@/contexts/AuthContext'
-import { ArrowLeft, AlertTriangle, CheckCircle2 } from 'lucide-react'
+import { ArrowLeft, AlertTriangle, CheckCircle2, Plus } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn, todayStr } from '@/lib/utils'
 import type { Equipment } from '@/types'
@@ -21,6 +21,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { AgreementCard, FullBleedQuestionCard } from '@/components/visual'
+import { AestheticDatePicker } from '@/components/common/AestheticDatePicker'
 
 // ── Hourly time slots (9am–6pm) ──────────────────────────────────────────────
 const TIME_SLOTS = [
@@ -76,13 +77,15 @@ export default function BookingFormPage() {
   const qc = useQueryClient()
 
   // Only show confirmed Tier 1 (bookable) machines — Spec 2 core decision
-  const { data: machines = [] } = useQuery({
-    queryKey: ['equipment', 'bookable'],
+  const { data: machines = [], isLoading: machinesLoading, isError: machinesError } = useQuery({
+    queryKey: ['equipment', 'bookable-confirmed'],
     queryFn: async () => {
       const ref = collection(db, COLLECTIONS.EQUIPMENT)
-      const q   = query(ref, where('tier', '==', 'bookable'), where('confirmed', '==', true), orderBy('name', 'asc'))
+      const q   = query(ref, orderBy('name', 'asc'))
       const snap = await getDocs(q)
-      return snap.docs.map(d => ({ id: d.id, ...d.data() }) as Equipment)
+      return snap.docs
+        .map(d => ({ id: d.id, ...d.data() }) as Equipment)
+        .filter(m => m.tier === 'bookable' && m.confirmed === true)
     },
     staleTime: 15 * 60 * 1000, // 15 min — equipment list rarely changes
   })
@@ -90,16 +93,16 @@ export default function BookingFormPage() {
   // User's active projects for the project selector
   const { data: projects = [], isLoading: projectsLoading } = useQuery({
     queryKey: ['projects', 'user', user?.uid],
-    queryFn: () => getUserProjects(user!.uid),
+    queryFn: () => getUserProjects(user!.uid, 'active'),
     enabled: !!user,
     staleTime: 5 * 60 * 1000,
   })
 
   const {
-    register, handleSubmit, watch, control,
+    register, handleSubmit, watch, control, setValue,
     formState: { errors, isSubmitting },
   } = useForm<FormData>({
-    resolver: zodResolver(bookingSchema) as any, // eslint-disable-line @typescript-eslint/no-explicit-any
+    resolver: typedZodResolver(bookingSchema),
     defaultValues: {
       equipmentId: params.get('machine') || '',
       date: todayStr(),
@@ -108,11 +111,30 @@ export default function BookingFormPage() {
   })
 
   const watchEquipmentId = watch('equipmentId')
+  const watchProjectId   = watch('projectId')
   const watchDate        = watch('date')
   const watchStart       = watch('startTime')
   const selectedMachine  = machines.find(m => m.id === watchEquipmentId)
   const is3DPrinter      = selectedMachine?.category === 'Digital Fabrication' && selectedMachine?.name.toLowerCase().includes('printer')
   const isLaserCutter    = selectedMachine?.name.toLowerCase().includes('laser')
+  const selectableMachines = machines.filter(m => m.status === 'available' || m.status === 'reserved')
+
+  React.useEffect(() => {
+    const machineParam = params.get('machine')
+    if (machineParam && machines.length > 0 && !selectableMachines.some(m => m.id === machineParam)) {
+      setValue('equipmentId', '')
+    }
+  }, [machines, selectableMachines, params, setValue])
+
+  const prevProjectId = React.useRef<string | undefined>(undefined)
+
+  React.useEffect(() => {
+    if (prevProjectId.current !== undefined && watchProjectId !== prevProjectId.current) {
+      setValue('equipmentId', '')
+    }
+    prevProjectId.current = watchProjectId
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [watchProjectId])
 
   // Existing bookings for this machine + date (for conflict display)
   const { data: existingBookings = [] } = useQuery({
@@ -162,20 +184,31 @@ export default function BookingFormPage() {
     }
   }
 
+  const onInvalid: SubmitErrorHandler<FormData> = (formErrors) => {
+    const messages = Object.values(formErrors)
+      .map((e) => e?.message)
+      .filter(Boolean)
+    if (messages.length > 0) {
+      toast.error(`Booking form incomplete: ${messages[0]}`)
+    } else {
+      toast.error('Please fill in all required booking fields correctly.')
+    }
+  }
+
   // Guard: user must have a project before booking
   const hasNoProjects = !projectsLoading && projects.length === 0
 
   return (
-    <div className="container mx-auto max-w-5xl space-y-6 py-6 animate-fade-in">
+    <div className="mx-auto max-w-5xl space-y-5 py-4 animate-fade-in sm:space-y-6 sm:py-6">
 
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-          <ArrowLeft className="h-5 w-5" />
+        <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="rounded-full hover:bg-white/10">
+          <ArrowLeft className="h-5 w-5 text-white" />
         </Button>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Book a Machine</h1>
-          <p className="text-muted-foreground mt-1">Reserve a time slot for a Tier 1 machine.</p>
+          <h1 className="text-3xl font-extrabold tracking-tight text-white">Book a Machine</h1>
+          <p className="text-white/60 text-xs sm:text-sm mt-1">Reserve a time slot for a Tier 1 machine.</p>
         </div>
       </div>
 
@@ -184,43 +217,25 @@ export default function BookingFormPage() {
         <div className="flex items-start gap-3 rounded-card border border-orange/40 bg-orange/10 p-4">
           <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-orange" />
           <div>
-            <p className="font-semibold text-sm text-foreground">You need a registered project first</p>
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="font-semibold text-sm text-white">You need an approved project first</p>
+            <p className="text-xs text-white/50 mt-1">
               All bookings must be linked to an active project.{' '}
-              <button onClick={() => navigate('/projects/new')} className="text-primary underline underline-offset-2">Register a project →</button>
+              <button onClick={() => navigate('/projects/new')} className="text-orange underline underline-offset-2">Register a project →</button>
             </p>
           </div>
         </div>
       )}
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+      <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-5">
 
         {/* ── Machine & Project ─────────────────────────────────────── */}
         <FullBleedQuestionCard
           eyebrow="New machine booking"
           title="What will you build next?"
-          description="Choose the machine and registered project first. Available times will appear as soon as the machine is selected."
+          description="Choose your registered project first, then select a machine. Available times will appear once a machine is chosen."
           controls={(
             <>
-              <Field label="Machine" required error={errors.equipmentId?.message}>
-              <select
-                {...register('equipmentId')}
-                className={cn(
-                  'tl-input',
-                  errors.equipmentId && 'border-pink'
-                )}
-              >
-                <option value="">— Select a machine —</option>
-                {machines.filter(m => m.status === 'available' || m.status === 'reserved').map(m => (
-                  <option key={m.id} value={m.id}>{m.name}</option>
-                ))}
-              </select>
-              {machines.length === 0 && (
-                <p className="mt-1 text-xs text-white/55">No confirmed machines available. Contact a coordinator.</p>
-              )}
-            </Field>
-
-            <Field label="Project" required error={errors.projectId?.message}>
+               <Field label="Project" required error={errors.projectId?.message}>
               <select
                 {...register('projectId')}
                 disabled={hasNoProjects}
@@ -234,17 +249,54 @@ export default function BookingFormPage() {
                   <option key={p.id} value={p.id}>{p.id} — {p.title}</option>
                 ))}
               </select>
+              <button
+                type="button"
+                onClick={() => navigate('/projects/new')}
+                className="mt-2 inline-flex items-center gap-1 rounded-full bg-pink px-3 py-1 text-xs font-bold text-black transition-all hover:brightness-110"
+              >
+                <Plus size={12} /> New Project
+              </button>
             </Field>
+
+            {watchProjectId && (
+            <Field label="Machine" required error={errors.equipmentId?.message}>
+              <select
+                {...register('equipmentId')}
+                className={cn(
+                  'tl-input',
+                  errors.equipmentId && 'border-pink'
+                )}
+                disabled={machinesLoading || machinesError || selectableMachines.length === 0}
+              >
+                <option value="">— Select a machine —</option>
+                {selectableMachines.map(m => (
+                  <option key={m.id} value={m.id}>{m.name}</option>
+                ))}
+              </select>
+              {machinesLoading && (
+                <p className="mt-1 text-xs text-white/40">Loading machines…</p>
+              )}
+              {machinesError && (
+                <p className="mt-1 text-xs font-semibold text-orange">Failed to load machines. Check your connection or try refreshing.</p>
+              )}
+              {!machinesLoading && !machinesError && machines.length === 0 && (
+                <p className="mt-1 text-xs font-semibold text-orange">No bookable machines are confirmed in the database. An admin needs to seed equipment first.</p>
+              )}
+              {!machinesLoading && !machinesError && machines.length > 0 && selectableMachines.length === 0 && (
+                <p className="mt-1 text-xs font-semibold text-orange">All machines are currently unavailable. Check back later or contact a coordinator.</p>
+              )}
+            </Field>
+            )}
             </>
           )}
         />
 
         {/* ── Date & Time ───────────────────────────────────────────── */}
-        {watchEquipmentId && (
-          <Card>
+        {watchProjectId && watchEquipmentId && (
+          <Card className="rounded-card border border-hairline bg-near-black text-white">
             <CardHeader>
-              <CardTitle>Date & Time Slot</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-xl font-bold text-white">Date & Time Slot</CardTitle>
+              <CardDescription className="text-white/60 text-xs">
                 {existingBookings.length > 0
                   ? `${existingBookings.length} slot(s) already booked on this date.`
                   : 'All slots available on selected date.'}
@@ -252,17 +304,28 @@ export default function BookingFormPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <Field label="Booking Date" required error={errors.date?.message}>
-                <Input type="date" {...register('date')} min={todayStr()} className={cn(errors.date && 'border-destructive')} />
+                <Controller
+                  name="date"
+                  control={control}
+                  render={({ field }) => (
+                    <AestheticDatePicker
+                      value={field.value}
+                      onChange={field.onChange}
+                      minDate={todayStr()}
+                      error={!!errors.date}
+                    />
+                  )}
+                />
               </Field>
 
               {watchDate && (
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <Field label="Start Time" required error={errors.startTime?.message}>
                     <Controller
                       control={control}
                       name="startTime"
                       render={({ field }) => (
-                        <div className="grid grid-cols-3 gap-1.5">
+                        <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
                           {TIME_SLOTS.slice(0, -1).map(t => {
                             const booked = isTimeBooked(t)
                             return (
@@ -271,7 +334,7 @@ export default function BookingFormPage() {
                                 onClick={() => !booked && field.onChange(t)}
                                 disabled={booked}
                                 className={cn(
-                                  'py-2 px-1 rounded-lg text-xs font-medium border-2 transition-all',
+                                   'min-h-10 rounded-lg border-2 px-1 py-2 text-xs font-medium transition-all',
                                   booked
                                     ? 'bg-destructive/10 border-destructive/20 text-destructive/50 cursor-not-allowed line-through'
                                     : field.value === t
@@ -290,7 +353,7 @@ export default function BookingFormPage() {
                       control={control}
                       name="endTime"
                       render={({ field }) => (
-                        <div className="grid grid-cols-3 gap-1.5">
+                        <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
                           {TIME_SLOTS.slice(1).map(t => {
                             const booked = isTimeBooked(t)
                             const beforeStart = watchStart && t <= watchStart
@@ -301,7 +364,7 @@ export default function BookingFormPage() {
                                 onClick={() => !disabled && field.onChange(t)}
                                 disabled={disabled}
                                 className={cn(
-                                  'py-2 px-1 rounded-lg text-xs font-medium border-2 transition-all',
+                                   'min-h-10 rounded-lg border-2 px-1 py-2 text-xs font-medium transition-all',
                                   booked
                                     ? 'bg-destructive/10 border-destructive/20 text-destructive/50 cursor-not-allowed line-through'
                                     : beforeStart
@@ -336,7 +399,7 @@ export default function BookingFormPage() {
         )}
 
         {/* ── Purpose ───────────────────────────────────────────────── */}
-        {watchEquipmentId && (
+        {watchProjectId && watchEquipmentId && (
           <Card>
             <CardHeader><CardTitle>Purpose of Use</CardTitle></CardHeader>
             <CardContent className="space-y-4">
@@ -362,7 +425,7 @@ export default function BookingFormPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <Field label="Filament Type">
                   <select {...register('filamentType')} className="flex h-10 w-full rounded-xl border-2 border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                     <option value="">Select type</option>
@@ -404,7 +467,7 @@ export default function BookingFormPage() {
         )}
 
         {/* ── Safety Agreement (Spec 2 required checkbox) ───────────── */}
-        {watchEquipmentId && (
+        {watchProjectId && watchEquipmentId && (
           <AgreementCard
             title="Safety Agreement"
             description="I have received or will receive proper training for this machine, and I agree to follow all lab safety guidelines."
@@ -415,12 +478,12 @@ export default function BookingFormPage() {
         )}
 
         {/* ── Submit ────────────────────────────────────────────────── */}
-        <div className="flex justify-end gap-3 pt-2">
-          <Button type="button" variant="outline" onClick={() => navigate(-1)}>Cancel</Button>
+        <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
+          <Button type="button" variant="outline" onClick={() => navigate(-1)} className="w-full sm:w-auto">Cancel</Button>
           <Button
             type="submit"
             disabled={isSubmitting || hasNoProjects || !watchEquipmentId}
-            className="min-w-[160px] gap-2"
+            className="w-full gap-2 sm:min-w-[160px] sm:w-auto"
           >
             {isSubmitting
               ? <><div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" /> Booking…</>

@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { AlertCircle, Cpu, CalendarCheck } from 'lucide-react'
 import { signInWithGoogle } from '@/services/firebase/auth'
 import { toast } from 'sonner'
+import { debugLog } from '@/lib/utils'
 import dashboardArt from '@/assets/tinkerer-figjam/register-image.webp'
 import { BrandLockup } from '@/components/visual'
 
@@ -21,8 +22,11 @@ export default function LoginPage() {
       navigate(from, { replace: true })
       toast.success('Signed in successfully')
     } catch (e) {
-      console.error('GOOGLE SIGN IN ERROR:', e)
-      setError(e instanceof Error ? e.message : 'Google sign-in failed')
+      debugLog('GOOGLE SIGN IN ERROR:', e)
+      const msg = e instanceof Error ? e.message : 'Google sign-in failed'
+      if (!msg.includes('Redirecting')) {
+        setError(msg)
+      }
     } finally {
       setGoogleLoading(false)
     }
@@ -32,23 +36,29 @@ export default function LoginPage() {
     <main className="tl-auth-shell">
       <div className="tl-ambient" aria-hidden="true" />
 
-      <header className="relative z-10 flex items-center justify-between px-6 lg:px-14 py-5">
+      <header className="relative z-10 flex items-center justify-between px-6 lg:px-14 py-4">
         <BrandLockup />
       </header>
 
-      <section className="relative z-10 flex-1 grid lg:grid-cols-[1.05fr_0.72fr] gap-10 lg:gap-16 items-center px-6 lg:px-14 pb-12 max-lg:grid-cols-1">
+      <section className="relative z-10 flex-1 min-h-0 overflow-y-auto grid lg:grid-cols-[1.05fr_0.72fr] gap-10 lg:gap-16 items-center px-6 lg:px-14 pb-6 max-lg:grid-cols-1 max-lg:items-start max-lg:gap-5">
         <div className="min-w-0">
-          <div className="overflow-hidden rounded-card border border-hairline">
-            <img src={dashboardArt} alt="Tinkerers Lab workspace" className="w-full h-auto block" />
+          <div className="mx-auto w-full max-w-[min(86svh,1260px)] max-lg:max-w-[min(34svh,220px)] overflow-hidden rounded-card border border-hairline aspect-square">
+            <img
+              src={dashboardArt}
+              alt="Tinkerers Lab workspace"
+              className="w-full h-full object-cover block"
+              loading="eager"
+              fetchPriority="high"
+            />
           </div>
         </div>
 
         <aside className="w-full max-w-[460px] justify-self-center flex flex-col">
-          <h1 className="tl-display-title mb-10 text-5xl text-white max-lg:text-center lg:text-6xl">
+          <h1 className="tl-display-title mb-6 text-5xl text-white max-lg:text-center lg:text-6xl">
             Book it.<br />Build it.
           </h1>
 
-          <div className="flex flex-col gap-8 mb-10 max-lg:mx-auto max-lg:w-full">
+          <div className="flex flex-col gap-5 mb-6 max-lg:mx-auto max-lg:w-full">
             <div className="flex gap-4 items-start">
               <div className="w-10 h-10 rounded-full bg-indigo/30 flex items-center justify-center shrink-0">
                 <Cpu size={20} className="text-indigo" strokeWidth={1.5} />
@@ -99,7 +109,7 @@ export default function LoginPage() {
         </aside>
       </section>
 
-      <footer className="relative z-10 px-6 lg:px-14 py-6 text-white/30 text-xs font-medium max-lg:text-center">
+      <footer className="relative z-10 px-6 lg:px-14 py-4 text-white/30 text-xs font-medium max-lg:text-center">
         © {new Date().getFullYear()} Tinkerers' Lab. All rights reserved.
       </footer>
     </main>

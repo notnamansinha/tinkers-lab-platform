@@ -1,7 +1,7 @@
 import {
   GoogleAuthProvider,
   signInWithPopup,
-  updateProfile,
+  signInWithRedirect,
   signOut as firebaseSignOut,
   type User,
 } from 'firebase/auth'
@@ -12,6 +12,7 @@ import {
   serverTimestamp,
 } from 'firebase/firestore'
 import { auth, db } from '@/lib/firebase'
+import { cleanFirestoreData } from '@/lib/utils'
 import type { UserProfile, UserRole } from '@/types'
 
 const googleProvider = new GoogleAuthProvider()
@@ -20,17 +21,17 @@ googleProvider.setCustomParameters({ prompt: 'select_account' })
 // ============================================================
 // SIGN IN — Google
 // ============================================================
-import { signInWithRedirect } from 'firebase/auth'
 
 export async function signInWithGoogle(): Promise<User> {
   try {
     const result = await signInWithPopup(auth, googleProvider)
     return result.user
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const firebaseError = error as { code?: string }
     if (
-      error.code === 'auth/popup-blocked' ||
-      error.code === 'auth/popup-closed-by-user' ||
-      error.code === 'auth/cross-origin-opener-policy-failed'
+      firebaseError.code === 'auth/popup-blocked' ||
+      firebaseError.code === 'auth/popup-closed-by-user' ||
+      firebaseError.code === 'auth/cross-origin-opener-policy-failed'
     ) {
       await signInWithRedirect(auth, googleProvider)
       throw new Error('Redirecting to Google...')
@@ -72,6 +73,11 @@ export async function createUserProfile(
 ): Promise<UserProfile> {
   const ref = doc(db, 'users', user.uid)
   const now = serverTimestamp()
+  // Strip privilege/identity fields so callers can never override role, active status,
+  // email, or uid — these are always set server-side/from the auth user below.
+  const safeExtraData = Object.fromEntries(
+    Object.entries(extraData).filter(([key]) => !['uid', 'email', 'role', 'isActive'].includes(key))
+  ) as Partial<UserProfile>
   const profile: Omit<UserProfile, 'createdAt' | 'updatedAt'> & {
     createdAt: ReturnType<typeof serverTimestamp>
     updatedAt: ReturnType<typeof serverTimestamp>
@@ -85,10 +91,9 @@ export async function createUserProfile(
     isActive: true,
     createdAt: now,
     updatedAt: now,
-    ...extraData,
+    ...safeExtraData,
   }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await setDoc(ref, profile as any, { merge: true })
+  await setDoc(ref, cleanFirestoreData(profile), { merge: true })
   return profile as unknown as UserProfile
 }
 
@@ -97,5 +102,10 @@ export async function updateUserProfile(
   data: Partial<Omit<UserProfile, 'uid' | 'createdAt'>>
 ): Promise<void> {
   const ref = doc(db, 'users', uid)
-  await setDoc(ref, { ...data, updatedAt: serverTimestamp() }, { merge: true })
+  // Defence-in-depth: never let a self-update change role, active status, or email
+  // (the Firestore rules also block these, but we strip them here too).
+  const safeData = Object.fromEntries(
+    Object.entries(data).filter(([key]) => !['email', 'role', 'isActive'].includes(key))
+  ) as Partial<Omit<UserProfile, 'uid' | 'createdAt'>>
+  await setDoc(ref, cleanFirestoreData({ ...safeData, updatedAt: serverTimestamp() }), { merge: true })
 }

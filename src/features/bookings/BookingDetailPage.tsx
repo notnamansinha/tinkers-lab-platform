@@ -11,8 +11,10 @@ import { formatDateTime } from '@/lib/utils'
 import { toast } from 'sonner'
 import type { Booking } from '@/types'
 import LoadingSpinner from '@/components/common/LoadingSpinner'
+import { ConfirmDialog } from '@/components/common/ConfirmDialog'
 
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 
@@ -21,6 +23,11 @@ export default function BookingDetailPage() {
   const navigate = useNavigate()
   const { isStaff, user } = useAuth()
   const qc = useQueryClient()
+
+  const [rejectDialogOpen, setRejectDialogOpen] = React.useState(false)
+  const [rejectionReason, setRejectionReason] = React.useState('')
+  const [cancelDialogOpen, setCancelDialogOpen] = React.useState(false)
+  const [actionLoading, setActionLoading] = React.useState(false)
 
   const { data: booking, isLoading } = useQuery({
     queryKey: ['bookings', id],
@@ -36,17 +43,32 @@ export default function BookingDetailPage() {
   if (!booking) return <div className="py-16 text-center text-muted-foreground">Booking not found. <Link to="/bookings" className="text-primary hover:underline">← Back</Link></div>
 
   const reject = async () => {
-    const reason = window.prompt('Rejection reason:') || ''
-    await updateBookingStatus(id!, 'rejected', { rejectionReason: reason })
-    toast.success('Rejected')
-    qc.invalidateQueries({ queryKey: ['bookings'] })
+    setActionLoading(true)
+    try {
+      await updateBookingStatus(id!, 'rejected', { rejectionReason })
+      toast.success('Booking rejected')
+      qc.invalidateQueries({ queryKey: ['bookings'] })
+      setRejectDialogOpen(false)
+      setRejectionReason('')
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Failed to reject booking')
+    } finally {
+      setActionLoading(false)
+    }
   }
-  
+
   const cancel = async () => {
-    if (!window.confirm('Cancel this booking?')) return
-    await updateBookingStatus(id!, 'cancelled')
-    toast.success('Cancelled')
-    navigate('/bookings')
+    setActionLoading(true)
+    try {
+      await updateBookingStatus(id!, 'cancelled')
+      toast.success('Booking cancelled')
+      navigate('/bookings')
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Failed to cancel booking')
+    } finally {
+      setActionLoading(false)
+      setCancelDialogOpen(false)
+    }
   }
 
   const badgeVariant = {
@@ -57,17 +79,17 @@ export default function BookingDetailPage() {
   }[booking.status] as any || 'outline'
 
   return (
-    <div className="container mx-auto max-w-4xl space-y-6 py-6 animate-fade-in">
-      <div className="flex items-center gap-4 rounded-card bg-indigo p-6 md:p-8">
+    <div className="mx-auto max-w-4xl space-y-5 py-4 animate-fade-in sm:space-y-6 sm:py-6">
+       <div className="flex flex-wrap items-center gap-3 rounded-card bg-indigo p-5 sm:gap-4 sm:p-6 lg:p-8">
         <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div className="flex-1">
           <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-white/55">Booking #{id?.slice(-8).toUpperCase()}</p>
-          <h1 className="mt-2 text-4xl font-extrabold tracking-[-0.05em] text-white md:text-5xl">{booking.machineName}</h1>
+           <h1 className="mt-2 text-[clamp(2.25rem,6vw,3.5rem)] font-extrabold tracking-[-0.05em] text-white">{booking.machineName}</h1>
           <p className="mt-3 text-sm font-medium text-white/65">Your booking details, safety acknowledgement, and approval status.</p>
         </div>
-        <Badge variant={badgeVariant} className="text-sm px-3 py-1 capitalize">
+         <Badge variant={badgeVariant} className="shrink-0 px-3 py-1 text-sm capitalize">
           {booking.status}
         </Badge>
       </div>
@@ -124,12 +146,12 @@ export default function BookingDetailPage() {
           {booking.status === 'approved' && (
             <>
               {isStaff && (
-                <Button onClick={reject} variant="destructive" className="gap-2">
+                <Button onClick={() => setRejectDialogOpen(true)} variant="destructive" className="gap-2">
                   <XCircle className="h-4 w-4" /> Reject
                 </Button>
               )}
               {booking.userId === user?.uid && (
-                <Button onClick={cancel} variant="outline" className="gap-2 text-destructive hover:bg-destructive/10">
+                <Button onClick={() => setCancelDialogOpen(true)} variant="outline" className="gap-2 text-destructive hover:bg-destructive/10">
                   <Trash2 className="h-4 w-4" /> Cancel Booking
                 </Button>
               )}
@@ -140,6 +162,35 @@ export default function BookingDetailPage() {
           )}
         </CardFooter>
       </Card>
+
+      <ConfirmDialog
+        open={rejectDialogOpen}
+        onOpenChange={setRejectDialogOpen}
+        title="Reject Booking"
+        description="Optionally provide a reason for rejection."
+        onConfirm={reject}
+        confirmLabel="Reject"
+        variant="destructive"
+        loading={actionLoading}
+      >
+        <Input
+          value={rejectionReason}
+          onChange={(e) => setRejectionReason(e.target.value)}
+          placeholder="Rejection reason (optional)"
+          className="w-full"
+        />
+      </ConfirmDialog>
+
+      <ConfirmDialog
+        open={cancelDialogOpen}
+        onOpenChange={setCancelDialogOpen}
+        title="Cancel Booking"
+        description="Are you sure you want to cancel this booking? This action cannot be undone."
+        onConfirm={cancel}
+        confirmLabel="Cancel Booking"
+        variant="destructive"
+        loading={actionLoading}
+      />
     </div>
   )
 }

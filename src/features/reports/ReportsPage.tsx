@@ -14,8 +14,14 @@ import type { Booking, ToolCheckout, Equipment } from '@/types'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 
 // ── Colour palette ────────────────────────────────────────────────────────────
-const PIE_COLORS   = ['#0A84FF', '#30D158', '#FF9500', '#FF453A', '#BF5AF2']
-const BAR_COLOR    = 'hsl(var(--primary))'
+const PIE_COLORS   = [
+  'var(--color-brand-indigo)',
+  'var(--color-accent-lime)',
+  'var(--color-accent-orange)',
+  'var(--color-accent-pink-deep)',
+  'var(--color-accent-pink)',
+]
+const BAR_COLOR    = 'var(--color-brand-indigo)'
 
 // ── Stat card ─────────────────────────────────────────────────────────────────
 function StatCard({ label, value, icon, color, sub }: {
@@ -30,7 +36,7 @@ function StatCard({ label, value, icon, color, sub }: {
             <p className="text-3xl font-bold text-foreground">{value}</p>
             {sub && <p className="text-xs text-muted-foreground mt-1">{sub}</p>}
           </div>
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: `${color}20` }}>
+           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl" style={{ background: `color-mix(in srgb, ${color} 15%, transparent)` }}>
             <span style={{ color }}>{icon}</span>
           </div>
         </div>
@@ -188,7 +194,7 @@ export default function ReportsPage() {
 
   if (!isStaff) {
     return (
-      <div className="container py-12 mx-auto text-center">
+      <div className="mx-auto max-w-2xl py-8 text-center">
         <BarChart3 className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
         <h1 className="text-2xl font-bold">Reports</h1>
         <p className="text-muted-foreground mt-2">Staff access only.</p>
@@ -204,7 +210,7 @@ export default function ReportsPage() {
   ] as const
 
   return (
-    <div className="space-y-8 container py-6 mx-auto max-w-5xl animate-fade-in">
+    <div className="mx-auto max-w-[1280px] space-y-6 py-4 animate-fade-in sm:space-y-7 sm:py-6">
       <div>
         <p className="text-xs font-mono uppercase tracking-widest text-muted-foreground">Admin · Analytics</p>
         <h1 className="text-3xl font-bold tracking-tight mt-1">Reports</h1>
@@ -232,37 +238,37 @@ export default function ReportsPage() {
       {tab === 'overview' && (
         <div className="space-y-8">
           {/* Top stats */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,11rem),1fr))] gap-3 sm:gap-4">
             <StatCard
               label="Total Bookings"
               value={bookingsByStatus.reduce((s, e) => s + e.value, 0)}
               icon={<Calendar size={20} />}
-              color="#0A84FF"
+               color="var(--color-brand-indigo)"
             />
             <StatCard
               label="Active Checkouts"
               value={allCheckouts.filter(c => !c.returnedAt).length}
               icon={<Package size={20} />}
-              color="#FF9500"
+               color="var(--color-accent-orange)"
               sub={overdueCheckouts.length > 0 ? `${overdueCheckouts.length} overdue` : 'None overdue'}
             />
             <StatCard
               label="Total Projects"
               value={projectsByStatus.reduce((s, e) => s + e.value, 0)}
               icon={<Layers3 size={20} />}
-              color="#30D158"
+               color="var(--color-accent-lime)"
             />
             <StatCard
               label="Overdue Tools"
               value={overdueCheckouts.length}
               icon={<AlertTriangle size={20} />}
-              color={overdueCheckouts.length > 0 ? '#FF453A' : '#30D158'}
+               color={overdueCheckouts.length > 0 ? 'var(--color-accent-pink-deep)' : 'var(--color-accent-lime)'}
               sub={overdueCheckouts.length > 0 ? 'Immediate action required' : 'All tools returned on time'}
             />
           </div>
 
           {/* Bookings + Projects side by side */}
-          <div className="grid lg:grid-cols-2 gap-6">
+          <div className="grid min-w-0 gap-4 xl:grid-cols-2 sm:gap-5">
             <Card>
               <CardHeader>
                 <CardTitle>Bookings by Status</CardTitle>
@@ -272,7 +278,8 @@ export default function ReportsPage() {
                 {bookingsByStatus.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-8">No bookings yet</p>
                 ) : (
-                  <ResponsiveContainer width="100%" height={220}>
+                  <div className="h-[clamp(12rem,28vw,18rem)] min-h-48">
+                    <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie data={bookingsByStatus} cx="50%" cy="50%" innerRadius={60} outerRadius={90} paddingAngle={3} dataKey="value" nameKey="name">
                         {bookingsByStatus.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
@@ -280,7 +287,8 @@ export default function ReportsPage() {
                       <Tooltip formatter={(v: any) => [v, 'bookings']} />
                       <Legend />
                     </PieChart>
-                  </ResponsiveContainer>
+                    </ResponsiveContainer>
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -294,7 +302,8 @@ export default function ReportsPage() {
                 {projectsByStatus.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-8">No projects yet</p>
                 ) : (
-                  <ResponsiveContainer width="100%" height={220}>
+                  <div className="h-[clamp(12rem,28vw,18rem)] min-h-48">
+                    <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie data={projectsByStatus} cx="50%" cy="50%" innerRadius={60} outerRadius={90} paddingAngle={3} dataKey="value" nameKey="name">
                         {projectsByStatus.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
@@ -302,7 +311,8 @@ export default function ReportsPage() {
                       <Tooltip formatter={(v: any) => [v, 'projects']} />
                       <Legend />
                     </PieChart>
-                  </ResponsiveContainer>
+                    </ResponsiveContainer>
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -318,7 +328,8 @@ export default function ReportsPage() {
               {equipmentHealth.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-8">No equipment data</p>
               ) : (
-                <ResponsiveContainer width="100%" height={200}>
+                <div className="h-[clamp(11rem,24vw,16rem)] min-h-44">
+                  <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={equipmentHealth} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis dataKey="name" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} />
@@ -326,7 +337,8 @@ export default function ReportsPage() {
                     <Tooltip contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8 }} />
                     <Bar dataKey="value" name="Count" fill={BAR_COLOR} radius={[6, 6, 0, 0]} />
                   </BarChart>
-                </ResponsiveContainer>
+                  </ResponsiveContainer>
+                </div>
               )}
             </CardContent>
           </Card>
@@ -345,15 +357,17 @@ export default function ReportsPage() {
               {bookingsPerMachine.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-12">No booking data</p>
               ) : (
-                <ResponsiveContainer width="100%" height={320}>
+                <div className="h-[clamp(18rem,38vw,22rem)] min-h-72">
+                  <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={bookingsPerMachine} layout="vertical" margin={{ top: 0, right: 16, left: 80, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="hsl(var(--border))" />
                     <XAxis type="number" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} allowDecimals={false} />
                     <YAxis dataKey="name" type="category" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} width={80} />
                     <Tooltip contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8 }} />
-                    <Bar dataKey="count" name="Bookings" fill="#0A84FF" radius={[0, 6, 6, 0]} />
+                     <Bar dataKey="count" name="Bookings" fill="var(--color-brand-indigo)" radius={[0, 6, 6, 0]} />
                   </BarChart>
-                </ResponsiveContainer>
+                  </ResponsiveContainer>
+                </div>
               )}
             </CardContent>
           </Card>
@@ -368,7 +382,7 @@ export default function ReportsPage() {
               <div className="space-y-2">
                 {equipmentHealth.map(e => (
                   <div key={e.name} className="flex items-center gap-3">
-                    <span className="text-sm text-muted-foreground w-36 capitalize">{e.name}</span>
+                     <span className="w-24 shrink-0 truncate text-sm capitalize text-muted-foreground sm:w-36">{e.name}</span>
                     <div className="flex-1 h-2.5 bg-muted rounded-full overflow-hidden">
                       <div
                         className="h-full bg-primary rounded-full transition-all"
@@ -387,10 +401,10 @@ export default function ReportsPage() {
       {/* ── Tool Checkouts Tab ───────────────────────────────────────── */}
       {tab === 'tools' && (
         <div className="space-y-6">
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-            <StatCard label="Currently Out" value={allCheckouts.filter(c => !c.returnedAt).length} icon={<Package size={18} />} color="#FF9500" />
-            <StatCard label="Off-Premises" value={offPremises} icon={<TrendingUp size={18} />} color="#BF5AF2" sub="Taken outside the lab" />
-            <StatCard label="Overdue" value={overdueCheckouts.length} icon={<AlertTriangle size={18} />} color="#FF453A" />
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,11rem),1fr))] gap-3 sm:gap-4">
+             <StatCard label="Currently Out" value={allCheckouts.filter(c => !c.returnedAt).length} icon={<Package size={18} />} color="var(--color-accent-orange)" />
+             <StatCard label="Off-Premises" value={offPremises} icon={<TrendingUp size={18} />} color="var(--color-brand-indigo)" sub="Taken outside the lab" />
+             <StatCard label="Overdue" value={overdueCheckouts.length} icon={<AlertTriangle size={18} />} color="var(--color-accent-pink-deep)" />
           </div>
 
           <Card>
@@ -402,15 +416,17 @@ export default function ReportsPage() {
               {checkoutsByCategory.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-8">No active checkouts</p>
               ) : (
-                <ResponsiveContainer width="100%" height={220}>
+                <div className="h-[clamp(12rem,28vw,18rem)] min-h-48">
+                  <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={checkoutsByCategory} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis dataKey="name" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} />
                     <YAxis tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} allowDecimals={false} />
                     <Tooltip contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8 }} />
-                    <Bar dataKey="value" name="Checkouts" fill="#FF9500" radius={[6, 6, 0, 0]} />
+                     <Bar dataKey="value" name="Checkouts" fill="var(--color-accent-orange)" radius={[6, 6, 0, 0]} />
                   </BarChart>
-                </ResponsiveContainer>
+                  </ResponsiveContainer>
+                </div>
               )}
             </CardContent>
           </Card>

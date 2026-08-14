@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button'
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
+import { typedZodResolver } from '@/lib/form'
 import { z } from 'zod'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { collection, query, orderBy, getDocs, doc, runTransaction } from 'firebase/firestore'
@@ -26,7 +26,7 @@ type FormData = z.infer<typeof schema>
 
 export default function CheckoutPage() {
   const navigate = useNavigate()
-  const { user, profile } = useAuth()
+  const { user, profile, isStaff } = useAuth()
   const qc = useQueryClient()
 
   const { data: items = [] } = useQuery({
@@ -41,13 +41,24 @@ export default function CheckoutPage() {
   })
 
   const { register, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm<FormData>({
-    resolver: zodResolver(schema) as any, // eslint-disable-line @typescript-eslint/no-explicit-any
+    resolver: typedZodResolver(schema),
     defaultValues: { type: 'issue', quantity: 1 },
   })
 
   const selectedItemId = watch('itemId')
   const transactionType = watch('type')
   const selectedItem = items.find(i => i.id === selectedItemId)
+
+  // Inventory stock movements are staff-only (matches the Firestore rules).
+  if (!isStaff) {
+    return (
+      <div className="mx-auto max-w-2xl py-16 text-center">
+        <Package size={32} className="mx-auto mb-4 text-muted-foreground" />
+        <h1 className="text-2xl font-display font-bold">Stock Checkout</h1>
+        <p className="mt-2 text-sm text-muted-foreground">Staff access only.</p>
+      </div>
+    )
+  }
 
   const onSubmit = async (data: FormData) => {
     if (!user || !profile) { toast.error('Please sign in'); return }
@@ -101,7 +112,7 @@ export default function CheckoutPage() {
   const inp = (hasErr: boolean) => `w-full px-3 py-2 text-sm border rounded-md bg-background outline-none focus:ring-2 focus:ring-ring${hasErr ? ' border-destructive' : ''}`
 
   return (
-    <div className="space-y-6 max-w-xl animate-fade-in">
+    <div className="w-full max-w-2xl space-y-5 animate-fade-in sm:space-y-6">
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="icon" onClick={() => navigate(-1)}><ArrowLeft className="h-5 w-5" /></Button>
         <div>
@@ -155,12 +166,12 @@ export default function CheckoutPage() {
           <textarea rows={2} placeholder="Purpose, condition notes…" className={`${inp(false)} resize-none`} {...register('notes')} />
         </div>
 
-        <div className="flex gap-3 pt-2">
-          <Button type="submit" disabled={isSubmitting} className="gap-2">
+        <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row">
+          <Button type="submit" disabled={isSubmitting} className="w-full gap-2 sm:w-auto">
             {isSubmitting ? <div className="w-4 h-4 border-2 border-current/20 border-t-current rounded-full animate-spin" /> : <Package size={16} />}
             Submit
           </Button>
-          <Button type="button" variant="outline" onClick={() => navigate(-1)}>Cancel</Button>
+          <Button type="button" variant="outline" onClick={() => navigate(-1)} className="w-full sm:w-auto">Cancel</Button>
         </div>
       </form>
     </div>

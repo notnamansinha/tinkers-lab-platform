@@ -1,5 +1,3 @@
-import { db } from '@/lib/firebase'
-
 // ============================================================
 // COLLECTION NAMES — single source of truth
 // ============================================================
@@ -19,5 +17,6 @@ export const COLLECTIONS = {
   ISSUES: 'issues',
   AUDIT_LOGS: 'auditLogs',
   SETTINGS: 'settings',
+  FEEDBACK: 'feedback',
 } as const
 

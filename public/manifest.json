@@ -1,0 +1,16 @@
+{
+  "name": "Tinkerers' Lab Platform",
+  "short_name": "TL Platform",
+  "description": "Makerspace management platform for the Innovation & Tinkering Lab, Ahmedabad University",
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#000000",
+  "background_color": "#000000",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

@@ -156,20 +156,20 @@ export default function EquipmentDetailPage() {
   }
 
   return (
-    <div className="w-full max-w-5xl mx-auto pb-20 animate-in fade-in duration-300">
+    <div className="mx-auto w-full max-w-5xl animate-in fade-in duration-300">
       
       {/* ── Back ── */}
       <button
         onClick={() => navigate(-1)}
-        className="flex items-center gap-2 text-[#7D9FC2] hover:text-white font-bold mb-6 transition-colors uppercase tracking-[0.08em] text-xs"
+        className="mb-6 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.08em] text-white/50 transition-colors hover:text-white"
       >
         <ArrowLeft size={16} /> Back
       </button>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-2">
         
         {/* Left Col: Photo & Details */}
-        <div className="space-y-8">
+        <div className="space-y-6">
           {/* Photo */}
           <div className="aspect-[4/3] rounded-[16px] border border-white/5 bg-black overflow-hidden shadow-[0_20px_45px_rgba(0,0,0,0.35)]">
             {equipment.imageUrls?.[0] ? (
@@ -186,32 +186,32 @@ export default function EquipmentDetailPage() {
           </div>
 
           {/* Details Panel */}
-          <div className="bg-[rgba(255,255,255,0.02)] border border-white/20 text-[#56779D] p-6 lg:p-8 rounded-[16px]">
+          <div className="rounded-[16px] border border-white/20 bg-white/[0.02] p-4 text-white sm:p-6 lg:p-8">
             <div className="space-y-4">
-              <div className="grid grid-cols-[100px_1fr] gap-4 py-3 border-b-2 border-white/10">
-                <span className="font-bold text-[#7D9FC2] uppercase tracking-[0.08em] text-xs">Location</span>
-                <span className="font-bold text-[#56779D]">{equipment.location || 'Unknown'}</span>
+              <div className="grid grid-cols-[minmax(5.5rem,7rem)_minmax(0,1fr)] gap-3 border-b-2 border-white/10 py-3">
+                <span className="text-xs font-bold uppercase tracking-[0.08em] text-white/50">Location</span>
+                <span className="break-words font-bold">{equipment.location || 'Unknown'}</span>
               </div>
-              <div className="grid grid-cols-[100px_1fr] gap-4 py-3 border-b-2 border-white/10">
-                <span className="font-bold text-[#7D9FC2] uppercase tracking-[0.08em] text-xs">Induction</span>
-                <span className="font-bold text-[#56779D]">
+              <div className="grid grid-cols-[minmax(5.5rem,7rem)_minmax(0,1fr)] gap-3 border-b-2 border-white/10 py-3">
+                <span className="text-xs font-bold uppercase tracking-[0.08em] text-white/50">Induction</span>
+                <span className="break-words font-bold">
                   {equipment.requiresTraining ? (
                     <span className="flex items-center gap-2">Required <span className="inline-block h-2.5 w-2.5 rounded-full bg-lime" /> Cleared</span>
                   ) : 'No training required'}
                 </span>
               </div>
-              <div className="grid grid-cols-[100px_1fr] gap-4 py-3 border-b-2 border-white/10">
-                <span className="font-bold text-[#7D9FC2] uppercase tracking-[0.08em] text-xs">Max session</span>
-                <span className="font-bold text-[#56779D]">3 hrs</span>
+              <div className="grid grid-cols-[minmax(5.5rem,7rem)_minmax(0,1fr)] gap-3 border-b-2 border-white/10 py-3">
+                <span className="text-xs font-bold uppercase tracking-[0.08em] text-white/50">Max session</span>
+                <span className="break-words font-bold">3 hrs</span>
               </div>
-              <div className="grid grid-cols-[100px_1fr] gap-4 py-3 border-b-2 border-white/10">
-                <span className="font-bold text-[#7D9FC2] uppercase tracking-[0.08em] text-xs">My bookings</span>
-                <span className="font-bold text-[#56779D]">{myBookingsCount} session{myBookingsCount !== 1 ? 's' : ''} this month</span>
+              <div className="grid grid-cols-[minmax(5.5rem,7rem)_minmax(0,1fr)] gap-3 border-b-2 border-white/10 py-3">
+                <span className="text-xs font-bold uppercase tracking-[0.08em] text-white/50">My bookings</span>
+                <span className="break-words font-bold">{myBookingsCount} session{myBookingsCount !== 1 ? 's' : ''} this month</span>
               </div>
               {equipment.description && (
-                <div className="grid grid-cols-[100px_1fr] gap-4 py-3">
-                  <span className="font-bold text-[#7D9FC2] uppercase tracking-[0.08em] text-xs">About</span>
-                  <span className="font-bold text-[#56779D] leading-relaxed">{equipment.description}</span>
+                <div className="grid grid-cols-[minmax(5.5rem,7rem)_minmax(0,1fr)] gap-3 py-3">
+                  <span className="text-xs font-bold uppercase tracking-[0.08em] text-white/50">About</span>
+                  <span className="break-words font-bold leading-relaxed">{equipment.description}</span>
                 </div>
               )}
             </div>
@@ -219,25 +219,25 @@ export default function EquipmentDetailPage() {
         </div>
 
         {/* Right Col: Booking Flow */}
-        <div className="space-y-8">
+        <div className="space-y-6">
           {/* Title & Status */}
-          <div className="bg-[rgba(81,74,241,0.15)] border border-[rgba(81,74,241,0.3)] text-[#56779D] p-6 lg:p-8 rounded-[16px]">
+            <div className="rounded-[16px] border border-indigo/30 bg-indigo/15 p-5 text-white sm:p-6 lg:p-8">
             <div className="flex items-center gap-3 mb-4">
               <span className={cn('w-4 h-4 rounded-full border-2 border-black', si.pulse && 'animate-status-pulse')} style={{ background: si.color }} />
-              <span className="font-bold text-[#56779D] uppercase tracking-[0.08em] text-sm">{si.label}</span>
+              <span className="text-sm font-bold uppercase tracking-[0.08em]">{si.label}</span>
             </div>
-            <h1 className="font-display uppercase text-4xl lg:text-5xl font-black text-[#56779D] leading-[0.95]">
+            <h1 className="font-display text-[clamp(2.25rem,6vw,3.5rem)] font-black uppercase leading-[0.95]">
               {equipment.name}
             </h1>
           </div>
 
           {/* Slot picker */}
           {isAvailableForBooking && (
-            <div className="bg-[#101010] border border-white/5 p-6 lg:p-8 rounded-[16px] shadow-2xl">
-              <h3 className="font-display uppercase text-xl font-black text-[#56779D] mb-6">Select a Slot</h3>
+            <div className="rounded-[16px] border border-white/5 bg-near-black p-5 shadow-2xl sm:p-6 lg:p-8">
+              <h3 className="mb-6 font-display text-xl font-black uppercase text-white">Select a Slot</h3>
               
               {/* Day tabs */}
-              <div className="flex gap-3 mb-8 overflow-x-auto pb-2 scrollbar-hide">
+              <div className="scrollbar-thin mb-6 flex gap-3 overflow-x-auto pb-2">
                 {days.slice(0, 5).map(d => {
                   const isActiveD = activeDay === d.date
                   return (
@@ -245,8 +245,8 @@ export default function EquipmentDetailPage() {
                       key={d.date}
                       onClick={() => { setSelectedDay(d.date); setSelectedSlot(null) }}
                       className={cn(
-                        "px-5 py-2 rounded-full font-bold uppercase tracking-[0.08em] text-xs whitespace-nowrap transition-colors border-2",
-                        isActiveD ? "bg-lime text-[#56779D] border-lime" : "bg-transparent text-[#7D9FC2] border-white/20 hover:border-white/50 hover:text-white"
+                        "min-h-10 whitespace-nowrap rounded-full border-2 px-4 py-2 text-xs font-bold uppercase tracking-[0.08em] transition-colors",
+                        isActiveD ? "border-lime bg-lime text-black" : "border-white/20 bg-transparent text-white/50 hover:border-white/50 hover:text-white"
                       )}
                     >
                       {d.label}
@@ -256,7 +256,7 @@ export default function EquipmentDetailPage() {
               </div>
 
               {/* Hour slots */}
-              <div className="flex flex-wrap gap-3 mb-8">
+              <div className="mb-6 flex flex-wrap gap-2">
                 {LAB_HOURS.map(hour => {
                   const taken    = isSlotTaken(hour)
                   const mine     = isMySlot(hour)
@@ -270,14 +270,14 @@ export default function EquipmentDetailPage() {
                       onClick={() => !taken && setSelectedSlot(selected ? null : hour)}
                       title={mine ? 'Your booking' : taken ? 'Slot taken' : ''}
                       className={cn(
-                        "flex items-center gap-2 px-4 py-3 rounded-[16px] font-bold text-sm transition-all border-2",
+                        "flex min-h-11 items-center gap-2 rounded-[16px] border-2 px-3 py-3 text-sm font-bold transition-all sm:px-4",
                         selected
-                          ? "bg-pink text-[#56779D] border-black shadow-[2px_2px_0_0_#000] -translate-y-0.5"
+                          ? "-translate-y-0.5 border-black bg-pink text-black shadow-[2px_2px_0_0_#000]"
                           : mine
                             ? "bg-lime/20 text-lime border-lime/40"
                             : taken
                               ? "bg-white/5 text-white/20 border-white/5 cursor-not-allowed"
-                              : "bg-[#1a1a1a] text-[#56779D] border-[#333] hover:border-pink hover:text-pink"
+                              : "bg-charcoal text-white border-hairline hover:border-pink hover:text-pink"
                       )}
                     >
                       {taken && !mine && <Lock size={14} className="opacity-50" />}
@@ -301,7 +301,7 @@ export default function EquipmentDetailPage() {
                     }
                   </button>
                 ) : (
-                  <div className="w-full text-center py-4 rounded-[16px] bg-white/5 border-2 border-dashed border-white/20 text-[#7D9FC2] font-bold uppercase tracking-[0.08em] text-xs">
+                  <div className="w-full rounded-[16px] border-2 border-dashed border-white/20 bg-white/5 py-4 text-center text-xs font-bold uppercase tracking-[0.08em] text-white/50">
                     Select a slot above to book
                   </div>
                 )}

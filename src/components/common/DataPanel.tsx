@@ -11,12 +11,12 @@ interface DataPanelProps {
 
 export function DataPanel({ title, description, children, className, headerAction }: DataPanelProps) {
   return (
-    <div className={cn('premium-glass-card p-8 md:p-10 flex flex-col', className)}>
+    <div className={cn('flex min-w-0 flex-col rounded-card border border-hairline bg-near-black p-4 text-white shadow-sm sm:p-6', className)}>
       {(title || description || headerAction) && (
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6 pb-4 border-b border-white/20">
-          <div>
-            {title && <h2 className="text-[24px] font-brand font-medium text-[#56779D]">{title}</h2>}
-            {description && <p className="text-[#7D9FC2] text-sm mt-1">{description}</p>}
+        <div className="mb-4 flex min-w-0 flex-col justify-between gap-3 border-b border-hairline pb-3 sm:flex-row sm:items-end">
+          <div className="min-w-0">
+            {title && <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-white">{title}</h2>}
+            {description && <p className="text-white/60 text-xs sm:text-sm mt-1">{description}</p>}
           </div>
           {headerAction}
         </div>

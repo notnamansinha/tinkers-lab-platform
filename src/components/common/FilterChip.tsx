@@ -5,19 +5,19 @@ interface FilterChipProps {
   label: string
   active: boolean
   onClick: () => void
-  tone?: 'light' | 'dark' // Kept for API compatibility, though OLED is mostly dark
 }
 
-export function FilterChip({ label, active, onClick, tone = 'dark' }: FilterChipProps) {
+export function FilterChip({ label, active, onClick }: FilterChipProps) {
   return (
     <button
       type="button"
       onClick={onClick}
+      aria-pressed={active}
       className={cn(
-        'px-4 py-2 rounded-full font-medium tracking-wide text-[12px] transition-all duration-300',
+        'min-h-10 rounded-full px-3.5 py-2 text-xs font-bold tracking-wide transition-all duration-150 select-none',
         active
-          ? 'bg-[#72E8FF] text-[#56779D] shadow-sm'
-          : 'bg-white/40 text-[#7D9FC2] hover:text-[#56779D] hover:bg-white/60 border border-white/20'
+          ? 'bg-lime text-black shadow-sm'
+          : 'bg-white/5 text-white/60 hover:text-white hover:bg-white/10 border border-hairline'
       )}
     >
       {label}

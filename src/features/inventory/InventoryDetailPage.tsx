@@ -52,8 +52,8 @@ export default function InventoryDetailPage() {
   }[item.status] as any || 'outline'
 
   return (
-    <div className="container py-6 mx-auto max-w-4xl space-y-6 animate-fade-in">
-      <div className="flex items-center gap-4">
+    <div className="mx-auto max-w-4xl space-y-5 py-4 animate-fade-in sm:space-y-6 sm:py-6">
+       <div className="flex flex-wrap items-center gap-3">
         <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
@@ -65,7 +65,7 @@ export default function InventoryDetailPage() {
           {item.status.replace('_', ' ')}
         </Badge>
         {isStaff && (
-          <Button variant="outline" className="gap-2" onClick={() => navigate(`/inventory/${id}/edit`)}>
+         <Button variant="outline" className="w-full gap-2 sm:w-auto" onClick={() => navigate(`/inventory/${id}/edit`)}>
             <Edit className="h-4 w-4" /> Edit
           </Button>
         )}
@@ -87,9 +87,9 @@ export default function InventoryDetailPage() {
             <p className="text-sm text-muted-foreground mt-2">Minimum threshold: {item.minQuantity} {item.unit}</p>
             
             {isStaff && (
-              <div className="mt-6 flex gap-3">
-                <Button variant="outline" onClick={() => navigate(`/inventory/${id}/checkout`)}>Issue Stock</Button>
-                <Button onClick={() => navigate(`/inventory/${id}/restock`)}>Restock</Button>
+             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                <Button variant="outline" className="w-full sm:w-auto" onClick={() => navigate(`/inventory/${id}/checkout`)}>Issue Stock</Button>
+                <Button className="w-full sm:w-auto" onClick={() => navigate(`/inventory/${id}/restock`)}>Restock</Button>
               </div>
             )}
           </CardContent>
@@ -108,7 +108,7 @@ export default function InventoryDetailPage() {
               ['Contact', item.supplierContact || '—'], 
               ['Unit Cost', item.unitCost ? `₹${item.unitCost}` : '—']
             ].map(([k, v]) => (
-              <div key={k} className="flex justify-between items-center border-b pb-2 last:border-0 last:pb-0">
+               <div key={k} className="flex flex-wrap items-center justify-between gap-2 border-b pb-2 last:border-0 last:pb-0">
                 <span className="text-sm text-muted-foreground">{k}</span>
                 <span className="text-sm font-medium">{String(v)}</span>
               </div>

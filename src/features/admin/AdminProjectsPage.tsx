@@ -1,16 +1,18 @@
 import React, { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { collection, query, orderBy, getDocs, doc, updateDoc, serverTimestamp } from 'firebase/firestore'
+import { collection, query, orderBy, where, getDocs, doc, updateDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { COLLECTIONS } from '@/services/firebase/firestore'
 import { Search, FolderKanban, CheckCircle, XCircle } from 'lucide-react'
-import { formatDateTime, cn } from '@/lib/utils'
+import { formatDateTime, cn, cleanFirestoreData, debugLog } from '@/lib/utils'
 import { toast } from 'sonner'
 import type { Project } from '@/types'
 import { useAuth } from '@/contexts/AuthContext'
 import { PageHeader } from '@/components/common/PageHeader'
 import { FilterChip } from '@/components/common/FilterChip'
 import { DataPanel } from '@/components/common/DataPanel'
+import { ConfirmDialog } from '@/components/common/ConfirmDialog'
+import { Input } from '@/components/ui/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 
 const STATUS_COLOR: Record<string, string> = {
@@ -21,37 +23,100 @@ const STATUS_COLOR: Record<string, string> = {
   rejected: 'bg-pink text-white',
 }
 
+type ExtendedProject = Project & { docId: string; firestoreDocId?: string }
+
 export default function AdminProjectsPage() {
   const { profile } = useAuth()
   const qc = useQueryClient()
   const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
+  const [rejectProject, setRejectProject] = useState<ExtendedProject | null>(null)
+  const [rejectionReason, setRejectionReason] = useState('')
+  const [actionLoading, setActionLoading] = useState(false)
 
   const { data: projects = [], isLoading } = useQuery({
-    queryKey: ['admin', 'projects'],
+    queryKey: ['admin', 'projects_v2'],
     queryFn: async () => {
       const ref = collection(db, COLLECTIONS.PROJECTS)
       const q = query(ref, orderBy('createdAt', 'desc'))
       const snap = await getDocs(q)
-      return snap.docs.map(d => ({ id: d.id, ...d.data() }) as Project)
+      return snap.docs.map(d => {
+        const data = d.data()
+        return {
+          ...data,
+          docId: d.id,
+          firestoreDocId: d.id,
+          id: (data as any).id || d.id,
+        } as ExtendedProject
+      })
     },
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
+    refetchOnMount: true,
   })
 
   const filtered = projects.filter(p => {
-    const matchSearch = !search || p.title.toLowerCase().includes(search.toLowerCase()) || p.userName.toLowerCase().includes(search.toLowerCase())
+    const matchSearch = !search || p.title?.toLowerCase().includes(search.toLowerCase()) || p.userName?.toLowerCase().includes(search.toLowerCase())
     const matchStatus = filterStatus === 'all' || p.status === filterStatus
     return matchSearch && matchStatus
   })
 
-  const updateStatus = async (id: string, status: string, rejectionReason?: string) => {
-    await updateDoc(doc(db, COLLECTIONS.PROJECTS, id), { status, rejectionReason: rejectionReason || null, reviewedBy: profile?.displayName, reviewedAt: serverTimestamp(), updatedAt: serverTimestamp() })
-    toast.success(`Project ${status}`)
-    qc.invalidateQueries({ queryKey: ['admin', 'projects'] })
+  const updateStatus = async (projectItem: ExtendedProject, status: string, reason?: string) => {
+    setActionLoading(true)
+    let targetDocId = projectItem.docId || projectItem.firestoreDocId || (projectItem as any)._id
+
+    // Fallback: If docId is not a Firestore doc ID (or is missing), query by sequential project code (e.g. "TL-001")
+    if (!targetDocId || targetDocId === projectItem.id) {
+      try {
+        const ref = collection(db, COLLECTIONS.PROJECTS)
+        const q = query(ref, where('id', '==', projectItem.id))
+        const snap = await getDocs(q)
+        if (!snap.empty) {
+          targetDocId = snap.docs[0].id
+        }
+      } catch (err) {
+        console.warn('Fallback docId lookup error:', err)
+      }
+    }
+
+    if (!targetDocId) {
+      toast.error('Cannot update project: Missing document ID.')
+      return
+    }
+
+    try {
+      const updates = cleanFirestoreData({
+        status,
+        rejectionReason: reason || null,
+        reviewedBy: profile?.displayName || 'Admin',
+        reviewedAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      })
+
+      await updateDoc(doc(db, COLLECTIONS.PROJECTS, targetDocId), updates)
+      toast.success(`Project marked as ${status}`)
+      qc.invalidateQueries({ queryKey: ['admin', 'projects_v2'] })
+    } catch (error: unknown) {
+      const firebaseErr = error as { code?: string; message?: string }
+      debugLog('Error updating project status:', error)
+      if (firebaseErr.code === 'permission-denied' || firebaseErr.message?.includes('permission')) {
+        toast.error('Permission denied: Your account document in Firestore has role="student". Please set role="super_admin" in Firebase Console -> Firestore -> users.')
+      } else {
+        toast.error(`Failed to update project: ${firebaseErr.message || 'Permission denied'}`)
+      }
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  const handleReject = async () => {
+    if (!rejectProject) return
+    await updateStatus(rejectProject, 'rejected', rejectionReason)
+    setRejectProject(null)
+    setRejectionReason('')
   }
 
   return (
-    <div className="w-full max-w-7xl mx-auto pb-20 animate-fade-in">
+    <div className="mx-auto w-full max-w-[1440px] min-w-0 animate-fade-in">
       <PageHeader
         variant="dark"
         title="Projects"
@@ -64,13 +129,13 @@ export default function AdminProjectsPage() {
         filters={
           <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center">
             <div className="relative w-full lg:w-80 flex-shrink-0">
-              <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#7D9FC2]" />
+              <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/50" />
               <input type="text" placeholder="Search projects…" value={search} onChange={e => setSearch(e.target.value)} className="tl-input pl-11 w-full" />
             </div>
             <div className="flex flex-wrap gap-2">
-              <FilterChip label="All statuses" active={filterStatus === 'all'} onClick={() => setFilterStatus('all')} tone="dark" />
+              <FilterChip label="All statuses" active={filterStatus === 'all'} onClick={() => setFilterStatus('all')} />
               {['pending', 'active', 'completed', 'on_hold', 'rejected'].map(s => (
-                <FilterChip key={s} label={s.replace('_', ' ')} active={filterStatus === s} onClick={() => setFilterStatus(s)} tone="dark" />
+                <FilterChip key={s} label={s.replace('_', ' ')} active={filterStatus === s} onClick={() => setFilterStatus(s)} />
               ))}
             </div>
           </div>
@@ -84,43 +149,90 @@ export default function AdminProjectsPage() {
               <TableHead>#</TableHead>
               <TableHead>Title</TableHead>
               <TableHead>Submitted by</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Department</TableHead>
-              <TableHead>Start</TableHead>
-              <TableHead>Submitted</TableHead>
+               <TableHead className="hidden lg:table-cell">Type</TableHead>
+               <TableHead className="hidden lg:table-cell">Department</TableHead>
+               <TableHead className="hidden sm:table-cell">Start</TableHead>
+               <TableHead className="hidden xl:table-cell">Submitted</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow><TableCell colSpan={9} className="h-32 text-center text-[#7D9FC2]">Loading…</TableCell></TableRow>
+              <TableRow><TableCell colSpan={9} className="h-24 text-center text-white/50">Loading…</TableCell></TableRow>
+            ) : filtered.length === 0 ? (
+              <TableRow><TableCell colSpan={9} className="h-24 text-center text-white/50">No projects found.</TableCell></TableRow>
             ) : filtered.map((p, idx) => (
-              <TableRow key={p.id} className={cn('border-0', p.status === 'pending' && 'bg-orange/5')}>
-                <TableCell className="text-[#7D9FC2] font-mono text-xs">{filtered.length - idx}</TableCell>
-                <TableCell className="font-semibold text-[#56779D]">{p.title}</TableCell>
+              <TableRow key={p.docId || p.id || idx} className={cn('border-0', p.status === 'pending' && 'bg-orange/5')}>
+                <TableCell className="font-mono text-xs text-white/50">{filtered.length - idx}</TableCell>
+                <TableCell className="font-semibold text-white">
+                  <div>{p.title}</div>
+                  <div className="font-mono text-xs text-white/50">{p.id}</div>
+                </TableCell>
                 <TableCell>
-                  <div className="text-sm font-medium text-[#56779D]">{p.userName}</div>
+                  <div className="text-sm font-medium text-white">{p.userName}</div>
                   <div className="text-xs text-white/45">{p.userEmail}</div>
                 </TableCell>
-                <TableCell className="text-[#7D9FC2] text-xs uppercase">{p.userType}</TableCell>
-                <TableCell className="text-[#7D9FC2] text-sm">{p.department}</TableCell>
-                <TableCell className="text-[#7D9FC2] text-sm">{p.startDate}</TableCell>
-                <TableCell className="text-[#7D9FC2] text-sm">{formatDateTime(p.createdAt)}</TableCell>
-                <TableCell><span className={cn('text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider', STATUS_COLOR[p.status] || 'bg-white/40 border border-white/20 shadow-sm text-white')}>{p.status}</span></TableCell>
+                 <TableCell className="hidden text-xs uppercase text-white/50 lg:table-cell">{p.userType}</TableCell>
+                 <TableCell className="hidden text-sm text-white/50 lg:table-cell">{p.department || '—'}</TableCell>
+                 <TableCell className="hidden text-sm text-white/50 sm:table-cell">{p.startDate}</TableCell>
+                 <TableCell className="hidden text-sm text-white/50 xl:table-cell">{formatDateTime(p.createdAt)}</TableCell>
+                <TableCell>
+                  <span className={cn('text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider', STATUS_COLOR[p.status] || 'bg-white/40 border border-white/20 shadow-sm text-white')}>
+                    {p.status}
+                  </span>
+                </TableCell>
                 <TableCell className="text-right">
-                  {p.status === 'pending' ? (
-                    <div className="flex gap-1 justify-end">
-                      <button onClick={() => updateStatus(p.id, 'active')} className="p-2 rounded-full hover:bg-lime/20 text-lime transition-colors" aria-label="Approve"><CheckCircle size={16} /></button>
-                      <button onClick={() => { const r = window.prompt('Rejection reason:') || ''; updateStatus(p.id, 'rejected', r) }} className="p-2 rounded-full hover:bg-pink/20 text-pink transition-colors" aria-label="Reject"><XCircle size={16} /></button>
-                    </div>
-                  ) : <span className="text-white/30 text-xs">—</span>}
+                  <div className="flex gap-2 justify-end items-center">
+                    <button
+                      onClick={() => { updateStatus(p, 'active') }}
+                      className={cn(
+                        'p-2 rounded-full transition-colors',
+                        p.status === 'active' ? 'bg-lime text-black font-bold' : 'hover:bg-lime/20 text-lime'
+                      )}
+                      title="Approve Project"
+                      aria-label="Approve"
+                      disabled={actionLoading}
+                    >
+                      <CheckCircle size={18} />
+                    </button>
+                    <button
+                      onClick={() => { setRejectProject(p); setRejectionReason('') }}
+                      className={cn(
+                        'p-2 rounded-full transition-colors',
+                        p.status === 'rejected' ? 'bg-pink text-white font-bold' : 'hover:bg-pink/20 text-pink'
+                      )}
+                      title="Reject Project"
+                      aria-label="Reject"
+                      disabled={actionLoading}
+                    >
+                      <XCircle size={18} />
+                    </button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </DataPanel>
+
+      <ConfirmDialog
+        open={rejectProject !== null}
+        onOpenChange={(open) => { if (!open) setRejectProject(null) }}
+        title="Reject Project"
+        description="Optionally provide a reason for rejection."
+        onConfirm={handleReject}
+        confirmLabel="Reject"
+        variant="destructive"
+        loading={actionLoading}
+      >
+        <Input
+          value={rejectionReason}
+          onChange={(e) => setRejectionReason(e.target.value)}
+          placeholder="Rejection reason (optional)"
+          className="tl-input w-full"
+        />
+      </ConfirmDialog>
     </div>
   )
 }

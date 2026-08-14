@@ -24,8 +24,8 @@ export default function WorkshopDetailPage() {
   if (!workshop) return <div className="py-16 text-center text-muted-foreground">Not found. <Link to="/workshops" className="text-primary hover:underline">← Back</Link></div>
 
   return (
-    <div className="max-w-2xl space-y-5 animate-fade-in">
-      <div className="flex items-center gap-3">
+    <div className="w-full max-w-3xl space-y-5 animate-fade-in">
+      <div className="flex flex-wrap items-center gap-3">
         <Button variant="ghost" size="icon" onClick={() => navigate(-1)}><ArrowLeft className="h-5 w-5" /></Button>
         <div className="flex-1">
           <p className="text-xs font-mono text-muted-foreground">{workshop.type.replace('_',' ')}</p>
@@ -35,7 +35,7 @@ export default function WorkshopDetailPage() {
       </div>
       <div className="rounded-lg border bg-card p-5 space-y-3">
         <p className="text-sm text-muted-foreground">{workshop.description}</p>
-        <div className="grid grid-cols-2 gap-3 pt-3 border-t">
+        <div className="grid grid-cols-1 gap-3 border-t pt-3 sm:grid-cols-2">
           {[['Date', workshop.date], ['Time', `${workshop.startTime}–${workshop.endTime}`], ['Location', workshop.location], ['Instructor', workshop.instructor], ['Email', workshop.instructorEmail || '—'], ['Capacity', `${workshop.registeredCount}/${workshop.capacity}`], ['Prerequisites', workshop.prerequisites || 'None'], ['Materials', workshop.materials || '—'], ['Certificate', workshop.certificateIssued ? 'Yes' : 'No']].map(([k,v]) => (
             <div key={k}><p className="text-xs text-muted-foreground font-mono">{k}</p><p className="text-sm font-medium">{String(v)}</p></div>
           ))}

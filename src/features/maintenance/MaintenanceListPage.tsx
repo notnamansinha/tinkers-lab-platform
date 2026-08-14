@@ -46,7 +46,7 @@ export default function MaintenanceListPage() {
   })
 
   return (
-    <div className="space-y-6 container py-6 mx-auto animate-fade-in">
+    <div className="mx-auto max-w-[1440px] space-y-5 py-4 animate-fade-in sm:space-y-6 sm:py-6">
       <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Maintenance Records</h1>
@@ -70,7 +70,7 @@ export default function MaintenanceListPage() {
           />
         </div>
         <Select value={filterStatus} onValueChange={(val) => setFilterStatus(val || '')}>
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-full sm:w-[180px]">
             <SelectValue placeholder="All statuses" />
           </SelectTrigger>
           <SelectContent>

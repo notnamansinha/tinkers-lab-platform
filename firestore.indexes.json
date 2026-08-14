@@ -44,6 +44,14 @@
       ]
     },
     {
+      "collectionGroup": "bookings",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "date", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "toolCheckouts",
       "queryScope": "COLLECTION",
       "fields": [

@@ -1,4 +1,4 @@
-import { Timestamp } from 'firebase/firestore'
+import type { Timestamp } from 'firebase/firestore'
 
 // ============================================================
 // USER & AUTH TYPES
@@ -501,6 +501,18 @@ export interface AuditLog {
   resource: string
   resourceId: string
   details?: string
+  createdAt: Timestamp
+}
+
+// ============================================================
+// FEEDBACK TYPES
+// ============================================================
+export interface Feedback {
+  id: string
+  userId: string
+  userName: string
+  userEmail: string
+  message: string
   createdAt: Timestamp
 }
 

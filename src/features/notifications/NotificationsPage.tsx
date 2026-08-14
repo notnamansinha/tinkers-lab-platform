@@ -29,8 +29,8 @@ export default function NotificationsPage() {
   }
 
   return (
-    <div className="space-y-5 max-w-2xl animate-fade-in">
-      <div className="flex items-start justify-between">
+    <div className="w-full max-w-3xl space-y-5 animate-fade-in">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-xs font-mono uppercase tracking-widest text-accent">Notifications</p>
           <h1 className="text-2xl font-display font-bold mt-1">Notifications</h1>
@@ -62,7 +62,7 @@ export default function NotificationsPage() {
                 <p className={cn('text-sm', !n.isRead && 'font-semibold')}>{n.title}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">{n.message}</p>
               </div>
-              <span className="text-xs text-muted-foreground shrink-0">{formatRelativeTime(n.createdAt)}</span>
+               <span className="shrink-0 text-xs text-muted-foreground">{formatRelativeTime(n.createdAt)}</span>
             </div>
           ))}
         </div>

@@ -2,6 +2,8 @@ import {
   collection,
   query,
   where,
+  orderBy,
+  limit,
   getDocs,
   serverTimestamp,
   doc,
@@ -11,6 +13,7 @@ import {
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { COLLECTIONS } from './firestore'
+import { todayStr, cleanFirestoreData } from '@/lib/utils'
 import type { ToolCheckout, ToolCondition } from '@/types'
 
 // ============================================================
@@ -28,13 +31,13 @@ export async function createToolCheckout(
   data: Omit<ToolCheckout, 'id' | 'createdAt' | 'updatedAt' | 'isOverdue' | 'returnedAt' | 'conditionAtReturn'>
 ): Promise<string> {
   const ref = collection(db, COLLECTIONS.TOOL_CHECKOUTS)
-  const docRef = await addDoc(ref, {
+  const docRef = await addDoc(ref, cleanFirestoreData({
     ...data,
     action: 'checking_out',
     isOverdue: false,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
-  })
+  }))
   return docRef.id
 }
 
@@ -78,6 +81,20 @@ export async function getActiveUserCheckouts(userId: string): Promise<ToolChecko
     .filter((c) => !c.returnedAt) // Client-side filter for unreturned
     .sort((a, b) => b.createdAt?.toMillis?.() - a.createdAt?.toMillis?.())
   return checkouts
+}
+
+/**
+ * Get ALL checkouts (staff view — including returned).
+ * Returns all checkout records across all users, ordered newest first.
+ */
+export async function getAllCheckouts(): Promise<ToolCheckout[]> {
+  const ref = collection(db, COLLECTIONS.TOOL_CHECKOUTS)
+  const q = query(ref, orderBy('createdAt', 'desc'), limit(500))
+  const snap = await getDocs(q)
+  const epoch = new Timestamp(0, 0)
+  return snap.docs
+    .map((d) => ({ id: d.id, ...d.data() }) as ToolCheckout)
+    .sort((a, b) => (b.createdAt ?? epoch).toMillis() - (a.createdAt ?? epoch).toMillis())
 }
 
 /**
@@ -134,8 +151,7 @@ export async function getUserCheckoutHistory(userId: string): Promise<ToolChecko
  */
 export function isCheckoutOverdue(checkout: ToolCheckout): boolean {
   if (checkout.returnedAt) return false
-  const today = new Date().toISOString().split('T')[0] // "YYYY-MM-DD"
-  return checkout.expectedReturnDate < today
+  return checkout.expectedReturnDate < todayStr()
 }
 
 /**

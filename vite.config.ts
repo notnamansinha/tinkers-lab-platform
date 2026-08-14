@@ -2,7 +2,6 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 
-// https://vitejs.dev/config/
 export default defineConfig({
   base: '/',
   plugins: [react()],
@@ -17,7 +16,17 @@ export default defineConfig({
     },
   },
   build: {
-    // Code splitting for optimal free-tier hosting
+    modulePreload: {
+      polyfill: true,
+      resolveDependencies: (_filename, deps) => {
+        return deps.filter(
+          (d) =>
+            !d.includes('vendor-firebase') &&
+            !d.includes('vendor-charts') &&
+            !d.includes('vendor-form'),
+        )
+      },
+    },
     rollupOptions: {
       output: {
         manualChunks(id) {
@@ -42,7 +51,7 @@ export default defineConfig({
         },
       },
     },
-    // Warn at 500kb chunks
     chunkSizeWarningLimit: 600,
+    target: 'es2020',
   },
 })

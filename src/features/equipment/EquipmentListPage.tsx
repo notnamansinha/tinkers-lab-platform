@@ -5,7 +5,7 @@ import { collection, query, orderBy, getDocs } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { COLLECTIONS } from '@/services/firebase/firestore'
 import { useAuth } from '@/contexts/AuthContext'
-import { Search, Plus } from 'lucide-react'
+import { Search, Plus, Wrench } from 'lucide-react'
 import type { Equipment, EquipmentCategory } from '@/types'
 import { cn } from '@/lib/utils'
 import { PageHeader } from '@/components/common/PageHeader'
@@ -13,12 +13,12 @@ import { FilterChip } from '@/components/common/FilterChip'
 import { EntityCard } from '@/components/common/EntityCard'
 
 const STATUS_CONFIG = {
-  available:         { label: 'Available',      chip: 'bg-[#DDF237] text-white' },
-  reserved:          { label: 'Reserved',       chip: 'bg-[#FFB13F] text-white' },
-  in_use:            { label: 'In Use',         chip: 'bg-[#FFB13F] text-white' },
-  under_maintenance: { label: 'Maintenance',    chip: 'bg-white/10 text-[#7D9FC2]' },
-  out_of_service:    { label: 'Out of Service', chip: 'bg-[#EC68D8] text-white' },
-  retired:           { label: 'Retired',        chip: 'bg-white/40 border border-white/20 shadow-sm text-[#7D9FC2]' },
+  available:         { label: 'Available',      chip: 'bg-lime text-black font-bold',      dot: 'bg-lime',            pulse: false },
+  reserved:          { label: 'Reserved',       chip: 'bg-orange text-black font-bold',    dot: 'bg-orange animate-pulse', pulse: true },
+  in_use:            { label: 'In Use',         chip: 'bg-orange text-black font-bold',    dot: 'bg-orange animate-pulse', pulse: true },
+  under_maintenance: { label: 'Maintenance',    chip: 'bg-pink/20 text-pink border border-pink/30 font-bold', dot: 'bg-pink', pulse: false },
+  out_of_service:    { label: 'Out of Service', chip: 'bg-pink text-black font-bold',      dot: 'bg-pink',            pulse: false },
+  retired:           { label: 'Retired',        chip: 'bg-white/10 text-white/50 border border-hairline', dot: 'bg-white/40', pulse: false },
 } as const
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -64,29 +64,33 @@ export default function EquipmentListPage() {
   })
 
   return (
-    <div className="w-full max-w-7xl mx-auto pb-20 animate-fade-in mt-4">
+    <div className="mx-auto mt-2 w-full max-w-[1440px] min-w-0 animate-fade-in">
       <PageHeader
         variant="dark"
-        title="Machines"
-        description="Browse the catalog. Tier-1 equipment requires induction and booking."
+        title="Machines & Equipment"
+        description="Browse lab equipment catalog. Tier-1 machines require safety induction and booking."
         action={
           isStaff ? (
-            <button onClick={() => navigate('/equipment/new')} className="tl-pill-button-secondary flex items-center gap-2 px-6">
-              <Plus size={18} /> Add Equipment
+            <button
+              onClick={() => navigate('/equipment/new')}
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-lime px-5 py-2.5 text-xs font-bold text-black shadow-sm transition-all hover:bg-lime/90"
+            >
+              <Plus size={16} /> Add Equipment
             </button>
           ) : undefined
         }
         filters={
-          <div className="flex flex-col gap-6">
-            <div className="flex flex-col lg:flex-row gap-5 items-start lg:items-center">
-              <div className="relative w-full lg:w-80 flex-shrink-0">
-                <Search size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#7D9FC2]" />
+          <div className="flex flex-col gap-5">
+            <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center">
+              <div className="relative w-full lg:w-80 shrink-0">
+                <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" />
                 <input
                   type="text"
                   placeholder="Search by name or ID..."
+                  aria-label="Search equipment by name or ID"
                   value={search}
                   onChange={e => setSearch(e.target.value)}
-                  className="tl-input pl-12 w-full h-[44px]"
+                  className="w-full h-10 pl-10 pr-4 rounded-xl bg-near-black border border-hairline text-xs text-white placeholder:text-white/40 focus:outline-none focus:border-white/30"
                 />
               </div>
               <div className="flex flex-wrap gap-2 flex-1">
@@ -101,7 +105,7 @@ export default function EquipmentListPage() {
                 ))}
               </div>
             </div>
-            <div className="flex flex-wrap gap-2 pt-5 border-t border-white/20">
+            <div className="flex flex-wrap gap-2 pt-4 border-t border-hairline">
               <FilterChip label="Any Status" active={filterStatus === 'all'} onClick={() => setFilterStatus('all')} />
               {STATUS_FILTERS.map(s => (
                 <FilterChip
@@ -117,59 +121,78 @@ export default function EquipmentListPage() {
       />
 
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
           {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="h-[300px] rounded-[24px] bg-[rgba(255,255,255,0.02)] border border-[rgba(255,255,255,0.03)] animate-pulse" />
+            <div key={i} className="h-64 rounded-card bg-near-black border border-hairline animate-pulse" />
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="py-24 text-center text-white/30 text-[14px]">
+           <div className="py-10 text-center text-xs text-white/40">
           No equipment found matching your filters.
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
           {filtered.map(e => {
-            const cfg  = STATUS_CONFIG[e.status] ?? STATUS_CONFIG.available
-            const pulse = e.status === 'in_use' || e.status === 'reserved'
-            const isDown = e.status === 'under_maintenance' || e.status === 'out_of_service' || e.status === 'retired'
-            const dotColorClass = isDown ? 'bg-white/30' : pulse ? 'bg-[#FFB13F] animate-pulse shadow-[0_0_8px_rgba(255,177,63,0.8)]' : 'bg-[#DDF237] shadow-[0_0_8px_rgba(221,242,55,0.8)]'
+            const cfg = STATUS_CONFIG[e.status] ?? STATUS_CONFIG.available
 
             return (
-              <EntityCard key={e.id} as="button" onClick={() => navigate(`/equipment/${e.id}`)}>
-                <div className="aspect-[16/10] relative bg-[rgba(0,0,0,0.5)] overflow-hidden flex-shrink-0">
+              <EntityCard key={e.id}>
+                <div className="aspect-[16/10] relative bg-black/60 overflow-hidden shrink-0 border-b border-hairline">
                   {e.imageUrls?.[0] ? (
-                    <img src={e.imageUrls[0]} alt={e.name} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity duration-300 group-hover:scale-[1.02]" />
+                    <img src={e.imageUrls[0]} alt={e.name} className="w-full h-full object-cover opacity-85 group-hover:opacity-100 transition-all duration-300 group-hover:scale-105" />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-white/20 text-[12px] uppercase tracking-widest font-semibold">
-                      No Image
+                    <div className="w-full h-full flex flex-col items-center justify-center text-white/20 gap-2">
+                      <Wrench className="h-8 w-8 text-white/20" />
+                      <span className="text-[10px] uppercase tracking-widest font-bold">No Image</span>
                     </div>
                   )}
-                  {/* Status Overlay */}
-                  <div className="absolute top-3 left-3 bg-[rgba(0,0,0,0.4)]  border border-[#6FA9FF]/50 px-2.5 py-1 rounded-full flex items-center gap-2">
-                    <span className={cn('w-2 h-2 rounded-full', dotColorClass)} />
-                    <span className="text-white/80 font-medium text-[10px] uppercase tracking-widest leading-none">
+                  {/* Status Overlay Badge */}
+                  <div className="absolute top-3 left-3 bg-black/70 backdrop-blur-md border border-white/10 px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-sm">
+                    <span className={cn('w-2 h-2 rounded-full', cfg.dot)} />
+                    <span className="text-white/90 font-bold text-[10px] uppercase tracking-wider leading-none">
                       {cfg.label}
                     </span>
                   </div>
                 </div>
 
-                <div className="p-6 flex-1 flex flex-col">
-                  <span className="text-[11px] font-semibold text-white/30 uppercase tracking-[0.1em] mb-1.5 block">
-                    {CATEGORY_LABELS[e.category] ?? e.category}
-                  </span>
-                  <h3 className="text-[18px] font-semibold text-[#56779D] mb-2 leading-tight group-hover:text-[#514AF1] transition-colors">
-                    {e.name}
-                  </h3>
+                <div className="p-5 flex-1 flex flex-col justify-between">
+                  <div>
+                    <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest block mb-1">
+                      {CATEGORY_LABELS[e.category] ?? e.category}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/equipment/${e.id}`)}
+                      className="text-left w-full group/link"
+                    >
+                      <h3 className="text-base font-bold text-white mb-2 leading-snug group-hover/link:text-lime transition-colors">
+                        {e.name}
+                      </h3>
+                    </button>
+                  </div>
                   
-                  <div className="mt-auto flex items-center justify-end gap-3 pt-4">
-                    {e.status === 'available' && (
-                      <span
-                        onClick={ev => { ev.stopPropagation(); navigate(`/bookings/new?machine=${e.id}`) }}
-                        className="bg-white/70 text-white/80 hover:text-white px-4 py-2 rounded-full text-[11px] font-bold uppercase tracking-wider hover:bg-[#514AF1] transition-all border border-[#6FA9FF]/50"
+                  <div className="mt-4 flex items-center justify-between pt-3 border-t border-hairline/50">
+                    <span className="text-[11px] text-white/50 font-medium truncate">
+                      {e.location || 'Lab Storage'}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => navigate(`/equipment/${e.id}`)}
+                        className="text-white/40 hover:text-white text-[11px] font-bold uppercase tracking-wider transition-colors"
                       >
-                        Book
-                      </span>
-                    )}
+                        View
+                      </button>
+                      {e.status === 'available' && (
+                        <button
+                          type="button"
+                          onClick={() => navigate(`/bookings/new?machine=${e.id}`)}
+                          className="bg-lime text-black px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider hover:bg-lime/90 transition-all shadow-sm"
+                        >
+                          Book
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </EntityCard>

@@ -1,15 +1,16 @@
 import React, { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
-import { onAuthStateChanged, type User } from 'firebase/auth'
-import { doc, onSnapshot } from 'firebase/firestore'
-import { auth, db } from '@/lib/firebase'
-import { getUserProfile } from '@/services/firebase/auth'
-import type { UserProfile, UserRole, ADMIN_ROLES, STAFF_ROLES } from '@/types'
+import type { User } from 'firebase/auth'
+import { type DocumentData, type DocumentSnapshot } from 'firebase/firestore'
+import type { UserProfile, UserRole } from '@/types'
+import { ADMIN_ROLES, STAFF_ROLES } from '@/types'
+import { debugLog } from '@/lib/utils'
 
 interface AuthContextValue {
   user: User | null
   profile: UserProfile | null
   role: UserRole | null
   loading: boolean
+  authReady: boolean
   isAdmin: boolean
   isStaff: boolean
   refetchProfile: () => Promise<void>
@@ -20,75 +21,110 @@ const AuthContext = createContext<AuthContextValue | null>(null)
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<UserProfile | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [authReady, setAuthReady] = useState(false)
 
-  const loadProfile = async (u: User) => {
+  const loadProfile = async (u: User, db: any) => {
     try {
-      const p = await getUserProfile(u.uid)
-      setProfile(p)
+      const { doc, getDoc } = await import('firebase/firestore')
+      const snap = await getDoc(doc(db, 'users', u.uid))
+      if (snap.exists()) {
+        setProfile(snap.data() as UserProfile)
+      } else {
+        setProfile(null)
+      }
     } catch {
       setProfile(null)
     }
   }
 
   const refetchProfile = async () => {
-    if (user) await loadProfile(user)
+    if (!user) return
+    const { db } = await import('@/lib/firebase')
+    await loadProfile(user, db)
   }
 
   useEffect(() => {
-    // Handle redirect result for environments where popup is blocked
-    import('firebase/auth').then(({ getRedirectResult }) => {
-      getRedirectResult(auth).catch(console.error)
-    })
+    let profileUnsub: (() => void) | null = null
+    let cancelled = false
 
-    let profileUnsub: (() => void) | null = null;
+    const init = async () => {
+      const [{ auth, db }, { onAuthStateChanged, getRedirectResult }, { doc, onSnapshot }] =
+        await Promise.all([
+          import('@/lib/firebase'),
+          import('firebase/auth'),
+          import('firebase/firestore'),
+        ])
 
-    const authUnsub = onAuthStateChanged(auth, (u) => {
-      setLoading(true)
-      setUser(u)
-      
-      if (profileUnsub) {
-        profileUnsub();
-        profileUnsub = null;
-      }
+      if (cancelled) return
 
-      if (u) {
-        profileUnsub = onSnapshot(doc(db, 'users', u.uid), (docSnap: any) => {
-          if (docSnap.exists()) {
-            setProfile(docSnap.data() as UserProfile)
-          } else {
-            setProfile(null)
-          }
-          setLoading(false)
-        }, (error: any) => {
-          console.error("Profile snapshot error:", error)
+      getRedirectResult(auth).catch((e: unknown) => { debugLog('getRedirectResult failed:', e) })
+
+      const authUnsub = onAuthStateChanged(auth, (u) => {
+        setUser(u)
+
+        if (profileUnsub) {
+          profileUnsub()
+          profileUnsub = null
+        }
+
+        if (u) {
+          // Reset to loading state before the first snapshot arrives for the
+          // new user — prevents the previous user's profile from being visible.
           setProfile(null)
-          setLoading(false)
-        })
-      } else {
-        setProfile(null)
-        setLoading(false)
+          setAuthReady(false)
+          profileUnsub = onSnapshot(
+            doc(db, 'users', u.uid),
+            (docSnap: DocumentSnapshot<DocumentData>) => {
+              if (docSnap.exists()) {
+                setProfile(docSnap.data() as UserProfile)
+              } else {
+                setProfile(null)
+              }
+              setAuthReady(true)
+            },
+            () => {
+              setProfile(null)
+              setAuthReady(true)
+            },
+          )
+        } else {
+          setProfile(null)
+          setAuthReady(true)
+        }
+      })
+
+      return () => {
+        authUnsub()
+        if (profileUnsub) profileUnsub()
       }
+    }
+
+    let cleanup: () => void = () => {}
+    init().then((c) => {
+      if (c && !cancelled) cleanup = c
+    }).catch((err: unknown) => {
+      debugLog('Auth initialization failed:', err)
+      setAuthReady(true)
     })
 
     return () => {
-      authUnsub()
-      if (profileUnsub) profileUnsub()
+      cancelled = true
+      cleanup()
     }
   }, [])
 
-  const role = profile?.role ?? null
-  const normalizedRole = role?.toLowerCase().replace(/[^a-z]/g, '') ?? ''
-  
-  const adminRoles = ['superadmin', 'admin']
-  const staffRoles = ['superadmin', 'admin', 'faculty', 'labassistant']
-  
-  const isAdmin = adminRoles.includes(normalizedRole)
-  const isStaff = staffRoles.includes(normalizedRole)
+  const rawRole = profile?.role ?? null
+  const normalizedRole = rawRole?.toLowerCase().replace(/[^a-z]/g, '') ?? ''
+
+  // Single source of truth: the role constants from src/types (matches firestore.rules).
+  const normalize = (r: string) => r.toLowerCase().replace(/[^a-z]/g, '')
+
+  const isAdmin = ADMIN_ROLES.map(normalize).includes(normalizedRole)
+  const isStaff = STAFF_ROLES.map(normalize).includes(normalizedRole)
 
   return (
     <AuthContext.Provider
-      value={{ user, profile, role, loading, isAdmin, isStaff, refetchProfile }}
+      value={{ user, profile, role: rawRole, loading: !authReady, authReady, isAdmin, isStaff, refetchProfile }}
     >
       {children}
     </AuthContext.Provider>

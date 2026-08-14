@@ -20,7 +20,7 @@ export function FullBleedQuestionCard({
   return (
     <section
       className={cn(
-        'flex min-h-[22rem] flex-col rounded-card bg-indigo p-6 text-white md:min-h-[28rem] md:p-8',
+        'flex min-h-[18rem] flex-col rounded-card bg-indigo p-5 text-white sm:min-h-[22rem] sm:p-6 lg:min-h-[26rem] lg:p-8',
         className,
       )}
       {...props}
@@ -44,7 +44,7 @@ export function FullBleedQuestionCard({
       {children}
 
       {controls && (
-        <div className="mt-auto grid gap-4 pt-10 sm:grid-cols-2">
+        <div className="mt-auto grid gap-4 pt-8 sm:grid-cols-2">
           {controls}
         </div>
       )}

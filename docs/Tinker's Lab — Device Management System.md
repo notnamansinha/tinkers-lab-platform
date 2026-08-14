@@ -189,10 +189,10 @@ Apps Script sends reminder email 24hrs before booking
 
 **Title:** Tinker's Lab — Book a Machine
 
-**Fields:**
+**Fields (current build):**
 
-1. Email — Short answer, Required, Email validation
-2. Machine — Dropdown, Required
+1. Project — Dropdown, Required (only admin-approved/active projects are listed)
+2. Machine — Dropdown, Required, appears after a project is selected
     - Bambu Labs 3D Printer (X-1C)
     - Creality Dual Nozzle 3D Printer
     - Success Laser Cutter
@@ -212,6 +212,8 @@ Apps Script sends reminder email 24hrs before booking
 5. End Time — Time, Required
 6. Purpose of Use — Paragraph, Required
 7. Additional Notes — Paragraph, Optional
+
+> **Flow note:** booking requires a project first. Only active (approved) projects are shown, and a "New Project" shortcut lets users create one without leaving the form.
 
 ---
 
@@ -357,5 +359,26 @@ Apps Script sends reminder email 24hrs before booking
 | June 26, 2026 | 4 user types with conditional form sections | Students, Professors, Startups, External all have different info needs |
 | June 26, 2026 | Machine-specific sheets routed by Apps Script | Easier to track usage history per machine |
 | June 26, 2026 | MVP first, scale later | Get system running in 2-3 days, add features incrementally |
+| August 10, 2026 | Global `cleanFirestoreData` payload sanitizer | Prevents `undefined` field errors from failing Firestore `addDoc`/`updateDoc` writes |
+| August 10, 2026 | Custom Dark OLED Date Picker (`AestheticDatePicker`) | Replaced native browser date pickers with dark popover calendar, presets (Today/Tomorrow/Next Week), and Lime accents |
+| August 10, 2026 | Structured Agreement Panel & Neon-Yellow Chips | Harmonized form agreements with `AgreementCard` square checkmark boxes and neon-yellow (`lime`) equipment chips with tick icons |
+| August 10, 2026 | Resilient Feedback Submission | Added permission-safe local storage buffering for feedback/issue forms to guarantee smooth user experience |
+| August 10, 2026 | Admin Project Status Fix | `AdminProjectsPage` resolves the Firestore doc ID via a fallback lookup by sequential project code (e.g. `TL-001`), surfaces permission-denied errors with actionable guidance, and uses `cleanFirestoreData` before `updateDoc` |
+| August 11, 2026 | Firebase Config Fail-Fast | Removed unconditional development credential fallbacks; `lib/firebase.ts` now throws if no `VITE_FIREBASE_API_KEY`/`_B64` is present unless emulator mode (`VITE_USE_EMULATORS=true`) is explicitly enabled |
+| August 11, 2026 | Per-User Feedback Cooldown | Feedback rate-limit key is now scoped by UID (`tl_feedback_lastSentAt_{uid}`) so one account's submission never blocks another |
+| August 11, 2026 | Dashboard Booking Filter | Upcoming schedule now drops completed same-day sessions (today's bookings require `endTime >= now`) while keeping date + start-time sorting; added the `userId`+`date` composite Firestore index |
+| August 11, 2026 | Local-Time Date Utilities | `todayStr()` now constructs the date from local `getFullYear`/`getMonth`/`getDate` instead of UTC `toISOString()` to avoid off-by-one today-highlighting near timezone boundaries; `getWeekDays` and all `new Date(weekDays[...])` call sites parse YYYY-MM-DD as local midnight (`T00:00:00`) |
+| August 11, 2026 | FieldValue Sentinel Preservation | `cleanFirestoreData` detects Firestore `FieldValue` sentinels (e.g. `serverTimestamp()`) via `_methodName` and returns them unchanged so `createProject` and `createBooking` writes are not stripped |
+| August 11, 2026 | Component Accessibility Pass | Resolved 6 nested-interactive/accessibility issues: (1) `AestheticDatePicker` clear button moved outside trigger `<button>` as a sibling `<button>`, (2) Equipment card "Book" quick-action changed from `<span>` to `<button>` sibling, (3) `ProjectListPage` `EntityCard` receives `as="button"` for focusability, (4) `AgreementCard` tracks local checked state for uncontrolled checkbox registrations, (5) `BookingCalendarPage` My Bookings panel renders a loading state before empty-state, (6) `IssueFormPage` catch block shows error toast and keeps form mounted for retry |
+| August 11, 2026 | Staff Tool Checkout Includes Returned | Added `getAllCheckouts()` to `toolCheckouts.ts` returning all checkout records (active + returned); staff view in `ToolCheckoutListPage` now uses this so the "Returned" filter shows actual data |
+| August 11, 2026 | Project Edit Preserves Agreements | `ProjectFormPage` edit-flow `updateDoc` payload now includes `safetyAgreementAccepted` and `termsAccepted` so agreement changes are persisted alongside project fields |
+| August 11, 2026 | FilterChip API Cleanup | Removed unused `tone` prop from `FilterChipProps` and all `tone="dark"` usages in `AdminProjectsPage` — the prop was silently ignored |
+| August 12, 2026 | Service Worker Offline Caching | `sw.js` precaches the app shell (`/`) on install and runtime-caches document responses so recently visited pages still load from cache when offline |
+| August 12, 2026 | Hardened Firestore Sanitizer | `cleanFirestoreData` now detects all Firestore sentinel types (`FieldValue`, `Timestamp`, `GeoPoint`, `DocumentReference`, `Bytes`) instead of probing `_methodName`, so server timestamps and document refs survive recursive cleaning |
+| August 12, 2026 | Bounded Checkout History Query | `getAllCheckouts()` queries with `orderBy('createdAt', 'desc')` + `limit(500)` instead of loading and sorting the entire collection in memory |
+| August 12, 2026 | Centralized Equipment Status Dots | Status dot color/pulse moved into `STATUS_CONFIG` (available/reserved/in_use/maintenance/out_of_service/retired) as a single source of truth for the overlay badge |
+| August 12, 2026 | Accessible Search Fields | Search inputs across equipment, bookings, issues, and admin tables gained explicit `aria-label`s |
+| August 12, 2026 | Responsive Space Utilization — Shell & Spacing | Single fluid `min-h-svh` shell: sidebar collapses to a compact 64px icon rail at tablet (`md`) and expands to the full labeled rail at `xl`; duplicate desktop top-bar brand chrome removed; page-level `pb-20` and `.container` gutters consolidated into one shell-owned fluid padding; mobile pill nav is safe-area aware and includes an Admin entry for staff |
+| August 12, 2026 | Responsive Space Utilization — Grids & Controls | Content-aware grids (`auto-fit`/`minmax`), dashboard columns delayed to `lg`/`xl`, fluid chart heights with aspect-ratio sizing, mobile forms stack with full-width actions and ≥44px touch targets, admin/detail tables hide low-priority columns on phones while keeping actions visible, and shared cards/headers/filters/date-picker use responsive padding. Palette, typography, routes, and data flows unchanged |
 
 [Tool Access System — Finalized Spec (Booking + Checkout)](https://app.notion.com/p/Tool-Access-System-Finalized-Spec-Booking-Checkout-390365156faf8132a648d5be74af5309?pvs=21)

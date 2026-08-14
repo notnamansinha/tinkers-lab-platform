@@ -14,17 +14,28 @@ service cloud.firestore {
       return isAuth() && request.auth.uid == uid;
     }
 
-    // NOTE: costs 1 read per rule call — minimise usage
+    // NOTE: each helper call below costs 1 read — minimise usage
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
     function getUserRole() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+      return getUserData().role;
+    }
+
+    // A user is "active" unless their profile explicitly sets isActive == false.
+    // (Missing/legacy profile docs without the field are treated as active.)
+    // This is what actually revokes access when an admin deactivates an account.
+    function isActiveUser() {
+      return isAuth() && getUserData().isActive != false;
     }
 
     function isAdmin() {
-      return isAuth() && getUserRole() == 'super_admin';
+      return isActiveUser() && getUserRole() == 'super_admin';
     }
 
     function isStaff() {
-      return isAuth() && getUserRole() in ['super_admin', 'faculty', 'lab_assistant'];
+      return isActiveUser() && getUserRole() in ['super_admin', 'faculty', 'lab_assistant'];
     }
 
     // ================================================================
@@ -37,7 +48,7 @@ service cloud.firestore {
                     && request.resource.data.keys().hasAll(['email', 'displayName', 'role', 'userType', 'isActive', 'createdAt'])
                     && request.resource.data.role == 'student';
       // Users update their own non-sensitive fields; admins update anything
-      allow update: if (isOwner(uid) && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'isActive']))
+      allow update: if (isOwner(uid) && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'isActive', 'email']))
                     || isAdmin();
       allow delete: if isAdmin();
     }
@@ -55,15 +66,31 @@ service cloud.firestore {
     // ================================================================
     match /bookings/{bookingId} {
       allow read: if isAuth() && (resource.data.userId == request.auth.uid || isStaff());
-      // Auto-confirm model (Spec 2): status must be 'approved' on create, not 'pending'
-      allow create: if isAuth()
+      // Auto-confirm model (Spec 2): status must be 'approved' on create.
+      // Server-side validation: active user, own booking, valid time window, and the
+      // machine must be a confirmed, bookable (Tier 1) machine that is available/reserved.
+      allow create: if isActiveUser()
                     && request.resource.data.userId == request.auth.uid
                     && request.resource.data.keys().hasAll(['equipmentId', 'machineId', 'date', 'startTime', 'endTime', 'purpose', 'projectId', 'status', 'safetyAgreementAccepted'])
+                    && request.resource.data.keys().hasOnly(['equipmentId', 'machineId', 'machineName', 'userId', 'userEmail', 'userName', 'projectId', 'projectTitle', 'date', 'startTime', 'endTime', 'purpose', 'consumables', 'safetyAgreementAccepted', 'status', 'rejectionReason', 'cancelledBy', 'createdAt', 'updatedAt'])
                     && request.resource.data.status == 'approved'
-                    && request.resource.data.safetyAgreementAccepted == true;
-      // Users can cancel own bookings; staff can fully update
+                    && request.resource.data.safetyAgreementAccepted == true
+                    && request.resource.data.date is string
+                    && request.resource.data.date.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}')
+                    && request.resource.data.startTime is string
+                    && request.resource.data.endTime is string
+                    && request.resource.data.startTime.matches('[0-9]{2}:[0-9]{2}')
+                    && request.resource.data.endTime.matches('[0-9]{2}:[0-9]{2}')
+                    && request.resource.data.startTime < request.resource.data.endTime
+                    && get(/databases/$(database)/documents/equipment/$(request.resource.data.equipmentId)).data.tier == 'bookable'
+                    && get(/databases/$(database)/documents/equipment/$(request.resource.data.equipmentId)).data.confirmed == true
+                    && get(/databases/$(database)/documents/equipment/$(request.resource.data.equipmentId)).data.status in ['available', 'reserved'];
+      // Users can cancel own bookings (status/cancelledBy only); staff can fully update.
       allow update: if isAuth() && (
-        (resource.data.userId == request.auth.uid && request.resource.data.status == 'cancelled')
+        (isActiveUser()
+         && resource.data.userId == request.auth.uid
+         && request.resource.data.status == 'cancelled'
+         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'cancelledBy', 'updatedAt']))
         || isStaff()
       );
       allow delete: if isAdmin();
@@ -74,11 +101,28 @@ service cloud.firestore {
     // ================================================================
     match /toolCheckouts/{checkoutId} {
       allow read: if isAuth() && (resource.data.userId == request.auth.uid || isStaff());
-      allow create: if isAuth()
+      // Server-enforced schema: new checkouts must be 'checking_out', not overdue, with
+      // valid enums and no extra/injected fields.
+      allow create: if isActiveUser()
                     && request.resource.data.userId == request.auth.uid
-                    && request.resource.data.keys().hasAll(['toolName', 'toolCategory', 'action', 'projectId', 'locationOfUse', 'conditionAtCheckout']);
-      // Users can update their own checkout (return action); staff can update any
-      allow update: if isAuth() && (resource.data.userId == request.auth.uid || isStaff());
+                    && request.resource.data.keys().hasAll(['toolName', 'toolCategory', 'action', 'projectId', 'locationOfUse', 'conditionAtCheckout', 'quantity', 'expectedReturnDate'])
+                    && request.resource.data.keys().hasOnly(['userId', 'userEmail', 'userName', 'universityId', 'projectId', 'projectTitle', 'action', 'toolCategory', 'toolName', 'quantity', 'locationOfUse', 'outsideLocation', 'expectedReturnDate', 'expectedReturnTime', 'conditionAtCheckout', 'notes', 'isOverdue', 'createdAt', 'updatedAt'])
+                    && request.resource.data.action == 'checking_out'
+                    && request.resource.data.toolCategory in ['Power Tools', 'Hand Tools', 'Measurement Tools', 'Safety Equipment', 'Other']
+                    && request.resource.data.locationOfUse in ['in_lab', 'taking_outside']
+                    && request.resource.data.conditionAtCheckout in ['good', 'fair', 'damaged']
+                    && request.resource.data.isOverdue == false
+                    && request.resource.data.expectedReturnDate is string
+                    && request.resource.data.expectedReturnDate.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}')
+                    && (request.resource.data.locationOfUse == 'in_lab'
+                        || (request.resource.data.outsideLocation is string && request.resource.data.outsideLocation.size() > 0));
+      // Owner may only perform a return (and flip overdue flags); staff can update any.
+      allow update: if isAuth() && (
+        (isActiveUser()
+         && resource.data.userId == request.auth.uid
+         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['action', 'conditionAtReturn', 'returnedAt', 'notes', 'isOverdue', 'updatedAt']))
+        || isStaff()
+      );
       allow delete: if isAdmin();
     }
 
@@ -124,7 +168,7 @@ service cloud.firestore {
     // ================================================================
     match /workshopRegistrations/{regId} {
       allow read: if isAuth() && (resource.data.userId == request.auth.uid || isStaff());
-      allow create: if isAuth() && request.resource.data.userId == request.auth.uid;
+      allow create: if isActiveUser() && request.resource.data.userId == request.auth.uid;
       allow update: if isStaff() || (isAuth() && resource.data.userId == request.auth.uid);
       allow delete: if isAdmin();
     }
@@ -133,16 +177,17 @@ service cloud.firestore {
     // PROJECTS COLLECTION  (Form 1 — Project Registration)
     // ================================================================
     match /projects/{projectId} {
-      allow read: if isAuth();
+      // Projects are only visible to their owner and staff — NOT all authenticated users.
+      allow read: if isAuth() && (resource.data.userId == request.auth.uid || isStaff());
       // Users self-register projects; status must start as 'pending'
-      allow create: if isAuth()
+      allow create: if isActiveUser()
                     && request.resource.data.userId == request.auth.uid
                     && request.resource.data.status == 'pending'
                     && request.resource.data.safetyAgreementAccepted == true
                     && request.resource.data.termsAccepted == true;
       // Users edit own pending/active projects (not status); admins change anything
       allow update: if isAuth() && (
-        (resource.data.userId == request.auth.uid && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['status']))
+        (isActiveUser() && resource.data.userId == request.auth.uid && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['status']))
         || isAdmin()
       );
       allow delete: if isAdmin();
@@ -174,7 +219,15 @@ service cloud.firestore {
     // ================================================================
     match /issues/{issueId} {
       allow read: if isAuth() && (resource.data.userId == request.auth.uid || isStaff());
-      allow create: if isAuth() && request.resource.data.userId == request.auth.uid;
+      // New issues start 'open' with valid enums and no injected resolution/status fields.
+      allow create: if isActiveUser()
+                    && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.status == 'open'
+                    && request.resource.data.type in ['machine_malfunction', 'safety_concern', 'missing_damaged', 'suggestion', 'other']
+                    && request.resource.data.severity in ['low', 'medium', 'high', 'urgent']
+                    && request.resource.data.description is string
+                    && request.resource.data.description.size() >= 20
+                    && request.resource.data.keys().hasOnly(['type', 'severity', 'relatedMachine', 'description', 'dateNoticed', 'userId', 'userName', 'userEmail', 'status', 'createdAt', 'updatedAt']);
       // Staff update status/resolution; users cannot edit after submission
       allow update: if isStaff();
       allow delete: if isAdmin();
@@ -185,7 +238,8 @@ service cloud.firestore {
     // ================================================================
     match /auditLogs/{logId} {
       allow read: if isAdmin();
-      allow create: if isAuth();
+      // Audit entries must be written by staff only — no client-side forging.
+      allow create: if isStaff();
       allow update, delete: if false; // Immutable
     }
 
@@ -193,8 +247,33 @@ service cloud.firestore {
     // SETTINGS COLLECTION
     // ================================================================
     match /settings/{settingId} {
-      allow read: if isAuth();
+      allow read: if isStaff();
       allow write: if isAdmin();
+    }
+
+    // ================================================================
+    // FEEDBACK COLLECTION (with server-side rate limiting)
+    // ================================================================
+    match /feedback/{feedbackId} {
+      // Only staff/admin can read feedback
+      allow read: if isStaff();
+      // Authenticated users can create their own feedback — server-enforced schema + rate limiting
+      allow create: if isAuth()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.message is string
+        && request.resource.data.message.size() > 0
+        && request.resource.data.message.size() <= 2000
+        && request.resource.data.createdAt == request.time
+        // Exhaustive allowlist — rejects any extra field the client might inject
+        && request.resource.data.keys().hasOnly(['userId', 'message', 'createdAt'])
+        // Rate limit: at most 1 feedback per user per 5-minute window.
+        // The document ID encodes the user + current window, so a second write in the
+        // same window fails automatically (create on an existing document is denied).
+        // NOTE: the document ID is client-predictable; replace with a Cloud Function
+        // or server-enforced flow if stricter rate limiting is required.
+        && feedbackId == request.auth.uid + '_' + string(math.floor(request.time.toMillis() / 300000));
+      // No one can edit or delete feedback
+      allow update, delete: if false;
     }
 
     // ================================================================

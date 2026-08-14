@@ -4,6 +4,10 @@ The Tinkerers' Lab platform utilizes a strict Role-Based Access Control (RBAC) s
 
 > [!NOTE]
 > All users default to the `student` role upon registration. Elevated roles can only be granted by an existing `super_admin` through the Admin Panel.
+>
+> Role checks are enforced **server-side** by `firestore.rules`: a user's `role` must be recorded in their `users/{uid}` document, and the account must be **active** (`isActive != false`). There is **no hard-coded owner override** in the application code — every permission is derived from the stored role.
+>
+> **Deactivation:** when an admin sets `isActive = false`, the Firestore rules treat the account as inactive. Deactivated users can no longer create bookings, tool checkouts, projects, issues, feedback, or workshop registrations, and they lose read access to other users' projects. (Catalog reads — equipment/inventory/maintenance/workshops/announcements — remain available to any authenticated user.)
 
 ## System Roles
 
@@ -31,12 +35,21 @@ The Tinkerers' Lab platform utilizes a strict Role-Based Access Control (RBAC) s
 | --- | --- | :---: | :---: | :---: | :---: |
 | **Profile** | Login / Logout | ✓ | ✓ | ✓ | ✓ |
 | | View/Edit Own Profile | ✓ | ✓ | ✓ | ✓ |
+| **Projects** | Create Project | ✓ | ✓ | ✓ | ✓ |
+| | View Own Projects | ✓ | ✓ | ✓ | ✓ |
+| | View All Projects | ✓ | ✓ | ✓ | ✗ |
+| | Edit Own Project | ✓ | ✓ | ✓ | ✓ |
+| | Approve/Reject (status change) | ✓ | ✗ | ✗ | ✗ |
+| | Delete Project | ✓ | ✗ | ✗ | ✗ |
+| **Feedback** | Submit Feedback | ✓ | ✓ | ✓ | ✓ |
+| | Read All Feedback | ✓ | ✓ | ✓ | ✗ |
 | **Users** | View All Users | ✓ | ✗ | ✗ | ✗ |
 | | Create/Edit/Delete Users | ✓ | ✗ | ✗ | ✗ |
 | | Assign Roles | ✓ | ✗ | ✗ | ✗ |
 | **Equipment** | View Equipment | ✓ | ✓ | ✓ | ✓ |
-| | Create/Edit Equipment | ✓ | ✗ | ✓ | ✗ |
-| | Update Status | ✓ | ✗ | ✓ | ✗ |
+| | Create/Edit Equipment | ✓ | ✓ | ✓ | ✗ |
+| | Upload/Delete Equipment Images | ✓ | ✓ | ✓ | ✗ |
+| | Update Status | ✓ | ✓ | ✓ | ✗ |
 | | Delete Equipment | ✓ | ✗ | ✗ | ✗ |
 | **Bookings** | Create Booking | ✓ | ✓ | ✓ | ✓ |
 | | View Own Bookings | ✓ | ✓ | ✓ | ✓ |
@@ -65,6 +78,9 @@ The Tinkerers' Lab platform utilizes a strict Role-Based Access Control (RBAC) s
 | | Export Reports | ✓ | △ | △ | ✗ |
 | **Admin** | Application Settings | ✓ | ✗ | ✗ | ✗ |
 | | View Audit Logs | ✓ | ✗ | ✗ | ✗ |
+
+> [!NOTE]
+> The authoritative source of truth is the security rules (`firestore.rules`, `storage.rules`). This matrix is a human-readable summary and may lag the rules; where they disagree, the rules win. Staff-level access in the rules (`isStaff`) covers `super_admin`, `faculty`, and `lab_assistant`.
 
 > [!IMPORTANT]  
 > This document only outlines intended behavior and structural design. No API keys, service accounts, backend endpoints, or configuration secrets are stored here, making it safe to share or commit to source control.

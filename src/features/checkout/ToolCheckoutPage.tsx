@@ -1,7 +1,7 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
+import { typedZodResolver } from '@/lib/form'
 import { z } from 'zod'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/contexts/AuthContext'
@@ -96,7 +96,7 @@ function CheckoutForm({ projects, user, profile, qc }: any) {
     register, handleSubmit, watch,
     formState: { errors, isSubmitting },
   } = useForm<CheckoutFormData>({
-    resolver: zodResolver(checkoutSchema) as any, // eslint-disable-line
+    resolver: typedZodResolver(checkoutSchema),
     defaultValues: { action: 'checking_out', locationOfUse: 'in_lab', conditionAtCheckout: 'good', quantity: 1 },
   })
 
@@ -184,7 +184,7 @@ function CheckoutForm({ projects, user, profile, qc }: any) {
         </CardHeader>
         <CardContent className="space-y-4">
           <Field label="Location of Use" required error={errors.locationOfUse?.message}>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {(['in_lab', 'taking_outside'] as const).map(val => (
                 <label key={val} className={cn(
                   'flex items-center gap-2.5 p-3 rounded-xl border-2 cursor-pointer transition-colors',
@@ -204,7 +204,7 @@ function CheckoutForm({ projects, user, profile, qc }: any) {
             </Field>
           )}
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="Expected Return Date" required error={errors.expectedReturnDate?.message}>
               <Input type="date" {...register('expectedReturnDate')} min={todayStr()} className={cn(errors.expectedReturnDate && 'border-destructive')} />
             </Field>
@@ -214,10 +214,10 @@ function CheckoutForm({ projects, user, profile, qc }: any) {
           </div>
 
           <Field label="Condition at Checkout" required error={errors.conditionAtCheckout?.message}>
-            <div className="flex gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               {CONDITIONS.map(c => (
                 <label key={c} className={cn(
-                  'flex-1 py-2 text-center rounded-xl border-2 cursor-pointer text-sm font-medium capitalize transition-colors',
+                  'flex min-h-10 items-center justify-center rounded-xl border-2 px-3 py-2 text-center text-sm font-medium capitalize transition-colors',
                   watch('conditionAtCheckout') === c ? 'border-primary bg-primary/5 text-primary' : 'border-border hover:border-primary/30'
                 )}>
                   <input type="radio" value={c} {...register('conditionAtCheckout')} className="sr-only" />
@@ -233,8 +233,8 @@ function CheckoutForm({ projects, user, profile, qc }: any) {
         </CardContent>
       </Card>
 
-      <div className="flex justify-end gap-3">
-        <Button type="submit" disabled={isSubmitting} className="min-w-[160px] gap-2">
+      <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+        <Button type="submit" disabled={isSubmitting} className="w-full gap-2 sm:min-w-[160px] sm:w-auto">
           {isSubmitting
             ? <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
             : <Package className="w-4 h-4" />}
@@ -248,12 +248,13 @@ function CheckoutForm({ projects, user, profile, qc }: any) {
 // ── Sub-component: Return Form ────────────────────────────────────────────────
 function ReturnForm({ activeCheckouts, qc }: { activeCheckouts: ToolCheckout[]; qc: any }) {
   const {
-    register, handleSubmit,
+    register, handleSubmit, watch,
     formState: { errors, isSubmitting },
   } = useForm<ReturnFormData>({
-    resolver: zodResolver(returnSchema) as any, // eslint-disable-line
+    resolver: typedZodResolver(returnSchema),
     defaultValues: { conditionAtReturn: 'good' },
   })
+  const watchedCondition = watch('conditionAtReturn')
 
   const onSubmit = async (data: ReturnFormData) => {
     try {
@@ -310,11 +311,11 @@ function ReturnForm({ activeCheckouts, qc }: { activeCheckouts: ToolCheckout[]; 
       <Card>
         <CardHeader><CardTitle>Condition at Return</CardTitle></CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             {CONDITIONS.map(c => (
               <label key={c} className={cn(
-                'flex-1 py-2 text-center rounded-xl border-2 cursor-pointer text-sm font-medium capitalize transition-colors',
-                (document.querySelector(`input[value="${c}"][name="conditionAtReturn"]`) as HTMLInputElement)?.checked
+                'flex min-h-10 items-center justify-center rounded-xl border-2 px-3 py-2 text-center text-sm font-medium capitalize transition-colors',
+                watchedCondition === c
                   ? 'border-primary bg-primary/5 text-primary' : 'border-border hover:border-primary/30'
               )}>
                 <input type="radio" value={c} {...register('conditionAtReturn')} className="sr-only" />
@@ -328,8 +329,8 @@ function ReturnForm({ activeCheckouts, qc }: { activeCheckouts: ToolCheckout[]; 
         </CardContent>
       </Card>
 
-      <div className="flex justify-end">
-        <Button type="submit" disabled={isSubmitting} className="min-w-[160px] gap-2">
+      <div className="flex flex-col sm:flex-row sm:justify-end">
+        <Button type="submit" disabled={isSubmitting} className="w-full gap-2 sm:min-w-[160px] sm:w-auto">
           {isSubmitting
             ? <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
             : <ArrowLeftRight className="w-4 h-4" />}
@@ -374,7 +375,7 @@ export default function ToolCheckoutPage() {
   const overdueCount  = activeCheckouts.filter(isCheckoutOverdue).length
 
   return (
-    <div className="space-y-6 container py-6 mx-auto max-w-2xl animate-fade-in">
+    <div className="mx-auto max-w-2xl space-y-5 py-4 animate-fade-in sm:space-y-6 sm:py-6">
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
           <ArrowLeft className="h-5 w-5" />

@@ -160,3 +160,19 @@ The four videos are present and readable as files. Frame extraction could not be
 - Layouts match the reference logic: black chrome, indigo work panels, cream analytics, pink actions, and dense product UI.
 - Existing Firebase/auth/navigation behavior remains unchanged.
 - Build passes and lint has no new warnings from this redesign work.
+
+## Implementation Status — August 12, 2026: Responsive Space Utilization
+
+An incremental spatial pass (commit `c3e3247`) was applied across the active `AppLayout` shell and every routed page. It improves how existing content uses the viewport without changing the identity, palette, typography, routes, or data layer. The design contract above remains the target; this pass makes the implementation conform to it responsively.
+
+**What landed**
+
+- **Shell:** single fluid `min-h-svh` flex shell; sidebar collapses to a 64px icon rail at `md`/tablet widths and restores the full labeled rail at `xl`; duplicated desktop top-bar brand/profile chrome reduced; mobile pill bottom-nav is safe-area aware and gains an Admin entry for staff.
+- **Page width:** one shell-owned gutter contract; removed compounded `.container` padding and page-level `pb-20`; page roots use `min-w-0` + fluid `max-w` so content grows into available space.
+- **Dashboard:** KPI strip uses content-aware `auto-fit`/`minmax()` columns; schedule/announcements share a row at `lg`; chart + attention panels split at `xl`; the availability chart uses a fluid `clamp()` height instead of a competing `max-h`.
+- **Cards/charts:** shared `PageHeader`, `DataPanel`, `Card`, `KpiTile`, `FilterChip`, and `Button` use responsive padding and ≥44px touch targets; Recharts panels in Reports use fluid height containers; `RoundedBarChart` gained `preserveAspectRatio` for cleaner scaling.
+- **Forms:** two-column form grids and time-slot/condition selectors stack on narrow screens; action rows wrap with full-width mobile buttons.
+- **Tables:** cells wrap by default; wide admin tables hide low-priority columns (email, timestamps, purpose, etc.) below tablet/desktop breakpoints while keeping primary identity and actions visible on phones.
+- **Color cleanup:** remaining active-page stale `#0A84FF`/`#7D9FC2`/`#56779D` literals were replaced with the existing palette tokens (`indigo`, `pink`, `lime`, `orange`, `white` opacity levels) defined in `globals.css`.
+
+**Deferred (still planned)** — per-page chart panel splits for equipment/bookings/inventory (Phase 5 of this plan), modal/strategy interactions (Phase 7), and any legacy-shell cleanup for `AppSidebar.tsx`/`TopBar.tsx` which are not mounted by the active route tree.

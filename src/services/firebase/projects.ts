@@ -37,24 +37,28 @@ export async function generateProjectId(): Promise<string> {
  * Status starts as 'pending' — admin reviews and approves/rejects.
  * Auto-generates a sequential project ID.
  */
+import { cleanFirestoreData } from '@/lib/utils'
+
 export async function createProject(
   data: Omit<Project, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'imageUrls' | 'documentUrls'>
 ): Promise<string> {
   const projectId = await generateProjectId()
-  // addDoc stores id as a Firestore field alongside the auto-generated doc ID
-  // We cast to any to store the human-readable TL-001 id as a document field
   const ref = collection(db, COLLECTIONS.PROJECTS)
-  const docRef = await addDoc(ref, {
+
+  const payload = cleanFirestoreData({
     ...data,
-    id: projectId,         // Human-readable: "TL-001" — stored as a field
+    id: projectId,
     status: 'pending',
     imageUrls: [],
     documentUrls: [],
+    teamMembers: data.teamMembers ?? '',
+    facultyMentor: data.facultyMentor ?? '',
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
-  } as any)
-  return docRef.id
+  })
 
+  const docRef = await addDoc(ref, payload)
+  return docRef.id
 }
 
 /**
@@ -63,13 +67,11 @@ export async function createProject(
  * Only returns active/pending projects (not rejected/completed).
  * React Query caches this — only fetched once per session.
  */
-export async function getUserProjects(userId: string): Promise<Project[]> {
+export async function getUserProjects(userId: string, statusFilter?: string): Promise<Project[]> {
   const ref = collection(db, COLLECTIONS.PROJECTS)
-  const q = query(
-    ref,
-    where('userId', '==', userId),
-    where('status', 'in', ['pending', 'active'])
-  )
+  const constraints: any[] = [where('userId', '==', userId)]
+  if (statusFilter) constraints.push(where('status', '==', statusFilter))
+  const q = query(ref, ...constraints)
   const snap = await getDocs(q)
   return snap.docs
     .map((d) => ({ id: d.id, ...d.data() }) as Project)
@@ -86,7 +88,7 @@ export async function userHasActiveProject(userId: string): Promise<boolean> {
   const q = query(
     ref,
     where('userId', '==', userId),
-    where('status', 'in', ['pending', 'active'])
+    where('status', '==', 'active')
   )
   const snap = await getCountFromServer(q)
   return snap.data().count > 0

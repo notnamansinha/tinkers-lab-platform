@@ -26,16 +26,16 @@ export function KpiTile({
   onClick,
 }: KpiTileProps) {
   const isLight = textColor === 'light'
-  const labelClass = isLight ? 'text-[#7D9FC2] text-[11px] font-semibold tracking-[0.1em] uppercase mb-1' : 'text-[#7D9FC2] text-[11px] font-semibold tracking-[0.1em] uppercase mb-1'
-  const valueClass = isLight ? 'tl-kpi-value text-[#56779D] text-[32px] md:text-[40px]' : 'tl-kpi-value text-[#56779D] text-[32px] md:text-[40px]'
-  const iconClass = isLight ? 'text-white/30 group-hover:text-[#7D9FC2]' : 'text-white/30 group-hover:text-[#7D9FC2]'
+  const labelClass = isLight ? 'text-white/60 text-[11px] font-semibold tracking-[0.1em] uppercase mb-1' : 'text-black/60 text-[11px] font-semibold tracking-[0.1em] uppercase mb-1'
+  const valueClass = isLight ? 'tl-kpi-value text-white text-[clamp(1.75rem,4vw,2.5rem)]' : 'tl-kpi-value text-black text-[clamp(1.75rem,4vw,2.5rem)]'
+  const iconClass = isLight ? 'text-white/45 group-hover:text-white' : 'text-black/45 group-hover:text-black'
   const footerClass = isLight
-    ? 'text-[11px] font-semibold text-[#7D9FC2] uppercase tracking-wider group-hover:text-[#7D9FC2] mt-2'
-    : 'text-[11px] font-semibold text-[#7D9FC2] uppercase tracking-wider group-hover:text-[#7D9FC2] mt-2'
+    ? 'text-[11px] font-semibold text-white/60 uppercase tracking-wider group-hover:text-white mt-2'
+    : 'text-[11px] font-semibold text-black/60 uppercase tracking-wider group-hover:text-black mt-2'
 
   const inner = (
     <div className="flex flex-col h-full justify-between">
-      <div className="flex items-start justify-between">
+      <div className="flex min-w-0 items-start justify-between gap-3">
         <span className={labelClass}>{label}</span>
         {Icon && <Icon size={18} className={cn(iconClass, 'transition-colors shrink-0')} />}
       </div>
@@ -46,7 +46,7 @@ export function KpiTile({
     </div>
   )
 
-  const baseStyle = 'rounded-[24px] p-6 flex flex-col group transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_40px_rgba(0,0,0,0.3)] shadow-[0_4px_24px_rgba(0,0,0,0.1)]'
+  const baseStyle = 'min-w-0 rounded-[24px] p-4 sm:p-5 flex flex-col group transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_40px_rgba(0,0,0,0.3)] shadow-[0_4px_24px_rgba(0,0,0,0.1)]'
   const tileClass = cn(baseStyle, className)
 
   if (href) {

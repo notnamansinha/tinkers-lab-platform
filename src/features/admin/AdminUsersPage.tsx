@@ -62,7 +62,7 @@ export default function AdminUsersPage() {
   }
 
   return (
-    <div className="w-full max-w-7xl mx-auto pb-20 animate-fade-in">
+    <div className="mx-auto w-full max-w-[1440px] min-w-0 animate-fade-in">
       <PageHeader
         variant="dark"
         title="Users"
@@ -75,7 +75,7 @@ export default function AdminUsersPage() {
         filters={
           <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center">
             <div className="relative w-full lg:w-80 flex-shrink-0">
-              <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#7D9FC2]" />
+              <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/50" />
               <input
                 type="text"
                 placeholder="Search users…"
@@ -105,11 +105,11 @@ export default function AdminUsersPage() {
             <TableRow className="hover:bg-transparent border-0">
               <TableHead>#</TableHead>
               <TableHead>Name</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Department</TableHead>
+              <TableHead className="hidden lg:table-cell">Email</TableHead>
+              <TableHead className="hidden xl:table-cell">Type</TableHead>
+              <TableHead className="hidden md:table-cell">Department</TableHead>
               <TableHead>Role</TableHead>
-              <TableHead>Joined</TableHead>
+              <TableHead className="hidden lg:table-cell">Joined</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -117,7 +117,7 @@ export default function AdminUsersPage() {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={9} className="h-32 text-center text-[#7D9FC2]">
+                <TableCell colSpan={9} className="h-24 text-center text-white/50">
                   <div className="flex flex-col items-center justify-center gap-3">
                     <div className="w-6 h-6 border-2 border-white/10 border-t-black/60 rounded-full animate-spin" />
                     Loading users…
@@ -126,11 +126,11 @@ export default function AdminUsersPage() {
               </TableRow>
             ) : filtered.map((u, idx) => (
               <TableRow key={u.uid} className="border-0">
-                <TableCell className="text-[#7D9FC2] font-mono text-xs">{filtered.length - idx}</TableCell>
-                <TableCell className="font-semibold text-[#56779D]">{u.displayName}</TableCell>
-                <TableCell className="text-[#7D9FC2] text-sm">{u.email}</TableCell>
-                <TableCell className="text-[#7D9FC2] text-xs uppercase">{u.userType}</TableCell>
-                <TableCell className="text-[#7D9FC2] text-sm">{u.department || '—'}</TableCell>
+                <TableCell className="font-mono text-xs text-white/50">{filtered.length - idx}</TableCell>
+                <TableCell className="font-semibold text-white">{u.displayName}</TableCell>
+                 <TableCell className="hidden text-sm text-white/50 lg:table-cell">{u.email}</TableCell>
+                 <TableCell className="hidden text-xs uppercase text-white/50 xl:table-cell">{u.userType}</TableCell>
+                 <TableCell className="hidden text-sm text-white/50 md:table-cell">{u.department || '—'}</TableCell>
                 <TableCell>
                   <select
                     value={u.role}
@@ -140,7 +140,7 @@ export default function AdminUsersPage() {
                     {ROLES.map(r => <option key={r} value={r}>{r.replace('_', ' ')}</option>)}
                   </select>
                 </TableCell>
-                <TableCell className="text-[#7D9FC2] text-sm">{formatDateTime(u.createdAt)}</TableCell>
+                 <TableCell className="hidden text-sm text-white/50 lg:table-cell">{formatDateTime(u.createdAt)}</TableCell>
                 <TableCell>
                   <span className={cn('text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider', u.isActive ? 'bg-lime text-white' : 'bg-pink text-white')}>
                     {u.isActive ? 'Active' : 'Disabled'}
@@ -149,7 +149,7 @@ export default function AdminUsersPage() {
                 <TableCell className="text-right">
                   <button
                     onClick={() => toggleActive(u.uid, u.isActive)}
-                    className="p-2 rounded-full hover:bg-black/5 transition-colors text-[#7D9FC2] hover:text-white"
+                     className="rounded-full p-2 text-white/50 transition-colors hover:bg-white/10 hover:text-white"
                     aria-label={u.isActive ? 'Deactivate user' : 'Activate user'}
                   >
                     {u.isActive ? <UserX size={16} /> : <UserCheck size={16} />}

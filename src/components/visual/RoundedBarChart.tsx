@@ -36,7 +36,7 @@ export function RoundedBarChart({
   const titleId = React.useId()
   const descriptionId = React.useId()
   const maxValue = Math.max(...data.map(item => item.value), 1)
-  const chartWidth = Math.max(240, data.length * 64)
+  const chartWidth = Math.max(240, data.length * 80)
   const chartBottom = 162
   const maximumBarHeight = 122
   const barWidth = Math.min(34, (chartWidth - 40) / Math.max(data.length * 1.8, 1))
@@ -50,7 +50,8 @@ export function RoundedBarChart({
   return (
     <svg
       viewBox={`0 0 ${chartWidth} 190`}
-      className={cn('h-auto w-full overflow-visible', className)}
+      className={cn('block h-auto w-full overflow-visible', className)}
+      preserveAspectRatio="xMidYMid meet"
       role="img"
       aria-labelledby={`${titleId} ${description ? descriptionId : ''}`.trim()}
       {...props}

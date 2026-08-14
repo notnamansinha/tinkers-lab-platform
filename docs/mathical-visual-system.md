@@ -31,10 +31,21 @@ This note documents the local design language derived from the reference files i
 
 ## Shape, Spacing, and Surfaces
 
-- Main app shell is black with a fixed left rail on desktop and compact top chrome on mobile.
+- Main app shell is black and fluid: a compact 64px icon rail on tablet widths, the full labeled rail at `xl`, a single compact top brand bar on desktop, and a rounded pill bottom-nav on mobile.
 - Functional panels use `16px` radius; inputs use `8px`; CTAs, sliders, and status pills use full rounding.
 - Layout gaps follow a 16/24/32px rhythm. Dense dashboard sections prefer aligned grids over freeform placement.
 - Cream cards are for analytics/data, indigo panels for forms and active work, pink panels for attention/results.
+
+## Responsive Layout
+
+The app uses a content-aware responsive system rather than screenshot-sized rules:
+
+- **Gutters:** horizontal/vertical page padding is owned once by the shell; page roots use `min-w-0` and fluid `max-w` so cards expand into available space without double gutters or reserved desktop-only bottom padding (`pb-20`).
+- **Grids:** stat strips and cards use `auto-fit`/`minmax(min(100%, …), 1fr)` so columns are content-driven; dense dashboard rows (schedule + announcements, chart + attention) only share a row once the content area is wide enough (`lg`/`xl`).
+- **Charts:** SVG/Recharts visuals scale to their containers with `preserveAspectRatio` and fluid `clamp()` heights instead of fixed pixel caps.
+- **Touch targets:** buttons, chips, date-picker cells, and slot controls maintain ~44–48px minimum height; mobile form actions become full-width.
+- **Tables:** cells wrap by default; wide tables hide low-priority columns below tablet/desktop breakpoints while keeping primary identity and actions visible.
+- **Safe areas:** the mobile bottom pill nav offsets with `env(safe-area-inset-bottom)`.
 
 ## Borders and Shadows
 

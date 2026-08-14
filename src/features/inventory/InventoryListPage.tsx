@@ -15,12 +15,6 @@ import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 
-const STATUS_VARIANT = {
-  in_stock: 'default',
-  low_stock: 'secondary',
-  out_of_stock: 'destructive',
-} as const
-
 export default function InventoryListPage() {
   const { isStaff } = useAuth()
   const navigate = useNavigate()
@@ -48,33 +42,41 @@ export default function InventoryListPage() {
   const lowStock = items.filter(i => i.status === 'low_stock').length
 
   return (
-    <div className="w-full max-w-7xl mx-auto pb-20 animate-fade-in mt-4">
+    <div className="mx-auto mt-2 w-full max-w-[1440px] min-w-0 animate-fade-in">
       <PageHeader
         variant="dark"
-        title="Inventory"
-        description="Materials, components, consumables and hand tools."
+        title="Inventory & Stock"
+        description="Materials, components, consumables and lab hand tools catalog."
         action={
-          <div className="flex flex-wrap gap-3 shrink-0">
-            <Button variant="outline" className="gap-2 text-[#56779D] bg-white/40 border border-white/20 shadow-sm border-[#6FA9FF]/50 hover:bg-[rgba(255,255,255,0.1)] hover:text-white rounded-full px-5 h-12" onClick={() => navigate('/checkout')}>
-              <Package className="h-4 w-4" /> Tool Checkout
+          <div className="flex flex-wrap gap-2 shrink-0">
+            <Button
+              variant="outline"
+              className="gap-2 text-xs font-bold text-white bg-white/5 border border-hairline hover:bg-white/10 rounded-full px-5 h-10"
+              onClick={() => navigate('/checkout')}
+            >
+              <Package className="h-4 w-4 text-orange" /> Tool Checkout
             </Button>
             {isStaff && (
-              <button onClick={() => navigate('/inventory/new')} className="tl-pill-button-secondary flex items-center gap-2 px-6">
-                <Plus size={18} /> Add Item
+              <button
+                onClick={() => navigate('/inventory/new')}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-lime text-black font-bold text-xs hover:bg-lime/90 transition-all shadow-sm"
+              >
+                <Plus size={16} /> Add Item
               </button>
             )}
           </div>
         }
         filters={
-          <div className="flex flex-col lg:flex-row gap-5 items-start lg:items-center">
-            <div className="relative w-full lg:w-96 flex-shrink-0">
-              <Search size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#7D9FC2]" />
+          <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center">
+            <div className="relative w-full lg:w-80 shrink-0">
+              <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" />
               <input
                 type="text"
                 placeholder="Search inventory..."
+                aria-label="Search inventory"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                className="tl-input pl-12 w-full h-[44px]"
+                className="w-full h-10 pl-10 pr-4 rounded-xl bg-near-black border border-hairline text-xs text-white placeholder:text-white/40 focus:outline-none focus:border-white/30"
               />
             </div>
             <div className="flex flex-wrap gap-2">
@@ -84,7 +86,6 @@ export default function InventoryListPage() {
                   label={s === 'all' ? 'All Statuses' : s.replace('_', ' ')}
                   active={filterStatus === s}
                   onClick={() => setFilterStatus(s)}
-                  tone="dark"
                 />
               ))}
             </div>
@@ -93,50 +94,50 @@ export default function InventoryListPage() {
       />
 
       {(outOfStock > 0 || lowStock > 0) && (
-        <div className="bg-[#EC68D8] p-5 mb-8 flex items-start gap-4 rounded-[20px] shadow-[0_12px_40px_rgba(236,104,216,0.2)]">
-          <AlertCircle className="h-6 w-6 shrink-0 mt-0.5 text-[#56779D]" />
-          <div>
-            <p className="font-bold text-[#56779D] text-[15px]">Low Stock Alert</p>
-            <p className="text-white/70 text-[13px] mt-1 font-medium">
+        <div className="bg-pink/15 border border-pink/30 p-4 mb-6 flex items-center gap-3 rounded-card text-pink">
+          <AlertCircle className="h-5 w-5 shrink-0" />
+          <div className="text-xs">
+            <span className="font-bold">Low Stock Alert: </span>
+            <span className="text-white/80">
               {outOfStock > 0 ? `${outOfStock} items out of stock` : ''}
               {outOfStock > 0 && lowStock > 0 ? ', ' : ''}
               {lowStock > 0 ? `${lowStock} items running low` : ''}.
-            </p>
+            </span>
           </div>
         </div>
       )}
 
       <DataPanel title="All Items" description={`${filtered.length} items in catalog`}>
-        <div className="overflow-hidden rounded-[16px] border border-white/20">
+        <div className="overflow-hidden rounded-xl border border-hairline bg-near-black">
           <Table>
-            <TableHeader className="bg-[rgba(255,255,255,0.02)]">
-              <TableRow className="hover:bg-transparent border-white/20">
-                <TableHead className="text-[#7D9FC2] font-semibold tracking-wide">Item</TableHead>
-                <TableHead className="text-[#7D9FC2] font-semibold tracking-wide">Category</TableHead>
-                <TableHead className="text-right text-[#7D9FC2] font-semibold tracking-wide">Qty</TableHead>
-                <TableHead className="text-right text-[#7D9FC2] font-semibold tracking-wide">Min</TableHead>
-                <TableHead className="text-[#7D9FC2] font-semibold tracking-wide">Unit</TableHead>
-                <TableHead className="text-[#7D9FC2] font-semibold tracking-wide">Location</TableHead>
-                <TableHead className="text-[#7D9FC2] font-semibold tracking-wide">Status</TableHead>
-                <TableHead className="text-right text-[#7D9FC2] font-semibold tracking-wide">Actions</TableHead>
+            <TableHeader className="bg-white/[0.03]">
+              <TableRow className="hover:bg-transparent border-hairline">
+                <TableHead className="text-white/40 text-[10px] uppercase font-bold tracking-widest">Item</TableHead>
+               <TableHead className="hidden text-white/40 text-[10px] uppercase font-bold tracking-widest sm:table-cell">Category</TableHead>
+                <TableHead className="text-right text-white/40 text-[10px] uppercase font-bold tracking-widest">Qty</TableHead>
+               <TableHead className="hidden text-right text-white/40 text-[10px] uppercase font-bold tracking-widest sm:table-cell">Min</TableHead>
+               <TableHead className="hidden text-white/40 text-[10px] uppercase font-bold tracking-widest md:table-cell">Unit</TableHead>
+               <TableHead className="hidden text-white/40 text-[10px] uppercase font-bold tracking-widest lg:table-cell">Location</TableHead>
+                <TableHead className="text-white/40 text-[10px] uppercase font-bold tracking-widest">Status</TableHead>
+                <TableHead className="text-right text-white/40 text-[10px] uppercase font-bold tracking-widest">Actions</TableHead>
               </TableRow>
             </TableHeader>
-            <TableBody>
+            <TableBody className="divide-y divide-hairline">
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="h-32 text-center text-[#7D9FC2] border-0">
-                    <div className="flex flex-col items-center justify-center gap-3">
-                      <div className="w-6 h-6 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" />
-                      Loading inventory...
+                  <TableCell colSpan={8} className="h-32 text-center text-white/40 border-0">
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <div className="w-5 h-5 border-2 border-white/20 border-t-white/80 rounded-full animate-spin" />
+                      <span className="text-xs">Loading inventory...</span>
                     </div>
                   </TableCell>
                 </TableRow>
               ) : filtered.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={8} className="h-32 text-center border-0">
-                    <div className="flex flex-col items-center justify-center text-white/30">
-                      <Package className="h-8 w-8 mb-3 opacity-20" />
-                      No items found matching your criteria.
+                    <div className="flex flex-col items-center justify-center text-white/30 text-xs">
+                      <Package className="h-7 w-7 mb-2 opacity-30" />
+                      No items found matching your search.
                     </div>
                   </TableCell>
                 </TableRow>
@@ -144,28 +145,28 @@ export default function InventoryListPage() {
                 filtered.map(item => (
                   <TableRow
                     key={item.id}
-                    className="cursor-pointer group border-white/20 hover:bg-white/40 border border-white/20 shadow-sm transition-colors"
+                    className="cursor-pointer group border-hairline hover:bg-white/[0.04] transition-colors"
                     onClick={() => navigate(`/inventory/${item.id}`)}
                   >
-                    <TableCell className="font-semibold max-w-[240px] truncate text-[#56779D] group-hover:text-[#514AF1] transition-colors text-[14px]">
+                    <TableCell className="font-bold text-white group-hover:text-lime transition-colors text-xs sm:text-sm">
                       {item.name}
                     </TableCell>
-                    <TableCell className="text-[#7D9FC2] text-[11px] uppercase tracking-wider font-semibold">{item.category}</TableCell>
+                     <TableCell className="hidden text-xs font-medium text-white/50 sm:table-cell">{item.category}</TableCell>
                     <TableCell className={cn(
-                      'font-mono text-right font-bold text-[14px]',
-                      item.quantity === 0 ? 'text-[#EC68D8]' : item.quantity <= item.minQuantity ? 'text-[#FFB13F]' : 'text-[#56779D]',
+                      'font-data text-right font-extrabold text-sm',
+                      item.quantity === 0 ? 'text-pink' : item.quantity <= item.minQuantity ? 'text-orange' : 'text-white'
                     )}>
                       {item.quantity}
                     </TableCell>
-                    <TableCell className="font-mono text-[12px] text-white/30 text-right">{item.minQuantity}</TableCell>
-                    <TableCell className="text-[12px] text-[#7D9FC2] font-medium">{item.unit}</TableCell>
-                    <TableCell className="text-[12px] text-[#7D9FC2] font-medium">{item.location || '—'}</TableCell>
+                     <TableCell className="hidden font-data text-right text-xs text-white/40 sm:table-cell">{item.minQuantity}</TableCell>
+                     <TableCell className="hidden text-xs text-white/50 md:table-cell">{item.unit}</TableCell>
+                     <TableCell className="hidden text-xs text-white/50 lg:table-cell">{item.location || '—'}</TableCell>
                     <TableCell>
                       <Badge variant="outline" className={cn(
-                        "uppercase tracking-widest text-[9px] font-bold border-0",
-                        item.status === 'in_stock' ? "bg-[rgba(221,242,55,0.15)] text-[#DDF237]" :
-                        item.status === 'out_of_stock' ? "bg-[rgba(236,104,216,0.15)] text-[#EC68D8]" :
-                        "bg-[rgba(255,177,63,0.15)] text-[#FFB13F]"
+                        "uppercase tracking-widest text-[9px] font-bold border",
+                        item.status === 'in_stock' ? "bg-lime/15 text-lime border-lime/30" :
+                        item.status === 'out_of_stock' ? "bg-pink/15 text-pink border-pink/30" :
+                        "bg-orange/15 text-orange border-orange/30"
                       )}>
                         {item.status.replace('_', ' ')}
                       </Badge>
@@ -174,7 +175,7 @@ export default function InventoryListPage() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="text-white/30 hover:text-white opacity-0 group-hover:opacity-100 rounded-full hover:bg-[rgba(255,255,255,0.1)] transition-all"
+                         className="rounded-full text-xs text-white/40 transition-all hover:bg-white/10 hover:text-white focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-lime sm:opacity-0 sm:group-hover:opacity-100"
                         onClick={e => { e.stopPropagation(); navigate(`/inventory/${item.id}`) }}
                       >
                         View

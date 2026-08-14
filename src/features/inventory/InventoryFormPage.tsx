@@ -1,7 +1,7 @@
 import React from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
+import { typedZodResolver } from '@/lib/form'
 import { z } from 'zod'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { COLLECTIONS } from '@/services/firebase/firestore'
@@ -10,7 +10,7 @@ import { db } from '@/lib/firebase'
 import { useAuth } from '@/contexts/AuthContext'
 import { ArrowLeft, Save, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
-import { cn } from '@/lib/utils'
+import { cn, cleanFirestoreData } from '@/lib/utils'
 import type { InventoryItem } from '@/types'
 import LoadingSpinner from '@/components/common/LoadingSpinner'
 
@@ -54,7 +54,7 @@ export default function InventoryFormPage() {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<FormData>({
-    resolver: zodResolver(schema) as any,
+    resolver: typedZodResolver(schema),
     defaultValues: { category: 'Consumables' as const, quantity: 0, minQuantity: 0, unit: 'pcs' },
   })
 
@@ -72,32 +72,39 @@ export default function InventoryFormPage() {
   const onSubmit = async (data: FormData) => {
     if (!isStaff) return
     const status = data.quantity === 0 ? 'out_of_stock' : data.quantity <= data.minQuantity ? 'low_stock' : 'in_stock'
+    const payload = cleanFirestoreData({ ...data, status })
     try {
-      if (isEdit) { await updateDoc(doc(db, COLLECTIONS.INVENTORY, id!), { ...data, status }); toast.success('Updated') }
-      else { const nId = await addDoc(collection(db, COLLECTIONS.INVENTORY), { ...data, status } as Omit<InventoryItem, 'id'|'createdAt'|'updatedAt'>); toast.success('Added'); navigate(`/inventory/${nId}`); return }
+      if (isEdit) { await updateDoc(doc(db, COLLECTIONS.INVENTORY, id!), payload); toast.success('Updated') }
+      else { const docRef = await addDoc(collection(db, COLLECTIONS.INVENTORY), payload); toast.success('Added'); qc.invalidateQueries({ queryKey: ['inventory'] }); navigate(`/inventory/${docRef.id}`); return }
       qc.invalidateQueries({ queryKey: ['inventory'] })
       navigate(`/inventory/${id}`)
     } catch (e) { toast.error(e instanceof Error ? e.message : 'Failed') }
   }
 
+  const onInvalid = (formErrors: any) => {
+    const messages = Object.values(formErrors)
+      .map((e: any) => e?.message)
+      .filter(Boolean)
+    toast.error(`Please fix form errors: ${messages[0] || 'Check required fields'}`)
+  }
 
   if (!isStaff) return <div className="py-16 text-center text-muted-foreground">Staff access required.</div>
   if (isLoading) return <LoadingSpinner text="Loading…" />
 
-  const selectClasses = "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+  const selectClasses = "flex h-10 w-full rounded-md border border-hairline bg-near-black px-3 py-2 text-sm text-white placeholder:text-white/40 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-lime disabled:cursor-not-allowed disabled:opacity-50"
 
   return (
-    <div className="space-y-6 container py-6 mx-auto max-w-3xl animate-fade-in">
+    <div className="mx-auto max-w-3xl space-y-5 py-4 animate-fade-in sm:space-y-6 sm:py-6">
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-          <ArrowLeft className="h-5 w-5" />
+        <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="rounded-full hover:bg-white/10">
+          <ArrowLeft className="h-5 w-5 text-white" />
         </Button>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">{isEdit ? 'Edit Item' : 'Add Inventory Item'}</h1>
-          <p className="text-muted-foreground mt-1">Manage components, materials, and lab stock.</p>
+          <h1 className="text-3xl font-extrabold tracking-tight text-white">{isEdit ? 'Edit Item' : 'Add Inventory Item'}</h1>
+          <p className="text-white/60 text-xs sm:text-sm mt-1">Manage components, materials, and lab stock.</p>
         </div>
       </div>
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-6">
         <Card>
           <CardHeader>
             <CardTitle>Item Information</CardTitle>
@@ -166,11 +173,11 @@ export default function InventoryFormPage() {
           </CardContent>
         </Card>
 
-        <div className="flex justify-end gap-4 pb-12">
-          <Button type="button" variant="outline" onClick={() => navigate(-1)}>
+        <div className="flex flex-col-reverse gap-3 pb-6 sm:flex-row sm:justify-end sm:gap-4">
+          <Button type="button" variant="outline" onClick={() => navigate(-1)} className="w-full sm:w-auto">
             Cancel
           </Button>
-          <Button type="submit" disabled={isSubmitting} className="gap-2">
+          <Button type="submit" disabled={isSubmitting} className="w-full gap-2 sm:w-auto">
             {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
             {isEdit ? 'Save changes' : 'Add item'}
           </Button>
