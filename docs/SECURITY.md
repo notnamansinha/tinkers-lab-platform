@@ -16,10 +16,23 @@
 
 | Layer | What it enforces |
 |---|---|
-| `firestore.rules` | Collection access, role gating (`isAdmin`/`isStaff`/`isActiveUser`), schema validation (field allowlists, enums, regex), cross-doc checks (equipment tier/confirmed/status), rate limiting (feedback doc-ID window), immutability (auditLogs, activityLog, feedback) |
-| `storage.rules` | Staff-only writes, content-type (`image/jpeg\|png\|webp`) and size (≤ 5 MB) validation |
+| `firestore.rules` | Collection access, role gating (`isAdmin`/`isStaff`/`isActiveUser`), schema validation (field allowlists, enums, regex), cross-doc checks (equipment tier/confirmed/status), immutability (auditLogs, activityLog, feedback) |
+| **Cloud Functions** (`functions/`) | **Server-enforced creation** of projects, bookings, and feedback (see §3) — the atomic counter, booking conflict detection, and feedback rate limiting cannot be bypassed by a malicious client |
+| `storage.rules` | Staff/owner-only writes, content-type and size validation per path |
 | `firebase.json` | Hosting security headers (CSP, HSTS, X-Frame-Options, nosniff, Referrer-Policy) |
 | Client (`auth.ts`, guards, services) | UX mirroring + belt-and-braces field stripping |
+
+## 3. Server-enforced operations (Cloud Functions)
+
+Rules cannot run queries or transactions, so these invariants are enforced in [`functions/`](../functions) with the Admin SDK (which bypasses rules — and the rules therefore **deny** direct client creation for these paths):
+
+| Invariant | Function | Rule backstop |
+|---|---|---|
+| No double-booking of machine slots | `createBooking` (transactional conflict check) | `projects/{id}/bookings` create denied |
+| Atomic, tamper-proof `TL-XXX` codes | `createProject` (server-side counter) | `counters` + `projects` create denied |
+| 1 feedback / 5 min (server clock) | `submitFeedback` (`feedbackWindows/{uid}`) | `feedback` create denied |
+| Overdue tools flagged daily | `sweepOverdueCheckouts` (02:00 IST) | n/a |
+| Approve/reject/overdue notifications | `notifyOnProjectUpdate`, `notifyOnBookingUpdate` | `notifications` client-create staff-only |
 
 ## 3. Access-control highlights
 
@@ -30,15 +43,12 @@
 - **Immutable collections**: `auditLogs`, `activityLog`, `feedback` — nobody can update or delete.
 - **Rate limiting**: feedback is capped at 1 per user per 5-minute window via deterministic document IDs (server clock).
 
-## 4. Known gaps (client-side-only enforcement — require Cloud Functions)
+## 4. Known gaps / hardening notes
 
-These business rules are enforced only in the UI because Security Rules cannot run queries/transactions, and no Cloud Functions layer exists yet:
-
-1. Booking time-slot **overlap detection** and "booking must reference an active project".
-2. Tool-checkout `isOverdue` computation (a daily server sweep is planned as Phase 9).
-3. The 200-word feedback limit (server enforces a 2000-character cap instead).
-4. Server-populated display identity (`userName`/`userEmail`) — currently client-supplied; only `userId` is rule-enforced.
-5. Sequential project IDs rely on an atomic counter (safe under concurrency via transactions) — but no Cloud Function is involved.
+- **Transactional email** (booking approved/rejected, overdue reminders) — notifications are in-app today; email is a Phase 9 item.
+- **`isOverdue` between sweeps** is client-computed for instant UI feedback; the daily sweep is authoritative.
+- **Roster/timeline writes by the project owner** are allowed by design (they manage their own project's members and can append log entries); status fields themselves are still admin-gated.
+- **No secrets in the repo** — see §5. Service-account keys (needed only for admin/CI tooling and migration scripts) are git-ignored everywhere including `functions/` and `tests/`.
 
 ## 5. Secrets hygiene
 

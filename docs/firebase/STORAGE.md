@@ -8,7 +8,16 @@
 
 ## 1. What Storage is used for
 
-Only **equipment images** today. Project `imageUrls`/`documentUrls` and workshop `materialUrls` exist in the Firestore schema but have **no upload UI yet**.
+Three file groups, all under size/type-restricted rules:
+
+| Path | Who writes | Types / size |
+|---|---|---|
+| `equipment/{equipmentId}/{fileName}` | Staff | jpeg/png/webp ≤ 5 MB |
+| `projects/{projectId}/images/{fileName}` | Project owner or staff | jpeg/png/webp ≤ 5 MB |
+| `projects/{projectId}/documents/{fileName}` | Project owner or staff | pdf/docx/txt/md/images ≤ 10 MB |
+| `workshops/{workshopId}/{fileName}` | Staff | pdf/docx/txt/md/images ≤ 10 MB |
+
+Project `imageUrls`/`documentUrls` and workshop `materialUrls` uploads are wired in `ProjectFormPage` / `WorkshopFormPage` via the shared [`FileUploader`](../../src/components/common/FileUploader.tsx) component.
 
 ## 2. Path layout
 
@@ -27,27 +36,30 @@ Example: `equipment/bambu-x1c/1723641234567_side_view.png`
 | Path | read | write | delete |
 |---|---|---|---|
 | `equipment/{equipmentId}/{fileName}` | any authenticated user | staff only, `image/(jpeg\|png\|webp)`, ≤ 5 MB | staff only |
+| `projects/{projectId}/images/{fileName}` | any authenticated user | **project owner or staff**, `image/(jpeg\|png\|webp)`, ≤ 5 MB | owner or staff |
+| `projects/{projectId}/documents/{fileName}` | any authenticated user | **project owner or staff**, pdf/docx/txt/md/images, ≤ 10 MB | owner or staff |
+| `workshops/{workshopId}/{fileName}` | any authenticated user | staff only, pdf/docx/txt/md/images, ≤ 10 MB | staff only |
 | `{allPaths=**}` (default) | **deny** | **deny** | **deny** |
 
-- The `isStaff()` helper in `storage.rules` reads the caller's Firestore `users/{uid}` doc to check `role ∈ [super_admin, faculty, lab_assistant]`.
+- The `isStaff()` and `isProjectOwner(projectId)` helpers in `storage.rules` read the caller's Firestore `users/{uid}` / `projects/{projectId}` docs to authorize.
 - Content-type and size checks run on every write (no other file types are permitted).
 
 ## 4. Client flow
 
+The generic [`uploads.ts`](../../src/services/firebase/uploads.ts) service + [`FileUploader`](../../src/components/common/FileUploader.tsx) component drive all uploads:
+
 ```mermaid
 sequenceDiagram
-    participant U as User (staff)
-    participant P as Page (EquipmentForm/Admin)
+    participant U as User (owner/staff)
+    participant P as Page (ProjectForm/WorkshopForm)
     participant S as Firebase Storage
     participant F as Firestore
-    U->>P: selects image file
-    P->>S: uploadBytesResumable(ref, file)
+    U->>P: selects file(s)
+    P->>S: uploadBytesResumable({folder}/{entityId}/...)
     S-->>P: progress events
     P->>S: getDownloadURL()
-    P->>F: append URL to equipment.imageUrls[]
+    P->>F: append URL to entity's urls[] array on save
 ```
-
-Rules gate the upload (`isStaff` + type/size), then the URL write to Firestore is gated by the `equipment` rules (staff write).
 
 ## 5. Deploying storage rules
 

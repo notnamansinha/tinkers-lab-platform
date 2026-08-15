@@ -31,7 +31,14 @@
 ### 🛠 Development
 | Document | Purpose |
 |---|---|
-| [`development/TESTING.md`](development/TESTING.md) | Quality gates: build, lint, manual verification, and Firebase emulator usage. |
+| [`development/TESTING.md`](development/TESTING.md) | Quality gates: unit tests (vitest), security-rule tests (emulators), build, lint, manual QA checklist. |
+
+### ☁️ Cloud Functions (server-side enforcement)
+| Document | Purpose |
+|---|---|
+| [`firebase/FIRESTORE.md`](firebase/FIRESTORE.md) §7 | Every function, its trigger, and what it enforces server-side. |
+| [`../functions/src/index.ts`](../functions/src/index.ts) | The deployed functions themselves (createProject, createBooking, submitFeedback, sweepOverdueCheckouts, notifyOnProject/BookingUpdate). |
+| [`tests/firestore.rules.test.ts`](../tests/firestore.rules.test.ts) · [`tests/storage.rules.test.ts`](../tests/storage.rules.test.ts) | Emulator-based security-rule tests (run with `npm run test:rules`, Java required, CI runs them). |
 
 ### 📐 Specifications (historical)
 | Document | Purpose |
