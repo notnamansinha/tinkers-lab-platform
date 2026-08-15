@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { collection, query, orderBy, where, getDocs, doc, updateDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
@@ -29,6 +30,7 @@ type ExtendedProject = Project & { docId: string; firestoreDocId?: string }
 export default function AdminProjectsPage() {
   const { profile } = useAuth()
   const qc = useQueryClient()
+  const navigate = useNavigate()
   const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
   const [rejectProject, setRejectProject] = useState<ExtendedProject | null>(null)
@@ -168,8 +170,14 @@ export default function AdminProjectsPage() {
               <TableRow key={p.docId || p.projectCode || idx} className={cn('border-0', p.status === 'pending' && 'bg-orange/5')}>
                 <TableCell className="font-mono text-xs text-white/50">{filtered.length - idx}</TableCell>
                 <TableCell className="font-semibold text-white">
-                  <div>{p.title}</div>
-                  <div className="font-mono text-xs text-white/50">{p.projectCode}</div>
+                  <button
+                    onClick={() => navigate(`/admin/projects/${p.docId || p.firestoreDocId}`)}
+                    className="text-left hover:underline underline-offset-2 transition-colors"
+                    title="View project details & logs"
+                  >
+                    <div>{p.title}</div>
+                    <div className="font-mono text-xs text-white/50">{p.projectCode}</div>
+                  </button>
                 </TableCell>
                 <TableCell>
                   <div className="text-sm font-medium text-white">{p.userName}</div>
