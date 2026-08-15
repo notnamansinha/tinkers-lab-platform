@@ -1,7 +1,10 @@
 import {
+  collection,
   collectionGroup,
   query,
   where,
+  orderBy,
+  limit,
   getDocs,
   serverTimestamp,
   doc,
@@ -107,4 +110,17 @@ export async function getUserBookings(userId: string): Promise<Booking[]> {
   return snap.docs
     .map((d) => ({ id: d.id, ...d.data() }) as Booking)
     .sort((a, b) => b.date.localeCompare(a.date))
+}
+
+/**
+ * Get every booking that hangs under one project (admin project drill-down).
+ * Scoped collection query — no collection-group scan needed.
+ */
+export async function getProjectBookings(projectId: string): Promise<Booking[]> {
+  const ref = collection(db, COLLECTIONS.PROJECTS, projectId, SUBCOLLECTIONS.PROJECT_BOOKINGS)
+  const q = query(ref, orderBy('createdAt', 'desc'), limit(200))
+  const snap = await getDocs(q)
+  return snap.docs
+    .map((d) => ({ id: d.id, ...d.data() }) as Booking)
+    .sort((a, b) => (b.date.localeCompare(a.date) || a.startTime.localeCompare(b.startTime)))
 }

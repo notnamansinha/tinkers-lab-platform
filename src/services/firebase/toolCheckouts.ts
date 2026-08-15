@@ -180,6 +180,19 @@ export async function getUserCheckoutHistory(userId: string): Promise<ToolChecko
 }
 
 /**
+ * Get every tool checkout that hangs under one project (admin drill-down).
+ * Scoped collection query — no collection-group scan needed.
+ */
+export async function getProjectCheckouts(projectId: string): Promise<ToolCheckout[]> {
+  const ref = collection(db, COLLECTIONS.PROJECTS, projectId, SUBCOLLECTIONS.PROJECT_CHECKOUTS)
+  const q = query(ref, orderBy('createdAt', 'desc'), limit(200))
+  const snap = await getDocs(q)
+  return snap.docs
+    .map((d) => ({ id: d.id, ...d.data() }) as ToolCheckout)
+    .sort((a, b) => b.createdAt?.toMillis?.() - a.createdAt?.toMillis?.())
+}
+
+/**
  * Client-side helper: check if a checkout is overdue.
  * Overdue = expectedReturnDate < today AND returnedAt is null.
  */
