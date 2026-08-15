@@ -274,9 +274,9 @@ Written automatically when bookings/checkouts are created or returned, and when 
 | Collection | ID strategy | Mechanism |
 |---|---|---|
 | `users` | Deterministic | `users/{authUid}` via `setDoc` |
-| `feedback` | Deterministic | `uid_<5minWindow>` |
+| `feedback` | **Auto (function)** | `submitFeedback` callable — server ID + `feedbackWindows/{uid}` cooldown |
 | `projects` | **Hybrid** | Firestore random **doc ID** + sequential `projectCode` field (`TL-XXX`) via atomic counter |
-| `projects/{id}/bookings` · `checkouts` · `activityLog` | Random | `addDoc` → Firestore auto-ID |
+| `projects/{id}/bookings` · `checkouts` · `activityLog` · `projectMembers` | Random | `addDoc` → Firestore auto-ID |
 | everything else | Random | `addDoc` → Firestore auto-ID |
 
 ### `projectCode` generation — atomic counter (`src/services/firebase/projects.ts`)
@@ -293,6 +293,7 @@ await runTransaction(db, async (tx) => {
 
 - Uses a **transaction on `counters/projects`** → race-free `TL-XXX` generation (fixes the old `getCountFromServer()` race).
 - The counter increment and the project document write happen **atomically together**.
+- ⚠️ **Since the Cloud Functions layer landed, this transaction runs server-side** in the `createProject` callable (`functions/src/createProject.ts`) — direct client writes to `counters` and `projects` are denied by rules so a client cannot tamper with the counter.
 
 ---
 
@@ -401,11 +402,12 @@ Defined in [`firestore.rules`](../../firestore.rules) (rules_version 2). Helper 
 | Collection | read | create | update | delete |
 |---|---|---|---|---|
 | `users` | owner or admin | self, `role='student'` only | owner (not role/isActive/email) or admin | admin |
-| `projects` | owner or staff | active user, own, `status='pending'`, agreements true | owner (not `status`) or admin | admin |
-| `projects/{id}/bookings` | project owner or staff | active user, **project owner**, own, `projectId == path projectId`, `status='approved'`, safety true, valid times, equipment must be **confirmed + bookable + available/reserved** | owner (cancel only) or staff | admin |
+| `projects` | owner or staff | **function only** (`createProject` callable) | owner (not `status`) or admin | admin |
+| `projects/{id}/bookings` | project owner or staff | **function only** (`createBooking` callable — transactional conflict check) | owner (cancel only) or staff | admin |
 | `projects/{id}/checkouts` | project owner or staff | active user, **project owner**, own, `projectId == path projectId`, `action='checking_out'`, valid enums, `isOverdue=false`, `outsideLocation` required if taking outside | owner (return-only keys) or staff | admin |
 | `projects/{id}/activityLog` | project owner or staff | active **project owner or staff**, key allowlist, type enum, summary ≤ 300 chars | **nobody** (immutable) | **nobody** |
-| `counters` | active user | active user (transaction) | — | — |
+| `projects/{id}/projectMembers` | project owner or staff | project owner or staff | project owner or staff | owner or admin |
+| `counters` | active user | **function only** (deny direct) | — | — |
 | `equipment` | any auth | staff | staff | staff |
 | `inventory` | any auth | staff | staff | admin |
 | `inventoryTransactions` | any auth | **staff** | admin | admin |
@@ -417,7 +419,7 @@ Defined in [`firestore.rules`](../../firestore.rules) (rules_version 2). Helper 
 | `issues` | owner or staff | active user, own, `status='open'`, valid enums, description ≥ 20 chars, **exhaustive key allowlist** | **staff only** | admin |
 | `auditLogs` | admin | staff | **nobody** (immutable) | **nobody** |
 | `settings` | staff | admin | admin | admin |
-| `feedback` | staff | any auth, own, message ≤ 2000 chars, **doc-ID rate limit**, exhaustive allowlist | nobody | nobody |
+| `feedback` | staff | **function only** (`submitFeedback` callable) | nobody | nobody |
 | `{document=**}` (default) | **deny** | **deny** | **deny** | **deny** |
 
 **Collection-group note:** the `bookings`, `checkouts`, and `activityLog` subcollection rules also gate collection-group reads (project owner or staff) — that's how the admin "all bookings" view and per-user history stay secure.
@@ -482,11 +484,10 @@ Single-field queries (e.g. `where('userId','==',uid)`, `where('status','==',x)`,
 
 ---
 
-## 10. Known Gaps / Future Work (as found in code & docs)
+## 10. Known Gaps / Future Work
 
-1. **No Cloud Functions yet** — auto-emails (booking approved/rejected, overdue reminders), daily overdue flips (`isOverdue` is client-computed today), and notification creation are Phase 9 items.
-2. **Uploads only for equipment images** — project `imageUrls`/`documentUrls` and workshop `materialUrls` exist in schema but have no upload flow.
-3. **Feedback rate limit is client-predictable** — the doc-ID scheme is noted in rules as replaceable with a Cloud Function for stricter enforcement.
-4. **Team/faculty fields are free-text strings** — `teamMembers`, `facultyMentor` etc. are not relational; changing a name doesn't cascade.
-5. **Migration required before switching over** — if you have production data in top-level `bookings`/`toolCheckouts`, run `scripts/migrateToSubcollections.ts` (needs `firebase-admin` + service account) BEFORE deploying this code.
-6. **Rules not yet emulator-tested** — this environment has no Java, so `firebase emulators:exec` couldn't validate rules locally. Deploy to a test project first.
+1. **Transactional email** — booking approved/rejected and overdue reminders are **in-app notifications** today (Cloud Functions `notify*`); email is a Phase 9 item.
+2. **Overdue sweep capped at 500 checkouts per run** — fine at lab scale; raise if the fleet grows.
+3. **Team/faculty fields remain free-text on the doc** for display — the structured `projectMembers` subcollection is the relational source; renames still don't cascade to denormalized display fields (accepted tradeoff).
+4. **Migration required before switching over** — if you have production data in top-level `bookings`/`toolCheckouts`, run `scripts/migrateToSubcollections.ts` (needs `firebase-admin` + service account) BEFORE deploying this code.
+5. **Rules tests require Java** (Firebase emulators) — they run in CI; see [`../development/TESTING.md`](../development/TESTING.md).

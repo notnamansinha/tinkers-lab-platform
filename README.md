@@ -94,6 +94,10 @@ tinkers-lab-platform/
 │   ├── services/firebase/     # Firestore service layer (auth, projects, bookings, …)
 │   ├── styles/                # Global CSS / Tailwind layer
 │   └── types/                 # Domain model types (single source of truth)
+├── functions/                 # ☁️ Cloud Functions (server-side enforcement)
+│   └── src/                   # createProject, createBooking, submitFeedback,
+│                              #   sweepOverdueCheckouts, notifyOnProject/BookingUpdate
+├── tests/                     # 🔐 Emulator-based security-rule tests (requires Java)
 ├── docs/                      # 📚 All documentation (start here → docs/README.md)
 │   ├── architecture/          # overview.md, data-architecture.md
 │   ├── firebase/              # FIRESTORE.md, AUTH.md, STORAGE.md, DEPLOYMENT.md, ENVIRONMENT.md
@@ -144,14 +148,18 @@ npm run dev          # → http://localhost:5173
 
 ### 4. Emulators (no credentials needed)
 ```bash
-firebase emulators:start
+npm run emulators
 VITE_USE_EMULATORS=true npm run dev
 ```
+
+> ⚠️ Project & booking creation, feedback, and overdue sweeping are **server-enforced by Cloud Functions** — run the emulator suite locally, or deploy functions (`npm run deploy:functions`) before exercising those flows.
 
 ### 5. Verify / build
 ```bash
 npm run lint
 npm run build
+npm test            # unit tests
+npm run test:rules  # security-rule tests (requires Java — CI runs these)
 ```
 
 ---
