@@ -38,6 +38,15 @@ export const createBookingCallable = httpsCallable<CreateBookingInput, CreateBoo
   'createBooking',
 )
 
+export interface CreateProjectResult {
+  projectId: string
+}
+
+export const createProjectCallable = httpsCallable<Record<string, unknown>, CreateProjectResult>(
+  functions,
+  'createProject',
+)
+
 export const submitFeedbackCallable = httpsCallable<{ message: string }, { feedbackId: string }>(
   functions,
   'submitFeedback',

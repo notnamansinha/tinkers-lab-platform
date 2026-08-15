@@ -81,6 +81,20 @@ describe('projects', () => {
     await assertFails(db.doc('projects/project-of-a').get())
   })
 
+  it('direct client project creation is denied (function-only)', async () => {
+    const db = env.authenticatedContext(STUDENT_A).firestore()
+    await assertFails(db.doc('projects/direct-create').set({
+      userId: 'student-a', status: 'pending', title: 'New', abstract: 'A long abstract',
+      safetyAgreementAccepted: true, termsAccepted: true,
+    }))
+  })
+
+  it('users cannot tamper with the atomic project counter (function-only)', async () => {
+    const db = env.authenticatedContext(STUDENT_A).firestore()
+    await assertFails(db.doc('counters/projects').set({ nextId: 999999 }))
+    await assertFails(db.doc('counters/projects').update({ nextId: 1 }))
+  })
+
   it('a student cannot read another student\'s project', async () => {
     const db = env.authenticatedContext(STUDENT_B).firestore()
     await assertFails(db.doc('projects/project-of-a').get())

@@ -64,13 +64,14 @@ service cloud.firestore {
     // ================================================================
     // COUNTERS COLLECTION  (atomic project code counter)
     // counters/projects → { nextId: N }
-    // Writes happen inside a runTransaction in createProject.
+    // ⚠️ WRITES ARE SERVER-ENFORCED: the `createProject` Cloud Function
+    // increments the counter inside a transaction with the Admin SDK.
+    // Direct client writes are denied so users cannot tamper with the
+    // counter and cause duplicate TL-XXX codes.
     // ================================================================
     match /counters/{counterId} {
       allow read: if isActiveUser();
-      // Only the system increments counters via transaction — but the client
-      // must be an active user to trigger it (createProject runs it).
-      allow write: if isActiveUser();
+      allow write: if false;
     }
 
     // ================================================================
@@ -215,12 +216,11 @@ service cloud.firestore {
     match /projects/{projectId} {
       // Projects are only visible to their owner and staff — NOT all authenticated users.
       allow read: if isAuth() && (resource.data.userId == request.auth.uid || isStaff());
-      // Users self-register projects; status must start as 'pending'
-      allow create: if isActiveUser()
-                    && request.resource.data.userId == request.auth.uid
-                    && request.resource.data.status == 'pending'
-                    && request.resource.data.safetyAgreementAccepted == true
-                    && request.resource.data.termsAccepted == true;
+      // ⚠️ CREATION IS SERVER-ENFORCED: the `createProject` Cloud Function
+      // (functions/src/createProject.ts) validates input, increments the
+      // atomic counter, and seeds timeline + roster with the Admin SDK.
+      // Direct client creation is denied.
+      allow create: if false;
       // Users edit own pending/active projects (not status); admins change anything
       allow update: if isAuth() && (
         (isActiveUser() && resource.data.userId == request.auth.uid && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['status']))

@@ -5,7 +5,6 @@ import {
   addDoc,
   deleteDoc,
   serverTimestamp,
-  type Transaction,
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { COLLECTIONS, SUBCOLLECTIONS } from './firestore'
@@ -14,8 +13,9 @@ import type { ProjectMember } from '@/types'
 // ============================================================
 // PROJECT MEMBER SERVICE  (projects/{projectId}/projectMembers)
 // Structured, relational roster for each project. Seeded at
-// project creation (atomically with the project doc) from the
-// free-text "Names and IDs" input; editable by owner/staff.
+// project creation (atomically, server-side via the createProject
+// Cloud Function) from the free-text "Names and IDs" input;
+// editable by owner/staff.
 // ============================================================
 
 function membersRef(projectDocId: string) {
@@ -27,29 +27,6 @@ export interface NewProjectMember {
   universityId?: string
   userId?: string
   isMentor?: boolean
-}
-
-/**
- * Seed the roster inside the createProject transaction so the project
- * doc, its business code, timeline entry, and members are written atomically.
- */
-export function seedProjectMembersTx(
-  tx: Transaction,
-  projectDocId: string,
-  members: NewProjectMember[],
-): void {
-  for (const m of members) {
-    const name = m.name.trim()
-    if (!name) continue
-    tx.set(doc(membersRef(projectDocId)), {
-      projectId: projectDocId,
-      name,
-      universityId: m.universityId ?? null,
-      userId: m.userId ?? null,
-      isMentor: m.isMentor === true,
-      createdAt: serverTimestamp(),
-    })
-  }
 }
 
 /** Add a member to an existing project (owner or staff). */
