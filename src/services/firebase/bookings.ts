@@ -97,22 +97,6 @@ export async function updateBookingStatus(
 }
 
 /**
- * Get all bookings for a specific user (their own history).
- * COLLECTION GROUP query on userId. Ordered by date descending (client-side).
- */
-export async function getUserBookings(userId: string): Promise<Booking[]> {
-  const q = query(
-    allBookings(),
-    where('userId', '==', userId),
-    where('status', 'in', ['approved', 'completed', 'cancelled', 'rejected'])
-  )
-  const snap = await getDocs(q)
-  return snap.docs
-    .map((d) => ({ id: d.id, ...d.data() }) as Booking)
-    .sort((a, b) => b.date.localeCompare(a.date))
-}
-
-/**
  * Get every booking that hangs under one project (admin project drill-down).
  * Scoped collection query — no collection-group scan needed.
  */

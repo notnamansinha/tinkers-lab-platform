@@ -155,15 +155,6 @@ export async function getAllActiveCheckouts(): Promise<ToolCheckout[]> {
  * COLLECTION GROUP query on isOverdue == true.
  * Phase 9 (server-side) will have a daily trigger to mark these automatically.
  */
-export async function getOverdueCheckouts(): Promise<ToolCheckout[]> {
-  const q = query(
-    allCheckoutsRef(),
-    where('isOverdue', '==', true)
-  )
-  const snap = await getDocs(q)
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as ToolCheckout)
-}
-
 /**
  * Get a user's full checkout history (checked-out + returned).
  * COLLECTION GROUP query. Ordered newest first.
