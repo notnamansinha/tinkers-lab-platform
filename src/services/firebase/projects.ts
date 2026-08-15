@@ -28,9 +28,14 @@ import type { Project, ProjectStatus } from '@/types'
  * Status starts as 'pending' — admin reviews and approves/rejects.
  * projectCode (TL-XXX) is generated atomically from counters/projects.
  * The Firestore document ID stays auto-generated (separate from projectCode).
+ * Optional imageUrls/documentUrls (uploaded via FileUploader) are persisted
+ * with the project.
  */
 export async function createProject(
-  data: Omit<Project, 'id' | 'projectCode' | 'createdAt' | 'updatedAt' | 'status' | 'imageUrls' | 'documentUrls'>
+  data: Omit<Project, 'id' | 'projectCode' | 'createdAt' | 'updatedAt' | 'status' | 'imageUrls' | 'documentUrls'> & {
+    imageUrls?: string[]
+    documentUrls?: string[]
+  }
 ): Promise<string> {
   const projectsCol = collection(db, COLLECTIONS.PROJECTS)
   const counterRef = doc(db, COLLECTIONS.COUNTERS, 'projects')
@@ -41,8 +46,8 @@ export async function createProject(
   const payload = cleanFirestoreData({
     ...data,
     status: 'pending',
-    imageUrls: [],
-    documentUrls: [],
+    imageUrls: data.imageUrls ?? [],
+    documentUrls: data.documentUrls ?? [],
     teamMembers: data.teamMembers ?? '',
     facultyMentor: data.facultyMentor ?? '',
     createdAt: serverTimestamp(),

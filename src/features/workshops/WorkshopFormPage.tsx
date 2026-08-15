@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { typedZodResolver } from '@/lib/form'
@@ -8,6 +8,7 @@ import { COLLECTIONS } from '@/services/firebase/firestore'
 import { doc, getDoc, collection, addDoc, updateDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { useAuth } from '@/contexts/AuthContext'
+import { FileUploader } from '@/components/common/FileUploader'
 import { ArrowLeft, Save, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
@@ -45,9 +46,11 @@ export default function WorkshopFormPage() {
     resolver: typedZodResolver(schema),
     defaultValues: { type: 'workshop', capacity: 20, isActive: true, certificateIssued: false },
   })
+  const [materialUrls, setMaterialUrls] = useState<string[]>(existing?.materialUrls ?? [])
 
   React.useEffect(() => {
     if (existing) {
+      setMaterialUrls(existing.materialUrls ?? [])
       reset({
         title: existing.title, type: existing.type as any, description: existing.description,
         instructor: existing.instructor, instructorEmail: existing.instructorEmail,
@@ -62,8 +65,8 @@ export default function WorkshopFormPage() {
   const onSubmit = async (data: FormData) => {
     if (!isStaff) return
     try {
-      if (isEdit) { await updateDoc(doc(db, COLLECTIONS.WORKSHOPS, id!), { ...data, materialUrls: existing?.materialUrls ?? [] }); toast.success('Updated') }
-      else { const nId = await addDoc(collection(db, COLLECTIONS.WORKSHOPS), { ...data, registeredCount: 0, materialUrls: [] } as Omit<Workshop,'id'|'createdAt'|'updatedAt'>); toast.success('Created'); navigate(`/workshops/${nId}`); return }
+      if (isEdit) { await updateDoc(doc(db, COLLECTIONS.WORKSHOPS, id!), { ...data, materialUrls }); toast.success('Updated') }
+      else { const nId = await addDoc(collection(db, COLLECTIONS.WORKSHOPS), { ...data, registeredCount: 0, materialUrls } as Omit<Workshop,'id'|'createdAt'|'updatedAt'>); toast.success('Created'); navigate(`/workshops/${nId}`); return }
       qc.invalidateQueries({ queryKey: ['workshops'] }); navigate(`/workshops/${id}`)
     } catch (e) { toast.error(e instanceof Error ? e.message : 'Failed') }
   }
@@ -177,6 +180,25 @@ export default function WorkshopFormPage() {
                 <Label htmlFor="certificateIssued">Certificate issued on completion</Label>
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-card border border-hairline bg-charcoal p-6">
+          <CardHeader className="px-0">
+            <CardTitle className="text-sm font-bold text-white">Workshop Materials</CardTitle>
+            <CardDescription className="text-xs text-white/50">
+              Upload slides, handouts, or certificates (optional).
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="px-0">
+            <FileUploader
+              folder="workshops"
+              entityId={id ?? 'draft'}
+              kind="materials"
+              existingUrls={materialUrls}
+              onChange={setMaterialUrls}
+              label="Upload materials"
+            />
           </CardContent>
         </Card>
 

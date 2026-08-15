@@ -135,6 +135,16 @@ export default function ProjectDetailPage() {
         Project ID: {project.projectCode}
       </p>
 
+      {(project.imageUrls?.length ?? 0) > 0 && (
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+          {project.imageUrls!.map((url) => (
+            <a key={url} href={url} target="_blank" rel="noreferrer" className="group overflow-hidden rounded-md border border-white/10">
+              <img src={url} alt="Project" className="aspect-video w-full object-cover transition-transform group-hover:scale-105" />
+            </a>
+          ))}
+        </div>
+      )}
+
       {/* ── Team Roster ─────────────────────────────────────────── */}
       <div className="rounded-card border border-hairline bg-charcoal p-6">
         <div className="mb-4 flex items-center gap-2">
