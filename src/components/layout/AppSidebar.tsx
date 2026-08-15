@@ -47,9 +47,10 @@ export default function AppSidebar() {
         <div
           className="uppercase leading-none tracking-[0.14em]"
           style={{
-            fontFamily: "'Gavency', 'Outfit', sans-serif",
+            fontFamily: "'Comic CAT', 'Outfit', sans-serif",
             fontWeight: 900,
-            fontSize: '1.05rem',
+            fontSize: '1.1rem',
+            WebkitTextStroke: '0.8px currentColor',
             color: '#FFFFFF',
           }}
         >

@@ -68,10 +68,11 @@ export default function TopBar() {
             <span
               className="hidden sm:inline uppercase leading-none"
               style={{
-                fontFamily: "'Gavency', 'Outfit', sans-serif",
+                fontFamily: "'Comic CAT', 'Outfit', sans-serif",
                 fontWeight: 900,
-                fontSize: '1.0rem',
+                fontSize: '1.05rem',
                 letterSpacing: '0.14em',
+                WebkitTextStroke: '0.8px currentColor',
                 color: '#FFFFFF',
               }}
             >
