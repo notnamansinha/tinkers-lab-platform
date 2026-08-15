@@ -378,12 +378,18 @@ export default function ProjectFormPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4 px-0">
+            {!isEdit && (
+              <p className="text-xs text-white/50">
+                Save the project first, then add images or documents from its Edit page.
+              </p>
+            )}
             <FileUploader
               folder="projects"
               entityId={id ?? 'draft'}
               kind="images"
               existingUrls={imageUrls}
               onChange={setImageUrls}
+              disabled={!isEdit}
               label="Upload project images"
             />
             <FileUploader
@@ -392,6 +398,7 @@ export default function ProjectFormPage() {
               kind="documents"
               existingUrls={documentUrls}
               onChange={setDocumentUrls}
+              disabled={!isEdit}
               label="Upload documents"
             />
           </CardContent>

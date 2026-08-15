@@ -246,7 +246,7 @@ function CheckoutForm({ projects, user, profile, qc }: any) {
 }
 
 // ── Sub-component: Return Form ────────────────────────────────────────────────
-function ReturnForm({ activeCheckouts, qc }: { activeCheckouts: ToolCheckout[]; qc: any }) {
+function ReturnForm({ activeCheckouts, qc, profile }: { activeCheckouts: ToolCheckout[]; qc: any; profile: { uid: string; displayName: string; email: string } | null }) {
   const {
     register, handleSubmit, watch,
     formState: { errors, isSubmitting },
@@ -264,9 +264,9 @@ function ReturnForm({ activeCheckouts, qc }: { activeCheckouts: ToolCheckout[]; 
     }
     try {
       await returnTool(checkout.projectId, data.checkoutId, data.conditionAtReturn, data.notes, {
-        uid: checkout.userId,
-        name: checkout.userName,
-        email: checkout.userEmail,
+        uid: profile?.uid ?? checkout.userId,
+        name: profile?.displayName ?? checkout.userName,
+        email: profile?.email ?? checkout.userEmail,
       })
       toast.success('Tool returned successfully. Thank you!')
       qc.invalidateQueries({ queryKey: ['toolCheckouts'] })
@@ -359,7 +359,7 @@ export default function ToolCheckoutPage() {
 
   const { data: projects = [], isLoading: projectsLoading } = useQuery({
     queryKey: ['projects', 'user', user?.uid],
-    queryFn: () => getUserProjects(user!.uid),
+    queryFn: () => getUserProjects(user!.uid, 'active'),
     enabled: !!user,
     staleTime: 5 * 60 * 1000,
   })
@@ -449,7 +449,7 @@ export default function ToolCheckoutPage() {
 
       {mode === 'checkout'
         ? <CheckoutForm projects={projects} user={user} profile={profile} qc={qc} />
-        : <ReturnForm   activeCheckouts={activeCheckouts} qc={qc} />
+        : <ReturnForm   activeCheckouts={activeCheckouts} qc={qc} profile={profile} />
       }
     </div>
   )

@@ -5,8 +5,13 @@ service firebase.storage {
     // ================================================================
     // HELPER — staff role check (reads the Firestore user document)
     // ================================================================
-    function isStaff() {
+    function isActiveUser() {
       return request.auth != null
+        && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.isActive != false;
+    }
+
+    function isStaff() {
+      return isActiveUser()
         && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role
              in ['super_admin', 'faculty', 'lab_assistant'];
     }
@@ -15,7 +20,7 @@ service firebase.storage {
     // HELPER — project owner check (reads the Firestore project doc)
     // ================================================================
     function isProjectOwner(projectId) {
-      return request.auth != null
+      return isActiveUser()
         && firestore.get(/databases/(default)/documents/projects/$(projectId)).data.userId
              == request.auth.uid;
     }

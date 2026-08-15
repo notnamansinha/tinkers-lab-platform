@@ -21,6 +21,19 @@ const PROJECT_KEYS = [
   'imageUrls', 'documentUrls', 'projectCode', 'createdAt', 'updatedAt',
 ] as const
 
+const DATE_PATTERN = /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/
+const EXPECTED_NEEDS = [
+  '3D Printer', 'Laser Cutter', 'Muffle Furnace', 'Lathe Machine', 'Sheet Bender',
+  'Pillar Drill', 'Table Saw', 'Mitre Saw', 'Cut-off Saw', 'ESD Workstation',
+  'Oscilloscope', 'Function Generator', 'Soldering Station', 'Hand Tools', 'Power Tools', 'Other',
+]
+
+function isRealDate(value: string): boolean {
+  if (!DATE_PATTERN.test(value)) return false
+  const date = new Date(`${value}T00:00:00Z`)
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value
+}
+
 interface CreateProjectInput {
   title: string
   abstract: string
@@ -62,8 +75,14 @@ export const createProject = onCall(
     if (typeof input.abstract !== 'string' || input.abstract.trim().length < 50) {
       throw new HttpsError('invalid-argument', 'Abstract must be at least 50 characters.')
     }
-    if (!input.contact) throw new HttpsError('invalid-argument', 'Contact is required.')
-    if (!input.startDate) throw new HttpsError('invalid-argument', 'Start date is required.')
+    if (typeof input.contact !== 'string' || input.contact.trim().length < 5) throw new HttpsError('invalid-argument', 'Contact is required.')
+    if (!isRealDate(input.startDate)) throw new HttpsError('invalid-argument', 'Start date must be a valid date.')
+    if (input.endDate && (!isRealDate(input.endDate) || input.endDate < input.startDate)) {
+      throw new HttpsError('invalid-argument', 'End date must be a valid date after the start date.')
+    }
+    if (!Array.isArray(input.expectedEquipmentNeeds) || input.expectedEquipmentNeeds.some((need) => !EXPECTED_NEEDS.includes(need))) {
+      throw new HttpsError('invalid-argument', 'Invalid expected equipment needs.')
+    }
     if (input.safetyAgreementAccepted !== true || input.termsAccepted !== true) {
       throw new HttpsError('invalid-argument', 'Both agreements must be accepted.')
     }

@@ -117,8 +117,11 @@ export async function updateProjectStatus(
   rejectionReason?: string,
   actor?: { uid: string; name: string; email: string }
 ): Promise<void> {
-  const updates: Record<string, unknown> = { status, updatedAt: serverTimestamp() }
-  if (rejectionReason) updates.rejectionReason = rejectionReason
+  const updates: Record<string, unknown> = {
+    status,
+    rejectionReason: status === 'rejected' ? (rejectionReason?.trim() || null) : null,
+    updatedAt: serverTimestamp(),
+  }
   const ref = doc(db, COLLECTIONS.PROJECTS, firestoreDocId)
   await updateDoc(ref, updates)
 

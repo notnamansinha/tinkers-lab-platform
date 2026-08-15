@@ -82,6 +82,7 @@ export default function AdminProjectsPage() {
 
     if (!targetDocId) {
       toast.error('Cannot update project: Missing document ID.')
+      setActionLoading(false)
       return
     }
 
@@ -95,6 +96,7 @@ export default function AdminProjectsPage() {
       // Keep reviewedBy/reviewedAt audit metadata (not part of the core Project type)
       await updateDoc(doc(db, COLLECTIONS.PROJECTS, targetDocId), cleanFirestoreData({
         reviewedBy: profile?.displayName || 'Admin',
+        reviewedByEmail: profile?.email || '',
         reviewedAt: serverTimestamp(),
       }))
       toast.success(`Project marked as ${status}`)

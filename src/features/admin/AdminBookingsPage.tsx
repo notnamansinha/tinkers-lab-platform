@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { collectionGroup, query, orderBy, getDocs } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { updateBookingStatus } from '@/services/firebase/bookings'
+import { useAuth } from '@/contexts/AuthContext'
 import { Search, Calendar, XCircle } from 'lucide-react'
 import { formatDateTime, cn } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -22,6 +23,7 @@ const STATUS_COLOR: Record<string, string> = {
 }
 
 export default function AdminBookingsPage() {
+  const { profile } = useAuth()
   const qc = useQueryClient()
   const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
@@ -49,7 +51,11 @@ export default function AdminBookingsPage() {
     try {
       await updateBookingStatus(rejectTarget.projectId, rejectTarget.id, 'rejected', {
         rejectionReason,
-        actor: { uid: 'admin', name: 'Coordinator', email: '' },
+        actor: {
+          uid: profile?.uid ?? 'admin',
+          name: profile?.displayName ?? 'Coordinator',
+          email: profile?.email ?? '',
+        },
       })
       toast.success('Booking rejected')
       qc.invalidateQueries({ queryKey: ['admin', 'bookings'] })

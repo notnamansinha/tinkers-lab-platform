@@ -412,6 +412,7 @@ export interface Project {
   imageUrls: string[]
   documentUrls: string[]
   reviewedBy?: string   // Admin audit metadata (set on approve/reject/hold/complete)
+  reviewedByEmail?: string
   reviewedAt?: Timestamp
   createdAt: Timestamp
   updatedAt: Timestamp

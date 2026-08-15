@@ -32,7 +32,7 @@ flowchart LR
 - Firestore is initialized with `persistentLocalCache({ tabManager: persistentMultipleTabManager() })` → the app works offline and caches reads (keeps free-tier read usage low).
 - Dev mode supports **emulators** when `VITE_USE_EMULATORS=true` (Auth `:9099`, Firestore `:8080`, Storage `:9199`).
 - Config comes from `VITE_FIREBASE_*` env vars; the API key may be passed Base64-encoded as `VITE_FIREBASE_API_KEY_B64` and is decoded at runtime.
-- All reads/writes go through the **web SDK directly from the client** — there are **no Cloud Functions** today. Server-side enforcement is done exclusively via **Firestore security rules** (section 6).
+- Reads use the web SDK; trusted creates and transactional business rules use the deployed **Cloud Functions** layer. Firestore security rules remain the defense-in-depth boundary (section 6).
 
 ---
 
@@ -43,10 +43,10 @@ Collection names are defined once in [`src/services/firebase/firestore.ts`](../.
 | # | Collection | Document ID | Who creates | Notes |
 |---|---|---|---|---|
 | 1 | `users` | **Firebase Auth `uid`** | Self on first sign-in | The join key for the whole app |
-| 2 | `projects` | **Auto-generated random** + business `projectCode` field `TL-001` | User (self-registration) | **Anchor document** — bookings/checkouts/activityLog hang under it |
-| 3 | `projects/{id}/bookings` | Auto-generated | User | **Subcollection** — Tier-1 machine time slots, auto-approved |
-| 4 | `projects/{id}/checkouts` | Auto-generated | User | **Subcollection** — Tier-2 tool borrow/return log |
-| 5 | `projects/{id}/activityLog` | Auto-generated | App (owner/staff) | **Subcollection** — immutable unified project timeline |
+| 2 | `projects` | **Auto-generated random** + business `projectCode` field `TL-001` | **Cloud Function** (`createProject`) | **Anchor document** — bookings/checkouts/activityLog hang under it |
+| 3 | `projects/{id}/bookings` | Auto-generated | **Cloud Function** (`createBooking`) | **Subcollection** — Tier-1 machine time slots, auto-approved |
+| 4 | `projects/{id}/checkouts` | Auto-generated | **Cloud Function** (`createToolCheckout`) | **Subcollection** — Tier-2 tool borrow/return log |
+| 5 | `projects/{id}/activityLog` | Auto-generated | Owner/staff appends + Cloud Functions | **Subcollection** — immutable unified project timeline |
 | 6 | `counters` | Fixed doc `projects` | System (transaction) | Atomic `{ nextId: N }` — powers `TL-XXX` codes |
 | 7 | `equipment` | Auto-generated | Staff (seeded) | 49 machines/tools in `scripts/seedEquipment.ts` |
 | 8 | `inventory` | Auto-generated | Staff | Stock management |
@@ -132,7 +132,7 @@ Types below mirror [`src/types/index.ts`](../../src/types/index.ts). `Timestamp`
 | `termsAccepted` | boolean | **Must be `true`** (rules enforce) |
 | `status` | enum | `pending` (default) → `active` / `rejected` / `on_hold` / `completed` |
 | `rejectionReason`? | string | Set by admin on reject |
-| `imageUrls` / `documentUrls` | string[] | Always `[]` on create (uploads not wired up yet) |
+| `imageUrls` / `documentUrls` | string[] | Empty on create; uploaded from the project edit view |
 | `createdAt` / `updatedAt` | Timestamp | |
 
 **Status lifecycle:**
@@ -171,7 +171,7 @@ stateDiagram-v2
 | `cancelledBy`? | string | On cancel |
 | `createdAt` / `updatedAt` | Timestamp | |
 
-**Auto-confirm model (Spec 2):** bookings are written as `approved` immediately. Conflict detection is done client-side (`checkBookingConflict`) **and** the rules additionally verify the equipment is a `confirmed` + `bookable` (Tier-1) machine with status `available`/`reserved`.
+**Auto-confirm model (Spec 2):** bookings are written as `approved` immediately. `createBooking` performs the conflict check transactionally and verifies the equipment is a `confirmed` + `bookable` (Tier-1) machine with status `available`/`reserved`.
 
 ### 3.4 `projects/{projectId}/checkouts/{docId}` — Tier-2 tool borrow/return (Form 2B)
 
@@ -380,7 +380,7 @@ projects/{aB3xY9zW}/activityLog/…  ← unified timeline (immutable)
 
 ### Booking against that project (same pattern)
 1. `BookingFormPage` → user picks a **confirmed Tier-1 machine**, date, time, and **selects their active project** (dropdown shows `projectCode` — `TL-XXX`).
-2. `createBooking()` runs `checkBookingConflict(equipmentId, date, start, end)` → **collection-group query** on `bookings` (`equipmentId + date + status`), then interval-overlap test. On conflict → throws → user sees error.
+2. `createBooking` runs the **collection-group query** on `bookings` (`equipmentId + date + status`) inside a transaction, then performs the interval-overlap test. On conflict → throws → user sees error.
 3. Payload written to **`projects/{projectId}/bookings/{autoId}`** with `status: 'approved'`, denormalized `projectId` + `projectTitle` + user fields, server timestamps. A **`booking` activity-log entry** is appended.
 4. Rules re-verify the parent project is owned by the user + equipment tier/confirmed/status + schema allowlists.
 5. Tool checkout follows the same pattern into **`projects/{projectId}/checkouts/{autoId}`** (+ `checkout` / `return` activity entries).
@@ -404,8 +404,8 @@ Defined in [`firestore.rules`](../../firestore.rules) (rules_version 2). Helper 
 | `users` | owner or admin | self, `role='student'` only | owner (not role/isActive/email) or admin | admin |
 | `projects` | owner or staff | **function only** (`createProject` callable) | owner (not `status`) or admin | admin |
 | `projects/{id}/bookings` | project owner or staff | **function only** (`createBooking` callable — transactional conflict check) | owner (cancel only) or staff | admin |
-| `projects/{id}/checkouts` | project owner or staff | active user, **project owner**, own, `projectId == path projectId`, `action='checking_out'`, valid enums, `isOverdue=false`, `outsideLocation` required if taking outside | owner (return-only keys) or staff | admin |
-| `projects/{id}/activityLog` | project owner or staff | active **project owner or staff**, key allowlist, type enum, summary ≤ 300 chars | **nobody** (immutable) | **nobody** |
+| `projects/{id}/checkouts` | project owner or staff | **function only** (`createToolCheckout`) | owner (validated return/overdue keys) or staff | admin |
+| `projects/{id}/activityLog` | project owner or staff | active owner checkout/return or staff status-change entries; server functions write creation/booking entries | **nobody** (immutable) | **nobody** |
 | `projects/{id}/projectMembers` | project owner or staff | project owner or staff | project owner or staff | owner or admin |
 | `counters` | active user | **function only** (deny direct) | — | — |
 | `equipment` | any auth | staff | staff | staff |
@@ -475,8 +475,8 @@ Single-field queries (e.g. `where('userId','==',uid)`, `where('status','==',x)`,
 ## 9. Free-Tier Optimizations (by design)
 
 - **`persistentLocalCache`** → offline reads + fewer network reads.
-- **`getCountFromServer`** (aggregation, 1 read) for `generateProjectId()` and `userHasActiveProject()`.
-- **Narrow queries** — conflict check is scoped to `equipmentId + date + status` before the client-side overlap loop.
+- **Atomic server counter** in `createProject` allocates project codes without a client-side count race.
+- **Narrow queries** — conflict checks are scoped to `equipmentId + date + status` inside the booking transaction.
 - **Denormalization** — no joins, no extra fetches to render lists.
 - **Client-side sorting** where cheap (after a narrow query), avoiding extra composite indexes.
 - React Query caches (e.g. `getUserProjects`) so data is fetched once per session.
@@ -487,7 +487,6 @@ Single-field queries (e.g. `where('userId','==',uid)`, `where('status','==',x)`,
 ## 10. Known Gaps / Future Work
 
 1. **Transactional email** — booking approved/rejected and overdue reminders are **in-app notifications** today (Cloud Functions `notify*`); email is a Phase 9 item.
-2. **Overdue sweep capped at 500 checkouts per run** — fine at lab scale; raise if the fleet grows.
-3. **Team/faculty fields remain free-text on the doc** for display — the structured `projectMembers` subcollection is the relational source; renames still don't cascade to denormalized display fields (accepted tradeoff).
-4. **Migration required before switching over** — if you have production data in top-level `bookings`/`toolCheckouts`, run `scripts/migrateToSubcollections.ts` (needs `firebase-admin` + service account) BEFORE deploying this code.
-5. **Rules tests require Java** (Firebase emulators) — they run in CI; see [`../development/TESTING.md`](../development/TESTING.md).
+2. **Team/faculty fields remain free-text on the doc** for display — the structured `projectMembers` subcollection is the relational source; renames still don't cascade to denormalized display fields (accepted tradeoff).
+3. **Migration required before switching over** — if you have production data in top-level `bookings`/`toolCheckouts`, run `scripts/migrateToSubcollections.ts` (needs `firebase-admin` + service account) BEFORE deploying this code.
+4. **Rules tests require Java** (Firebase emulators) — they run in CI; see [`../development/TESTING.md`](../development/TESTING.md).

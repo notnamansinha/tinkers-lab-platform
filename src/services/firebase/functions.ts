@@ -42,9 +42,31 @@ export interface CreateProjectResult {
   projectId: string
 }
 
+export interface CreateToolCheckoutInput {
+  projectId: string
+  toolCategory: string
+  toolName: string
+  quantity: number
+  locationOfUse: 'in_lab' | 'taking_outside'
+  outsideLocation?: string
+  expectedReturnDate: string
+  expectedReturnTime?: string
+  conditionAtCheckout: 'good' | 'fair' | 'damaged'
+  notes?: string
+}
+
+export interface CreateToolCheckoutResult {
+  checkoutId: string
+}
+
 export const createProjectCallable = httpsCallable<Record<string, unknown>, CreateProjectResult>(
   functions,
   'createProject',
+)
+
+export const createToolCheckoutCallable = httpsCallable<CreateToolCheckoutInput, CreateToolCheckoutResult>(
+  functions,
+  'createToolCheckout',
 )
 
 export const submitFeedbackCallable = httpsCallable<{ message: string }, { feedbackId: string }>(

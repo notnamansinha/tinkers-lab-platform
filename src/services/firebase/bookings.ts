@@ -4,7 +4,6 @@ import {
   query,
   where,
   orderBy,
-  limit,
   getDocs,
   serverTimestamp,
   doc,
@@ -90,6 +89,7 @@ export async function updateBookingStatus(
   await logProjectActivity(projectId, {
     type: 'status_change',
     summary: `Booking ${status}${options?.rejectionReason ? ` — ${options.rejectionReason}` : ''}`,
+    resourceId: bookingId,
     userId: actor?.uid ?? 'system',
     userName: actor?.name ?? 'Coordinator',
     userEmail: actor?.email ?? '',
@@ -102,7 +102,7 @@ export async function updateBookingStatus(
  */
 export async function getProjectBookings(projectId: string): Promise<Booking[]> {
   const ref = collection(db, COLLECTIONS.PROJECTS, projectId, SUBCOLLECTIONS.PROJECT_BOOKINGS)
-  const q = query(ref, orderBy('createdAt', 'desc'), limit(200))
+  const q = query(ref, orderBy('createdAt', 'desc'))
   const snap = await getDocs(q)
   return snap.docs
     .map((d) => ({ id: d.id, ...d.data() }) as Booking)
