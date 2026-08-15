@@ -68,7 +68,7 @@ function Field({
 
 export default function ProfilePage() {
   const navigate = useNavigate()
-  const { user, profile, refetchProfile, isStaff, isAdmin } = useAuth()
+  const { user, profile, refetchProfile, isAdmin } = useAuth()
 
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)

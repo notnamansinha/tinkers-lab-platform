@@ -37,6 +37,7 @@ export const SUBCOLLECTIONS = {
   PROJECT_BOOKINGS: 'bookings',
   PROJECT_CHECKOUTS: 'checkouts',
   PROJECT_ACTIVITY_LOG: 'activityLog',
+  PROJECT_MEMBERS: 'projectMembers',
 } as const
 
 

@@ -185,6 +185,7 @@ export async function getUserCheckoutHistory(userId: string): Promise<ToolChecko
  */
 export function isCheckoutOverdue(checkout: ToolCheckout): boolean {
   if (checkout.returnedAt) return false
+  if (!checkout.expectedReturnDate) return false
   return checkout.expectedReturnDate < todayStr()
 }
 

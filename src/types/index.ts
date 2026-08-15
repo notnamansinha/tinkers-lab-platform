@@ -416,6 +416,21 @@ export interface Project {
 }
 
 // ============================================================
+// PROJECT MEMBER TYPES  (projects/{projectId}/projectMembers)
+// Structured roster — relational counterpart of the free-text
+// `teamMembers` / `facultyMentor` fields (Form 1 §2).
+// ============================================================
+export interface ProjectMember {
+  id?: string
+  projectId: string
+  name: string
+  universityId?: string
+  userId?: string     // Linked Auth UID if the member is a platform user
+  isMentor: boolean   // true = faculty mentor, false = team member
+  createdAt: Timestamp
+}
+
+// ============================================================
 // NOTIFICATION TYPES
 // ============================================================
 export type NotificationType =
@@ -509,7 +524,7 @@ export interface AuditLog {
 // ============================================================
 // PROJECT ACTIVITY LOG TYPES  (projects/{projectId}/activityLog)
 // ============================================================
-export type ActivityLogType = 'booking' | 'checkout' | 'return' | 'status_change'
+export type ActivityLogType = 'created' | 'booking' | 'checkout' | 'return' | 'status_change'
 
 /**
  * Unified chronological timeline entry stored under each project.

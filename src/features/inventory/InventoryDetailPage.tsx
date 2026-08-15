@@ -1,6 +1,6 @@
 import React from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { COLLECTIONS } from '@/services/firebase/firestore'
 import { doc, getDoc, collection, query, where, getDocs, limit } from 'firebase/firestore'
 import { db } from '@/lib/firebase'

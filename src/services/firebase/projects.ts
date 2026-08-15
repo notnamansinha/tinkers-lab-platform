@@ -10,8 +10,10 @@ import {
   serverTimestamp,
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
-import { COLLECTIONS } from './firestore'
+import { COLLECTIONS, SUBCOLLECTIONS } from './firestore'
 import { logProjectActivity } from './activityLog'
+import { seedProjectMembersTx } from './projectMembers'
+import { parseTeamRoster } from '@/lib/teamMembers'
 import { cleanFirestoreData } from '@/lib/utils'
 import type { Project, ProjectStatus } from '@/types'
 
@@ -58,6 +60,27 @@ export async function createProject(
     tx.set(counterRef, { nextId: nextId + 1 }, { merge: true })
     // 2. Write the project doc with its business code (atomic with counter)
     tx.set(projectDocRef, { ...payload, projectCode })
+    // 3. Seed the immutable project timeline with its creation event (atomic)
+    const activityRef = doc(
+      collection(db, COLLECTIONS.PROJECTS, projectDocRef.id, SUBCOLLECTIONS.PROJECT_ACTIVITY_LOG),
+    )
+    tx.set(activityRef, {
+      type: 'created',
+      summary: `Project registered (${projectCode}) — pending review`,
+      resourceId: projectDocRef.id,
+      userId: payload.userId ?? '',
+      userName: payload.userName ?? '',
+      userEmail: payload.userEmail ?? '',
+      createdAt: serverTimestamp(),
+    })
+    // 4. Seed the relational team roster (atomic) — parsed from free-text
+    //    "Names and IDs" + the faculty mentor as a mentor-scoped member.
+    const roster = parseTeamRoster(typeof data.teamMembers === 'string' ? data.teamMembers : '')
+    const mentor = typeof data.facultyMentor === 'string' ? data.facultyMentor.trim() : ''
+    seedProjectMembersTx(tx, projectDocRef.id, [
+      ...(mentor ? [{ name: mentor, isMentor: true }] : []),
+      ...roster.map((m) => ({ name: m.name, universityId: m.universityId })),
+    ])
   })
 
   return projectDocRef.id

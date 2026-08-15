@@ -13,7 +13,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { ArrowLeft, Package } from 'lucide-react'
 import { toast } from 'sonner'
 import { serverTimestamp } from 'firebase/firestore'
-import type { InventoryItem, InventoryTransaction, TransactionType } from '@/types'
+import type { InventoryItem } from '@/types'
 
 const schema = z.object({
   itemId: z.string().min(1, 'Select an item'),
