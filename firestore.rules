@@ -169,7 +169,7 @@ service cloud.firestore {
                       || isStaff()
                     )
                     && request.resource.data.keys().hasOnly(['type', 'summary', 'resourceId', 'userId', 'userName', 'userEmail', 'createdAt'])
-                    && request.resource.data.type in ['booking', 'checkout', 'return', 'status_change']
+                    && request.resource.data.type in ['created', 'booking', 'checkout', 'return', 'status_change']
                     && request.resource.data.summary is string
                     && request.resource.data.summary.size() > 0
                     && request.resource.data.summary.size() <= 300;
@@ -242,6 +242,24 @@ service cloud.firestore {
         || isAdmin()
       );
       allow delete: if isAdmin();
+    }
+
+    // ================================================================
+    // PROJECT MEMBERS  (projects/{projectId}/projectMembers/{memberId})
+    // Structured roster — seeded at project creation, owner/staff editable.
+    // ================================================================
+    match /projects/{projectId}/projectMembers/{memberId} {
+      allow read: if isAuth() && (
+        get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid
+        || isStaff()
+      );
+      allow create, update: if isActiveUser() && (
+        get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid
+        || isStaff()
+      );
+      allow delete: if isAdmin()
+                    || (isActiveUser()
+                        && get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid);
     }
 
     // ================================================================

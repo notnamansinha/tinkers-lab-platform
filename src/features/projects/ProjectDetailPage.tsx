@@ -5,9 +5,10 @@ import { COLLECTIONS } from '@/services/firebase/firestore'
 import { doc, getDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { getProjectActivity } from '@/services/firebase/activityLog'
-import { ArrowLeft, Edit, Calendar, Clock, User, Mail, Phone, Building, IdCard, Users, Link2, History } from 'lucide-react'
+import { getProjectMembers } from '@/services/firebase/projectMembers'
+import { ArrowLeft, Edit, Calendar, Clock, User, Mail, Phone, Building, IdCard, Users, Link2, History, GraduationCap } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
-import type { Project, ActivityLogEntry } from '@/types'
+import type { Project, ActivityLogEntry, ProjectMember } from '@/types'
 import LoadingSpinner from '@/components/common/LoadingSpinner'
 import { formatRelativeTime, cn } from '@/lib/utils'
 
@@ -56,6 +57,12 @@ export default function ProjectDetailPage() {
   const { data: activity = [] } = useQuery({
     queryKey: ['projects', id, 'activity'],
     queryFn: () => getProjectActivity(id!),
+    enabled: !!id,
+    staleTime: 30 * 1000,
+  })
+  const { data: roster = [] } = useQuery({
+    queryKey: ['projects', id, 'members'],
+    queryFn: () => getProjectMembers(id!),
     enabled: !!id,
     staleTime: 30 * 1000,
   })

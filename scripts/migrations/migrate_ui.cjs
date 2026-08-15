@@ -48,7 +48,7 @@ allFiles.forEach(f => {
   content = content.replace(/text-black text-xl/g, 'text-white text-[20px]');
   content = content.replace(/text-black text-2xl/g, 'text-white text-[24px]');
   // Also any stray `text-black` that follows an open quote (like class="text-black...")
-  content = content.replace(/\"text-black/g, '"text-white');
+  content = content.replace(/"text-black/g, '"text-white');
   // Also generic ` text-black `
   content = content.replace(/ text-black /g, ' text-white ');
 

@@ -23,7 +23,7 @@ allFiles.forEach(f => {
   let content = fs.readFileSync(f, 'utf8');
   let original = content;
 
-  content = content.replace(/bg-\[\#050505\]/g, 'bg-transparent');
+  content = content.replace(/bg-[#050505]/g, 'bg-transparent');
   content = content.replace(/bg-black\/20/g, 'bg-white/5');
   content = content.replace(/border-black\/10/g, 'border-white/10');
   content = content.replace(/border-black\/20/g, 'border-white/10');

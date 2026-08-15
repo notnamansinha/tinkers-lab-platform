@@ -1,18 +1,16 @@
 import { Button } from '@/components/ui/button'
 import React from 'react'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { doc, updateDoc, writeBatch, collection } from 'firebase/firestore'
+import { doc, updateDoc, writeBatch } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { COLLECTIONS } from '@/services/firebase/firestore'
 import { useNotifications } from '@/hooks/useNotifications'
-import { Bell, Check, CheckCheck } from 'lucide-react'
+import { Bell, CheckCheck } from 'lucide-react'
 import { formatRelativeTime } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 
 export default function NotificationsPage() {
   const { notifications, loading } = useNotifications()
-  const qc = useQueryClient()
 
   const markRead = async (id: string) => {
     const ref = doc(db, COLLECTIONS.NOTIFICATIONS, id)
