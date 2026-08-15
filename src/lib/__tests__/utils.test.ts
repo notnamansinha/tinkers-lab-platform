@@ -82,6 +82,6 @@ describe('todayStr', () => {
 describe('cn', () => {
   it('merges and dedupes tailwind classes', () => {
     expect(cn('px-2', 'px-3')).toBe('px-3')
-    expect(cn('bg-red-500', undefined, false && 'text-white', 'text-black')).toBe('bg-red-500 text-black')
+    expect(cn('bg-red-500', undefined, '', 'text-black')).toBe('bg-red-500 text-black')
   })
 })

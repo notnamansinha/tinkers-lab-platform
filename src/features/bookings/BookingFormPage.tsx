@@ -7,7 +7,8 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { collection, query, orderBy, getDocs } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { COLLECTIONS } from '@/services/firebase/firestore'
-import { createBooking, getBookingsForSlot } from '@/services/firebase/bookings'
+import { getBookingsForSlot } from '@/services/firebase/bookings'
+import { createBookingCallable } from '@/services/firebase/functions'
 import { getUserProjects } from '@/services/firebase/projects'
 import { useAuth } from '@/contexts/AuthContext'
 import { ArrowLeft, AlertTriangle, CheckCircle2, Plus } from 'lucide-react'
@@ -154,13 +155,12 @@ export default function BookingFormPage() {
     const selectedProject = projects.find(p => p.docId === data.projectId)
 
     try {
-      await createBooking({
+      // Server-enforced creation (Cloud Function) — runs the conflict check
+      // transactionally so two clients cannot double-book a slot.
+      await createBookingCallable({
         equipmentId: data.equipmentId,
         machineId:   selectedMachine.machineId,
         machineName: selectedMachine.name,
-        userId:      user.uid,
-        userEmail:   user.email!,
-        userName:    profile.displayName,
         projectId:   data.projectId,
         projectTitle: selectedProject?.title ?? '',
         date:        data.date,

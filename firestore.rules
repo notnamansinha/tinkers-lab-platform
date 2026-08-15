@@ -83,27 +83,12 @@ service cloud.firestore {
         get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid
         || isStaff()
       );
-      // Auto-confirm model (Spec 2): status must be 'approved' on create.
-      // Server-side validation: active user, own booking, valid time window, and the
-      // machine must be a confirmed, bookable (Tier 1) machine that is available/reserved.
-      allow create: if isActiveUser()
-                    && get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid
-                    && request.resource.data.userId == request.auth.uid
-                    && request.resource.data.projectId == projectId
-                    && request.resource.data.keys().hasAll(['equipmentId', 'machineId', 'date', 'startTime', 'endTime', 'purpose', 'projectId', 'status', 'safetyAgreementAccepted'])
-                    && request.resource.data.keys().hasOnly(['equipmentId', 'machineId', 'machineName', 'userId', 'userEmail', 'userName', 'projectId', 'projectTitle', 'date', 'startTime', 'endTime', 'purpose', 'consumables', 'safetyAgreementAccepted', 'status', 'rejectionReason', 'cancelledBy', 'createdAt', 'updatedAt'])
-                    && request.resource.data.status == 'approved'
-                    && request.resource.data.safetyAgreementAccepted == true
-                    && request.resource.data.date is string
-                    && request.resource.data.date.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}')
-                    && request.resource.data.startTime is string
-                    && request.resource.data.endTime is string
-                    && request.resource.data.startTime.matches('[0-9]{2}:[0-9]{2}')
-                    && request.resource.data.endTime.matches('[0-9]{2}:[0-9]{2}')
-                    && request.resource.data.startTime < request.resource.data.endTime
-                    && get(/databases/$(database)/documents/equipment/$(request.resource.data.equipmentId)).data.tier == 'bookable'
-                    && get(/databases/$(database)/documents/equipment/$(request.resource.data.equipmentId)).data.confirmed == true
-                    && get(/databases/$(database)/documents/equipment/$(request.resource.data.equipmentId)).data.status in ['available', 'reserved'];
+      // ⚠️ CREATION IS SERVER-ENFORCED: the `createBooking` Cloud Function
+      // (functions/src/createBooking.ts) performs the conflict check inside a
+      // transaction and writes with the Admin SDK, which bypasses rules. Direct
+      // client creation is denied so a malicious client cannot skip conflict
+      // detection or forge fields. Cancellation/status updates stay client-side.
+      allow create: if false;
       // Users can cancel own bookings (status/cancelledBy only); staff can fully update.
       allow update: if isAuth() && (
         (isActiveUser()
@@ -326,21 +311,12 @@ service cloud.firestore {
     match /feedback/{feedbackId} {
       // Only staff/admin can read feedback
       allow read: if isStaff();
-      // Authenticated users can create their own feedback — server-enforced schema + rate limiting
-      allow create: if isAuth()
-        && request.resource.data.userId == request.auth.uid
-        && request.resource.data.message is string
-        && request.resource.data.message.size() > 0
-        && request.resource.data.message.size() <= 2000
-        && request.resource.data.createdAt == request.time
-        // Exhaustive allowlist — rejects any extra field the client might inject
-        && request.resource.data.keys().hasOnly(['userId', 'message', 'createdAt'])
-        // Rate limit: at most 1 feedback per user per 5-minute window.
-        // The document ID encodes the user + current window, so a second write in the
-        // same window fails automatically (create on an existing document is denied).
-        // NOTE: the document ID is client-predictable; replace with a Cloud Function
-        // or server-enforced flow if stricter rate limiting is required.
-        && feedbackId == request.auth.uid + '_' + string(math.floor(request.time.toMillis() / 300000));
+      // ⚠️ CREATION IS SERVER-ENFORCED: the `submitFeedback` Cloud Function
+      // (functions/src/submitFeedback.ts) enforces a 5-minute cooldown via
+      // feedbackWindows/{uid} with the server clock and writes with the Admin
+      // SDK. Direct client creation is denied — the old client-predictable
+      // document-ID scheme is retired.
+      allow create: if false;
       // No one can edit or delete feedback
       allow update, delete: if false;
     }

@@ -1,5 +1,4 @@
 import {
-  collection,
   collectionGroup,
   query,
   where,
@@ -7,10 +6,8 @@ import {
   serverTimestamp,
   doc,
   updateDoc,
-  addDoc,
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
-import { cleanFirestoreData } from '@/lib/utils'
 import { COLLECTIONS, SUBCOLLECTIONS } from './firestore'
 import { logProjectActivity } from './activityLog'
 import type { Booking, BookingStatus } from '@/types'
@@ -20,91 +17,15 @@ import type { Booking, BookingStatus } from '@/types'
 // Project-centric restructure: bookings now live UNDER the project
 //   projects/{projectId}/bookings/{bookingId}
 // Cross-project queries use COLLECTION GROUP queries on 'bookings'.
-// Free-tier optimised — narrow queries, minimal reads.
-// Auto-confirm model (Spec 2): bookings go straight to 'approved'
-// with conflict-check rejection as the safety net.
+// ⚠️ CREATION is server-enforced via the `createBooking` Cloud
+// Function (src/services/firebase/functions.ts) — direct client
+// creates are denied by firestore.rules so conflict detection
+// cannot be bypassed. This module handles reads + status updates.
 // ============================================================
 
 /** collectionGroup reference for querying bookings across ALL projects */
 function allBookings() {
   return collectionGroup(db, SUBCOLLECTIONS.PROJECT_BOOKINGS)
-}
-
-/** Reference for one project's bookings subcollection */
-function projectBookings(projectId: string) {
-  return collection(db, COLLECTIONS.PROJECTS, projectId, SUBCOLLECTIONS.PROJECT_BOOKINGS)
-}
-
-/**
- * Check if a time slot conflicts with existing approved bookings for a machine.
- * Uses a COLLECTION GROUP query (all projects) scoped by equipmentId + date.
- * Two time intervals [a,b] and [c,d] overlap if a < d && c < b.
- */
-export async function checkBookingConflict(
-  equipmentId: string,
-  date: string,
-  startTime: string,
-  endTime: string,
-  excludeBookingId?: string
-): Promise<Booking | null> {
-  const q = query(
-    allBookings(),
-    where('equipmentId', '==', equipmentId),
-    where('date', '==', date),
-    where('status', 'in', ['approved'])  // Only approved bookings block slots
-  )
-  const snap = await getDocs(q)
-  for (const d of snap.docs) {
-    if (d.id === excludeBookingId) continue
-    const b = { id: d.id, ...d.data() } as Booking
-    if (startTime < b.endTime && b.startTime < endTime) {
-      return b
-    }
-  }
-  return null
-}
-
-/**
- * Create a new booking.
- * - Runs conflict check first; throws if overlap found (Spec 2: "rejects + emails if conflict found")
- * - Writes to projects/{projectId}/bookings/{autoId}
- * - Sets status to 'approved' immediately (Spec 2 auto-confirm model)
- * - Accepts optional consumables for 3D printers and laser cutter (Spec 2)
- * - Appends a 'booking' entry to the project's activityLog
- */
-export async function createBooking(
-  data: Omit<Booking, 'id' | 'createdAt' | 'updatedAt' | 'status'>
-): Promise<string> {
-  const conflict = await checkBookingConflict(
-    data.equipmentId,
-    data.date,
-    data.startTime,
-    data.endTime
-  )
-  if (conflict) {
-    throw new Error(
-      `Time slot conflicts with an existing booking (${conflict.startTime}–${conflict.endTime}). Please choose a different time.`
-    )
-  }
-  const ref = projectBookings(data.projectId)
-  const payload = cleanFirestoreData({
-    ...data,
-    status: 'approved',
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
-  })
-  const docRef = await addDoc(ref, payload)
-
-  await logProjectActivity(data.projectId, {
-    type: 'booking',
-    summary: `Booked ${data.machineName} (${data.date} ${data.startTime}–${data.endTime})`,
-    resourceId: docRef.id,
-    userId: data.userId,
-    userName: data.userName,
-    userEmail: data.userEmail,
-  })
-
-  return docRef.id
 }
 
 /**
