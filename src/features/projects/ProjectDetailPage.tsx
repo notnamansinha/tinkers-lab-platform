@@ -135,6 +135,34 @@ export default function ProjectDetailPage() {
         Project ID: {project.projectCode}
       </p>
 
+      {/* ── Team Roster ─────────────────────────────────────────── */}
+      <div className="rounded-card border border-hairline bg-charcoal p-6">
+        <div className="mb-4 flex items-center gap-2">
+          <Users className="h-4 w-4 text-white/40" />
+          <h2 className="text-xs font-black uppercase tracking-widest text-white/40">Team Roster</h2>
+        </div>
+        {roster.length === 0 ? (
+          <p className="text-sm text-white/40">No team members recorded yet.</p>
+        ) : (
+          <ul className="grid gap-2 sm:grid-cols-2">
+            {roster.map((member: ProjectMember) => (
+              <li key={member.id} className="flex items-center gap-2 rounded-md border border-white/10 bg-black/20 px-3 py-2">
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-indigo/20 text-white/60">
+                  {member.isMentor ? <GraduationCap className="h-4 w-4" /> : <User className="h-4 w-4" />}
+                </span>
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-white/85">{member.name}</p>
+                  <p className="text-[11px] text-white/40">
+                    {member.isMentor ? 'Faculty mentor' : 'Team member'}
+                    {member.universityId ? ` · ${member.universityId}` : ''}
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
       {/* ── Activity Log ─────────────────────────────────────────── */}
       <div className="rounded-card border border-hairline bg-charcoal p-6">
         <div className="mb-4 flex items-center gap-2">

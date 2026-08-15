@@ -9,7 +9,13 @@
     "lint": "oxlint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "emulators": "firebase emulators:start",
+    "deploy": "firebase deploy",
+    "deploy:hosting": "firebase deploy --only hosting",
+    "deploy:rules": "firebase deploy --only firestore:rules,storage",
+    "deploy:indexes": "firebase deploy --only firestore:indexes",
+    "deploy:functions": "npm --prefix functions run deploy"
   },
   "dependencies": {
     "@fontsource/fredoka": "^5.2.10",
