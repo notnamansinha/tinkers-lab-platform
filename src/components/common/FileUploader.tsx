@@ -75,7 +75,7 @@ export function FileUploader({
         setUploads((prev) => [...prev, { file, progress: 0, done: false, error: null }])
         try {
           const url = await uploadFile(
-            { folder, entityId, allowedTypes, maxSize },
+            { folder, entityId, allowedTypes, maxSize, kind: kind === 'images' || kind === 'documents' ? kind : undefined },
             file,
             (pct) => {
               setUploads((prev) =>
@@ -86,9 +86,11 @@ export function FileUploader({
           setUploads((prev) =>
             prev.map((u) => (u.file.name === file.name ? { ...u, done: true, progress: 100 } : u)),
           )
-          const next = [...urls, url]
-          setUrls(next)
-          onChange(next)
+          setUrls((previous) => {
+            const next = [...previous, url]
+            onChange(next)
+            return next
+          })
         } catch (e) {
           setUploads((prev) =>
             prev.map((u) => (u.file.name === file.name ? { ...u, error: e instanceof Error ? e.message : 'Upload failed' } : u)),
@@ -96,7 +98,7 @@ export function FileUploader({
         }
       }
     },
-    [allowedTypes, entityId, folder, maxFiles, maxSize, onChange, urls],
+    [allowedTypes, entityId, folder, kind, maxFiles, maxSize, onChange, urls],
   )
 
   const handleDelete = async (url: string) => {

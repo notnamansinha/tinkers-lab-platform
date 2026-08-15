@@ -101,7 +101,7 @@ interface UserProfile {
    * Missing Profile: Authenticated users without a profile document see an onboarding call-to-action that routes to `/onboarding` instead of editable profile controls.
    * Feedback panel: Allows submitting text feedback up to 200 words, rate-limited to 5 minutes between submissions. Rate limiting is enforced at both layers:
      - **Client-side**: localStorage key `tl_feedback_lastSentAt` with 5-minute cooldown, plus in-form word-count validation (the 200-word limit is **UI-only** — the server rule enforces a 2000-character cap instead).
-     - **Server-side**: Firestore security rules enforce deterministic document IDs (`userId_windowId`) so only one feedback document can be created per user per 5-minute window, with a 2000-character message size cap. The document ID is derived from the server clock (`request.time`).
+     - **Server-side**: the `submitFeedback` callable enforces one submission per user per five-minute window with a 2000-character message cap, using the server clock and `feedbackWindows/{uid}`.
    * Admin Panel entry: Super admins see an "Admin Panel" card (gated on `isAdmin`) that routes to `/admin` — this is the primary admin entry point on mobile, where the desktop sidebar is hidden.
    * Logout button: Explicitly signs out of Firebase Auth and redirects to `/login`.
 

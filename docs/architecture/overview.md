@@ -117,7 +117,7 @@ erDiagram
 - **Tailwind & Radix UI**: The UI is built with a utility-first CSS framework (Tailwind) and accessible primitives (Radix UI) for dialogs, combined with custom components modeled on shadcn/ui patterns.
 - **Form Handling**: React Hook Form + Zod provide typed, validated form handling. A centralized `typedZodResolver` wrapper in `src/lib/form.ts` normalizes Zod v4 compatibility across all form pages.
 - **Security Headers**: HTTP security headers (CSP, HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy) are enforced at the Firebase Hosting level via `firebase.json`.
-- **Server-Side Rate Limiting**: Feedback submissions are rate-limited server-side via Firestore security rules enforcing deterministic document IDs keyed by `userId + time window` (server clock), in addition to a client-side localStorage cooldown.
+- **Server-Side Rate Limiting**: Feedback submissions are rate-limited by the `submitFeedback` callable using the server clock and `feedbackWindows/{uid}`, in addition to a client-side localStorage cooldown.
 
 ## Security Model
 
@@ -132,23 +132,21 @@ Authorization is enforced **server-side** by `firestore.rules` and `storage.rule
 ### Enforcement highlights
 
 - **Users**: self-create with `role = 'student'` only; owners update their own non-sensitive fields; `role`/`isActive`/`email` changes require `super_admin`. Client-side, profile writes strip `uid`/`email`/`role`/`isActive` from any caller-supplied data.
-- **Projects**: readable only by the owner and staff (no cross-user PII leak). Users create `pending` projects and may edit their own non-`status` fields; status changes are admin-only.
+- **Projects**: readable only by the owner and staff (no cross-user PII leak). Users create `pending` projects through `createProject` and may edit only their approved project fields; status changes are admin-only.
 - **Bookings**: active users only; must reference a **confirmed Tier-1 bookable** machine that is `available`/`reserved`, with a valid `HH:MM` window and a strict field allowlist.
-- **Tool checkouts**: strict schema — `action = 'checking_out'`, valid enums, `isOverdue = false`; owners may only perform a return (or flip the overdue flag), never rewrite the tool/project details.
+- **Tool checkouts**: `createToolCheckout` validates the active project, identity, dates, quantity, and enums; owners may only perform a return (or flip the overdue flag), never rewrite tool/project details.
 - **Issues**: new issues start `open` with valid `type`/`severity`; resolution/status fields are staff-only.
 - **Audit logs**: staff-only writes (immutable); read by admins.
 - **Feedback**: deterministic `userId_windowId` document IDs enforce 1-per-5-minute submissions (server clock).
 - **Storage**: equipment images are readable by any authenticated user but writable/deletable by staff only.
 
-### Known client-side-only enforcement (require Cloud Functions)
+### Server-enforced business rules
 
-These business rules are enforced only in the UI because security rules cannot run queries/transactions, and this repo has no backend/Cloud Functions layer yet:
+Cloud Functions now enforce the operations that require trusted identity, transactions, or server time:
 
-- Booking time-slot **overlap detection** and the "booking must reference an active project" requirement (`checkBookingConflict`, `userHasActiveProject`).
-- Tool checkout `isOverdue` computation (a daily server sweep is planned as "Phase 9").
-- The 200-word feedback limit (the server enforces a 2000-character cap instead).
-- Server-populated display identity (`userName`/`userEmail`) — currently client-supplied; only `userId` is rule-enforced.
-- Sequential project IDs (`generateProjectId` uses `getCountFromServer() + 1`, which can race under concurrency).
+- `createBooking` performs active-project checks, machine validation, and transactional overlap detection.
+- `createToolCheckout` validates active-project ownership, dates, quantities, identity, and writes the checkout plus timeline entry atomically.
+- `sweepOverdueCheckouts` computes overdue state on the server; feedback cooldowns and project-code allocation are also server-side.
 
 ## Utilities (`src/lib/utils.ts`)
 

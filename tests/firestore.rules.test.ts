@@ -110,15 +110,15 @@ describe('projects', () => {
     await assertSucceeds(db.doc('projects/project-of-a').get())
   })
 
-  it('a student can register a pending project with agreements', async () => {
+  it('direct client project creation is denied even with agreements', async () => {
     const db = env.authenticatedContext(STUDENT_A).firestore()
-    await assertSucceeds(db.doc('projects/new-project').set({
+    await assertFails(db.doc('projects/new-project').set({
       userId: 'student-a', status: 'pending', title: 'New', abstract: 'A long abstract',
       safetyAgreementAccepted: true, termsAccepted: true,
     }))
   })
 
-  it('a student cannot register a project without agreements', async () => {
+  it('direct client project creation is denied without agreements', async () => {
     const db = env.authenticatedContext(STUDENT_A).firestore()
     await assertFails(db.doc('projects/no-agreement').set({
       userId: 'student-a', status: 'pending', title: 'New', abstract: 'A long abstract',
@@ -131,6 +131,13 @@ describe('projects', () => {
       userId: 'inactive-user', status: 'pending', title: 'New', abstract: 'A long abstract',
       safetyAgreementAccepted: true, termsAccepted: true,
     }))
+  })
+
+  it('an owner cannot change protected project identity or status fields', async () => {
+    const db = env.authenticatedContext(STUDENT_A).firestore()
+    await assertSucceeds(db.doc('projects/project-of-a').update({ title: 'Updated title' }))
+    await assertFails(db.doc('projects/project-of-a').update({ userId: STUDENT_B }))
+    await assertFails(db.doc('projects/project-of-a').update({ status: 'active' }))
   })
 })
 
@@ -159,6 +166,18 @@ describe('bookings (server-enforced creation)', () => {
   })
 })
 
+describe('checkouts (server-enforced creation)', () => {
+  it('direct client checkout creation is denied (function-only)', async () => {
+    const db = env.authenticatedContext(STUDENT_A).firestore()
+    await assertFails(db.doc('projects/project-of-a/checkouts/c1').set({
+      userId: STUDENT_A, projectId: 'project-of-a', action: 'checking_out',
+      toolCategory: 'Hand Tools', toolName: 'Hammer', quantity: 1,
+      locationOfUse: 'in_lab', expectedReturnDate: '2099-01-01',
+      conditionAtCheckout: 'good', isOverdue: false,
+    }))
+  })
+})
+
 describe('feedback (server-enforced creation)', () => {
   it('direct client feedback creation is denied (function-only)', async () => {
     const db = env.authenticatedContext(STUDENT_A).firestore()
@@ -177,7 +196,8 @@ describe('activityLog (immutable timeline)', () => {
   it('the project owner can append an entry', async () => {
     const db = env.authenticatedContext(STUDENT_A).firestore()
     await assertSucceeds(db.doc('projects/project-of-a/activityLog/e2').set({
-      type: 'booking', summary: 'Booked Y', userId: 'student-a', createdAt: new Date(),
+      type: 'checkout', summary: 'Checked out Y', userId: 'student-a',
+      userName: 'X', userEmail: 'x@x.com', createdAt: new Date(),
     }))
   })
 
@@ -185,5 +205,13 @@ describe('activityLog (immutable timeline)', () => {
     const db = env.authenticatedContext(STAFF).firestore()
     await assertFails(db.doc('projects/project-of-a/activityLog/e1').update({ summary: 'tampered' }))
     await assertFails(db.doc('projects/project-of-a/activityLog/e1').delete())
+  })
+
+  it('an owner cannot forge another actor in the timeline', async () => {
+    const db = env.authenticatedContext(STUDENT_A).firestore()
+    await assertFails(db.doc('projects/project-of-a/activityLog/e3').set({
+      type: 'checkout', summary: 'Forged entry', userId: STUDENT_B,
+      userName: 'Someone else', userEmail: 'other@example.com', createdAt: new Date(),
+    }))
   })
 })

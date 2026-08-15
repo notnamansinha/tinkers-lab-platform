@@ -114,6 +114,9 @@ export default function AdminProjectDetailPage() {
     enabled: !!id,
   })
 
+  const imageUrls = project?.imageUrls ?? []
+  const documentUrls = project?.documentUrls ?? []
+
   const updateStatus = async (status: 'active' | 'rejected' | 'on_hold' | 'completed', reason?: string) => {
     if (!project?.docId) return
     setActionLoading(true)
@@ -123,9 +126,10 @@ export default function AdminProjectDetailPage() {
         name: profile?.displayName || 'Admin',
         email: profile?.email || '',
       })
-      await updateDoc(doc(db, COLLECTIONS.PROJECTS, project.docId), cleanFirestoreData({
-        reviewedBy: profile?.displayName || 'Admin',
-        reviewedAt: serverTimestamp(),
+        await updateDoc(doc(db, COLLECTIONS.PROJECTS, project.docId), cleanFirestoreData({
+          reviewedBy: profile?.displayName || 'Admin',
+          reviewedByEmail: profile?.email || '',
+          reviewedAt: serverTimestamp(),
       }))
       toast.success(`Project marked as ${status}`)
       qc.invalidateQueries({ queryKey: ['admin', 'projects', id] })
@@ -206,7 +210,9 @@ export default function AdminProjectDetailPage() {
           <Flag className="h-4 w-4" /> Complete
         </Button>
         {project.reviewedBy && (
-          <span className="ml-auto text-xs text-white/35">Reviewed by {project.reviewedBy}</span>
+          <span className="ml-auto text-xs text-white/35">
+            Reviewed by {project.reviewedBy}{project.reviewedByEmail ? ` (${project.reviewedByEmail})` : ''} · {formatDateTime(project.reviewedAt)}
+          </span>
         )}
       </div>
 
@@ -252,20 +258,20 @@ export default function AdminProjectDetailPage() {
       </DataPanel>
 
       {/* ── Files ─────────────────────────────────────────────────── */}
-      {(project.imageUrls?.length > 0 || project.documentUrls?.length > 0) && (
+      {(imageUrls.length > 0 || documentUrls.length > 0) && (
         <DataPanel title="Files">
-          {project.imageUrls!.length > 0 && (
+          {imageUrls.length > 0 && (
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-              {project.imageUrls!.map((url) => (
+              {imageUrls.map((url) => (
                 <a key={url} href={url} target="_blank" rel="noreferrer" className="group overflow-hidden rounded-md border border-white/10">
                   <img src={url} alt="Project" className="aspect-video w-full object-cover transition-transform group-hover:scale-105" />
                 </a>
               ))}
             </div>
           )}
-          {project.documentUrls!.length > 0 && (
+          {documentUrls.length > 0 && (
             <ul className="mt-3 space-y-1.5">
-              {project.documentUrls!.map((url) => (
+              {documentUrls.map((url) => (
                 <li key={url}>
                   <a href={url} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-sm text-indigo-300 underline-offset-2 hover:underline">
                     <FileText className="h-4 w-4" /> {decodeURIComponent(url.split('/').pop() ?? url)}

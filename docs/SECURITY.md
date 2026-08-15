@@ -41,7 +41,7 @@ Rules cannot run queries or transactions, so these invariants are enforced in [`
 - **Bookings/checkouts/activityLog**: project-scoped subcollections; collection-group reads still require project ownership or staff role.
 - **Deactivation**: `isActive = false` revokes self-service + elevated access immediately server-side (catalog reads remain available to any authenticated user).
 - **Immutable collections**: `auditLogs`, `activityLog`, `feedback` — nobody can update or delete.
-- **Rate limiting**: feedback is capped at 1 per user per 5-minute window via deterministic document IDs (server clock).
+- **Rate limiting**: the `submitFeedback` callable caps feedback at 1 per user per 5-minute window using `feedbackWindows/{uid}` and the server clock.
 
 ## 4. Known gaps / hardening notes
 

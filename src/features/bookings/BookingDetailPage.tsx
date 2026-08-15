@@ -17,7 +17,7 @@ import { Badge } from '@/components/ui/badge'
 export default function BookingDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { isStaff, user } = useAuth()
+  const { isStaff, user, profile } = useAuth()
   const qc = useQueryClient()
 
   const [rejectDialogOpen, setRejectDialogOpen] = React.useState(false)
@@ -39,7 +39,11 @@ export default function BookingDetailPage() {
     try {
       await updateBookingStatus(booking.projectId, id!, 'rejected', {
         rejectionReason,
-        actor: { uid: 'admin', name: 'Coordinator', email: '' },
+        actor: {
+          uid: profile?.uid ?? user?.uid ?? 'admin',
+          name: profile?.displayName ?? 'Coordinator',
+          email: profile?.email ?? '',
+        },
       })
       toast.success('Booking rejected')
       qc.invalidateQueries({ queryKey: ['bookings'] })
@@ -55,7 +59,14 @@ export default function BookingDetailPage() {
   const cancel = async () => {
     setActionLoading(true)
     try {
-      await updateBookingStatus(booking.projectId, id!, 'cancelled', { cancelledBy: user?.uid ?? 'user' })
+      await updateBookingStatus(booking.projectId, id!, 'cancelled', {
+        cancelledBy: user?.uid ?? 'user',
+        actor: {
+          uid: profile?.uid ?? user?.uid ?? 'user',
+          name: profile?.displayName ?? booking.userName,
+          email: profile?.email ?? booking.userEmail,
+        },
+      })
       toast.success('Booking cancelled')
       navigate('/bookings')
     } catch (e) {

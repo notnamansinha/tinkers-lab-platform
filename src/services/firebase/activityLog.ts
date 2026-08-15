@@ -5,7 +5,6 @@ import {
   getDocs,
   addDoc,
   serverTimestamp,
-  limit,
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { COLLECTIONS, SUBCOLLECTIONS } from './firestore'
@@ -58,7 +57,7 @@ export async function logProjectActivity(
  */
 export async function getProjectActivity(projectDocId: string): Promise<ActivityLogEntry[]> {
   const ref = collection(db, COLLECTIONS.PROJECTS, projectDocId, SUBCOLLECTIONS.PROJECT_ACTIVITY_LOG)
-  const q = query(ref, orderBy('createdAt', 'desc'), limit(100))
+  const q = query(ref, orderBy('createdAt', 'desc'))
   const snap = await getDocs(q)
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as ActivityLogEntry)
 }

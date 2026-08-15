@@ -44,6 +44,7 @@ beforeAll(async () => {
     await db.doc('users/student').set({ ...base, role: 'student', isActive: true })
     await db.doc('users/other').set({ ...base, role: 'student', isActive: true })
     await db.doc('users/staff').set({ ...base, role: 'lab_assistant', isActive: true })
+    await db.doc('users/inactive-staff').set({ ...base, role: 'lab_assistant', isActive: false })
     await db.doc('projects/project-of-a').set({
       userId: 'student', status: 'pending', title: 'A', abstract: 'Abstract',
       safetyAgreementAccepted: true, termsAccepted: true,
@@ -69,6 +70,11 @@ describe('storage — equipment images', () => {
   it('staff cannot upload non-image content types', async () => {
     const storage = env.authenticatedContext('staff').storage()
     await assertFails(put(storage, 'equipment/bambu-x1c/test.pdf', new Uint8Array(10), 'application/pdf'))
+  })
+
+  it('deactivated staff cannot upload equipment images', async () => {
+    const storage = env.authenticatedContext('inactive-staff').storage()
+    await assertFails(put(storage, 'equipment/bambu-x1c/inactive.png', new Uint8Array(10), 'image/png'))
   })
 })
 

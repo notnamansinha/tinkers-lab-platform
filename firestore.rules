@@ -110,28 +110,28 @@ service cloud.firestore {
         get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid
         || isStaff()
       );
-      // Server-enforced schema: new checkouts must be 'checking_out', not overdue, with
-      // valid enums and no extra/injected fields.
-      allow create: if isActiveUser()
-                    && get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid
-                    && request.resource.data.userId == request.auth.uid
-                    && request.resource.data.projectId == projectId
-                    && request.resource.data.keys().hasAll(['toolName', 'toolCategory', 'action', 'projectId', 'locationOfUse', 'conditionAtCheckout', 'quantity', 'expectedReturnDate'])
-                    && request.resource.data.keys().hasOnly(['userId', 'userEmail', 'userName', 'universityId', 'projectId', 'projectTitle', 'action', 'toolCategory', 'toolName', 'quantity', 'locationOfUse', 'outsideLocation', 'expectedReturnDate', 'expectedReturnTime', 'conditionAtCheckout', 'notes', 'isOverdue', 'createdAt', 'updatedAt'])
-                    && request.resource.data.action == 'checking_out'
-                    && request.resource.data.toolCategory in ['Power Tools', 'Hand Tools', 'Measurement Tools', 'Safety Equipment', 'Other']
-                    && request.resource.data.locationOfUse in ['in_lab', 'taking_outside']
-                    && request.resource.data.conditionAtCheckout in ['good', 'fair', 'damaged']
-                    && request.resource.data.isOverdue == false
-                    && request.resource.data.expectedReturnDate is string
-                    && request.resource.data.expectedReturnDate.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}')
-                    && (request.resource.data.locationOfUse == 'in_lab'
-                        || (request.resource.data.outsideLocation is string && request.resource.data.outsideLocation.size() > 0));
-      // Owner may only perform a return (and flip overdue flags); staff can update any.
+      // Creation is server-enforced by createToolCheckout so identity, project status,
+      // date validity, and the activity entry are written atomically.
+      allow create: if false;
+      // Owners may only mark an active checkout overdue or perform one return;
+      // staff can update any checkout.
       allow update: if isAuth() && (
-        (isActiveUser()
-         && resource.data.userId == request.auth.uid
-         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['action', 'conditionAtReturn', 'returnedAt', 'notes', 'isOverdue', 'updatedAt']))
+        (isActiveUser() && resource.data.userId == request.auth.uid && (
+          (
+            resource.data.action == 'checking_out'
+            && (!resource.data.keys().hasAny(['returnedAt']) || resource.data.returnedAt == null)
+            && request.resource.data.action == 'returning'
+            && request.resource.data.returnedAt is timestamp
+            && request.resource.data.conditionAtReturn in ['good', 'fair', 'damaged']
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['action', 'conditionAtReturn', 'returnedAt', 'notes', 'updatedAt', 'isOverdue'])
+            && request.resource.data.isOverdue == false
+          )
+          || (
+            resource.data.action == 'checking_out'
+            && request.resource.data.isOverdue == true
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isOverdue', 'updatedAt'])
+          )
+        ))
         || isStaff()
       );
       allow delete: if isAdmin();
@@ -147,12 +147,30 @@ service cloud.firestore {
         get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid
         || isStaff()
       );
-      // The app appends entries as the project owner (bookings/checkouts) or as
-      // staff (status changes). Restrict create to those actors.
+      // The app appends owner checkout/return entries or staff status changes.
+      // Project creation and booking entries are written by Cloud Functions.
       allow create: if isActiveUser()
                     && (
-                      get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid
-                      || isStaff()
+                      (
+                        get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid
+                        && request.resource.data.userId == request.auth.uid
+                        && request.resource.data.userName == getUserData().displayName
+                        && request.resource.data.userEmail == getUserData().email
+                        && (
+                          request.resource.data.type in ['checkout', 'return']
+                          || (
+                            request.resource.data.type == 'status_change'
+                            && request.resource.data.summary == 'Booking cancelled'
+                          )
+                        )
+                      )
+                      || (
+                        isStaff()
+                        && request.resource.data.userId == request.auth.uid
+                        && request.resource.data.userName == getUserData().displayName
+                        && request.resource.data.userEmail == getUserData().email
+                        && request.resource.data.type == 'status_change'
+                      )
                     )
                     && request.resource.data.keys().hasOnly(['type', 'summary', 'resourceId', 'userId', 'userName', 'userEmail', 'createdAt'])
                     && request.resource.data.type in ['created', 'booking', 'checkout', 'return', 'status_change']
@@ -223,7 +241,13 @@ service cloud.firestore {
       allow create: if false;
       // Users edit own pending/active projects (not status); admins change anything
       allow update: if isAuth() && (
-        (isActiveUser() && resource.data.userId == request.auth.uid && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['status']))
+        (isActiveUser()
+         && resource.data.userId == request.auth.uid
+         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+           'title', 'abstract', 'contact', 'startDate', 'endDate', 'resourceLink',
+           'expectedEquipmentNeeds', 'equipmentNeedsOther',
+           'safetyAgreementAccepted', 'termsAccepted', 'imageUrls', 'documentUrls', 'updatedAt'
+         ]))
         || isAdmin()
       );
       allow delete: if isAdmin();

@@ -29,6 +29,8 @@ export interface UploadOptions {
   allowedTypes?: readonly string[]
   /** Max file size in bytes; defaults to 5 MB */
   maxSize?: number
+  /** Project subfolder; workshop materials stay directly under the workshop. */
+  kind?: 'images' | 'documents'
 }
 
 export function validateUpload(
@@ -57,7 +59,8 @@ export async function uploadFile(
 
   const sanitized = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
   const fileName = `${Date.now()}_${sanitized}`
-  const storageRef = ref(storage, `${options.folder}/${options.entityId}/${fileName}`)
+  const segment = options.folder === 'projects' && options.kind ? `/${options.kind}` : ''
+  const storageRef = ref(storage, `${options.folder}/${options.entityId}${segment}/${fileName}`)
 
   return new Promise((resolve, reject) => {
     const uploadTask = uploadBytesResumable(storageRef, file)

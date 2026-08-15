@@ -70,14 +70,14 @@ projects/{projectDocId}                     ← the project document (same field
 
 #### [MODIFY] [bookings.ts](file:///c:/Users/Naman%20Sinha/Desktop/tinkers-lab-platform/src/services/firebase/bookings.ts)
 - `createBooking()` → writes to `projects/{projectId}/bookings/{autoId}` instead of top-level `bookings`.
-- `checkBookingConflict()` → uses a **collection group query** on `bookings` (all projects) scoped by `equipmentId + date + status`. This is the same query shape as today, just on a collection group instead of a top-level collection.
-- `getUserBookings()` → collection group query on `bookings` where `userId == uid`.
+- `createBooking` → server callable uses a **collection group query** on `bookings` (all projects) scoped by `equipmentId + date + status` inside a transaction.
+- User booking history uses the current collection-group reads in the dashboard and calendar.
 - `getBookingsForSlot()` → collection group query (unchanged shape).
 
 #### [MODIFY] [toolCheckouts.ts](file:///c:/Users/Naman%20Sinha/Desktop/tinkers-lab-platform/src/services/firebase/toolCheckouts.ts)
-- `createToolCheckout()` → writes to `projects/{projectId}/checkouts/{autoId}`.
+- `createToolCheckout()` → server callable writes to `projects/{projectId}/checkouts/{autoId}` and appends the checkout timeline entry atomically.
 - `getActiveUserCheckouts()` → collection group query on `checkouts` where `userId == uid && action == 'checking_out'`.
-- `getAllCheckouts()` / `getAllActiveCheckouts()` / `getOverdueCheckouts()` → collection group queries.
+- `getAllCheckouts()` / `getAllActiveCheckouts()` → collection group queries; overdue state is marked by the scheduled function.
 - `returnTool()` → needs the full path `projects/{projectId}/checkouts/{checkoutId}`. We'll store `projectId` on the checkout doc (already there) and use it to construct the path.
 
 #### [NEW] [activityLog.ts](file:///c:/Users/Naman%20Sinha/Desktop/tinkers-lab-platform/src/services/firebase/activityLog.ts)

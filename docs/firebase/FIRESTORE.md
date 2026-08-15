@@ -16,7 +16,7 @@
 | **Cloud Firestore** | Primary database | 18 collections/subcollections (see §2) |
 | **Firebase Storage** | Binary files | Equipment images only — see [`STORAGE.md`](STORAGE.md) |
 
-No **Cloud Functions** are deployed today. All client-side enforcement lives in Firestore Security Rules; business rules that rules *cannot* express are documented as known gaps in §7.
+Cloud Functions enforce the transactional write paths and invariants that clients cannot safely enforce: project creation, booking conflict checks, tool checkout creation, feedback rate limiting, notifications, and overdue sweeps. Firestore Security Rules remain the defense-in-depth boundary.
 
 ### Initialization (`src/lib/firebase.ts`)
 
@@ -34,8 +34,8 @@ No **Cloud Functions** are deployed today. All client-side enforcement lives in 
 | 1 | `users` | `users/{uid}` | Firebase Auth `uid` | Self on first sign-in |
 | 2 | `projects` | `projects/{docId}` | Auto random + `projectCode` (`TL-XXX`) | **Cloud Function** (`createProject`) |
 | 3 | Project bookings | `projects/{projectId}/bookings/{bookingId}` | Auto | **Cloud Function** (`createBooking`) |
-| 4 | Project checkouts | `projects/{projectId}/checkouts/{checkoutId}` | Auto | User (Tier-2 tools) |
-| 5 | Project activity log | `projects/{projectId}/activityLog/{logId}` | Auto | App (owner/staff/function) |
+| 4 | Project checkouts | `projects/{projectId}/checkouts/{checkoutId}` | Auto | **Cloud Function** (`createToolCheckout`) |
+| 5 | Project activity log | `projects/{projectId}/activityLog/{logId}` | Auto | Owner/staff appends + Cloud Functions |
 | 5b | Project members | `projects/{projectId}/projectMembers/{memberId}` | Auto | **Cloud Function** (seed) / owner / staff |
 | 6 | `counters` | `counters/projects` | Fixed: `projects` | **Cloud Function only** |
 | 7 | `equipment` | `equipment/{docId}` | Auto | Staff (seeded) |
@@ -140,7 +140,7 @@ Renames only propagate on future writes — acceptable for this app.
 | `cancelledBy`? | string | On cancel |
 | `createdAt` / `updatedAt` | Timestamp | |
 
-**Auto-confirm model:** bookings are written `approved` immediately. Rules additionally verify the equipment is `confirmed: true` + `tier: 'bookable'` with status `available`/`reserved`. Overlap detection is client-side (`checkBookingConflict`) — a known gap (§7).
+**Auto-confirm model:** bookings are written `approved` immediately. The `createBooking` callable verifies the equipment is `confirmed: true` + `tier: 'bookable'` with status `available`/`reserved` and performs overlap detection transactionally.
 
 ### 3.4 `projects/{projectId}/checkouts/{checkoutId}` (Form 2B — Tier-2 tools)
 
@@ -255,8 +255,8 @@ Defined in [`firestore.rules`](../../firestore.rules) (rules_version 2).
 | `users` | owner or admin | self, `role='student'` only | owner (not role/isActive/email) or admin | admin |
 | `projects` | owner or staff | **function only** (deny direct) | owner (not `status`) or admin | admin |
 | `projects/{id}/bookings` | project owner or staff | **function only** (deny direct — conflict detection can't be bypassed) | owner (cancel only) or staff | admin |
-| `projects/{id}/checkouts` | project owner or staff | active, **project owner**, own, `projectId == path`, `action='checking_out'`, valid enums, `isOverdue=false`, `outsideLocation` if taking outside | owner (return-only keys) or staff | admin |
-| `projects/{id}/activityLog` | project owner or staff | active project owner **or staff**, key allowlist, type enum, summary ≤ 300 | **nobody** | **nobody** |
+| `projects/{id}/checkouts` | project owner or staff | **function only** (deny direct — validates active project, identity, dates, and writes timeline atomically) | owner (return/overdue-only keys) or staff | admin |
+| `projects/{id}/activityLog` | project owner or staff | owner checkout/return or booking-cancel entry; staff status change; functions for created/booking | **nobody** | **nobody** |
 | `projects/{id}/projectMembers` | project owner or staff | project owner or staff | project owner or staff | owner or admin |
 | `counters` | active user | **function only** (deny direct) | — | — |
 | `equipment` | any auth | staff | staff | staff |
@@ -279,7 +279,7 @@ Defined in [`firestore.rules`](../../firestore.rules) (rules_version 2).
 - **Server-side enum checks** on create (status, category, condition, severity…).
 - **Schema shape checks** (`is string`, `YYYY-MM-DD` regex, `startTime < endTime`).
 - **Cross-doc validation** with `get()` on `equipment` during booking create.
-- **Deterministic feedback IDs** → 1-per-5-minute server-enforced rate limit.
+- **Callable feedback rate limiting** → 1-per-5-minute server-enforced window.
 - Each `get()` helper costs 1 read — rules are written to minimize calls (free-tier friendly).
 - Collection-group rules on `bookings`/`checkouts`/`activityLog` gate admin & per-user cross-project reads.
 
@@ -293,7 +293,8 @@ Defined in [`firestore.rules`](../../firestore.rules) (rules_version 2).
 | `feedback` | **Auto (function)** | `submitFeedback` callable adds with a server ID; rate limit via `feedbackWindows/{uid}` |
 | `projects` | Hybrid | Random doc ID + sequential `projectCode` via **server-side** atomic counter (`createProject` function) |
 | `projects/{id}/bookings` | Random | Auto-ID (written by `createBooking` function) |
-| `projects/{id}/checkouts` · `activityLog` · `projectMembers` | Random | `addDoc` auto-ID |
+| `projects/{id}/checkouts` | Random | `createToolCheckout` callable |
+| `projects/{id}/activityLog` · `projectMembers` | Random | Function or authorized app append |
 | everything else | Random | `addDoc` auto-ID |
 
 **Atomic counter (`functions/src/createProject.ts`):** the counter lives server-side and is written inside a transaction — clients cannot read-modify-write it. This makes `TL-XXX` generation race-free **and tamper-proof**.
@@ -327,18 +328,18 @@ Deployed from [`functions/`](../../functions) (firebase-functions v2 + Admin SDK
 |---|---|---|
 | `createProject` | callable | Validates input, increments the atomic counter, writes project + `created` timeline entry + team roster (all in one transaction) |
 | `createBooking` | callable | **Server-side conflict detection** (transactional query + overlap check), atomic booking write + timeline entry |
+| `createToolCheckout` | callable | Validates active project ownership, identity, dates, quantity, and enums; atomically writes checkout + timeline entry |
 | `submitFeedback` | callable | Server-enforced 1-per-5-minute rate limit via `feedbackWindows/{uid}` |
 | `sweepOverdueCheckouts` | scheduled (02:00 IST daily) | Flags unreturned past-due checkouts `isOverdue: true` + sends `checkout_overdue` notifications |
 | `notifyOnProjectUpdate` | Firestore trigger | `project_approved` / `project_rejected` / hold / completed notifications |
 | `notifyOnBookingUpdate` | Firestore trigger | `booking_rejected` / cancelled notifications |
 
-> The Admin SDK bypasses security rules, so rules explicitly **deny** direct client creation of `projects`, `projects/*/bookings`, `counters`, and `feedback` — the functions are the only writers (defence in depth: functions also re-validate everything).
+> The Admin SDK bypasses security rules, so rules explicitly **deny** direct client creation of `projects`, `projects/*/bookings`, `projects/*/checkouts`, `counters`, and `feedback` — the functions are the only writers (defence in depth: functions also re-validate everything).
 
 ## 8. Remaining Known Gaps / Future Work
 
 1. **Transactional email** (booking approved/rejected, overdue reminders) — notifications are in-app today; email is a Phase 9 item (would extend `notify*` functions with a mail provider).
-2. **Overdue sweep is capped at 500 checkouts per run** — fine at lab scale; raise the limit if the active fleet grows.
-3. **Migration required before switchover** if production data exists in top-level `bookings`/`toolCheckouts` — run `scripts/migrateToSubcollections.ts` (needs `firebase-admin` + service account) before deploying.
-4. **`isOverdue` is still computed client-side between sweeps** for instant UI feedback — the daily sweep is now the authoritative server-side source.
-5. **Project team fields remain free-text on the doc** (`teamMembers`, `facultyMentor`) for display — the structured `projectMembers` subcollection is the relational source.
-6. **Rules tests require Java** (Firebase emulators) — they run in CI; see [`development/TESTING.md`](../development/TESTING.md).
+2. **Migration required before switchover** if production data exists in top-level `bookings`/`toolCheckouts` — run `scripts/migrateToSubcollections.ts` (needs `firebase-admin` + service account) before deploying.
+3. **`isOverdue` is still computed client-side between sweeps** for instant UI feedback — the daily sweep is now the authoritative server-side source.
+4. **Project team fields remain free-text on the doc** (`teamMembers`, `facultyMentor`) for display — the structured `projectMembers` subcollection is the relational source.
+5. **Rules tests require Java** (Firebase emulators) — they run in CI; see [`development/TESTING.md`](../development/TESTING.md).

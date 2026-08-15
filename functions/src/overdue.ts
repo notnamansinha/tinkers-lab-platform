@@ -23,7 +23,6 @@ export const sweepOverdueCheckouts = onSchedule(
     const snap = await db
       .collectionGroup('checkouts')
       .where('action', '==', 'checking_out')
-      .limit(500)
       .get()
 
     const batch = db.batch()

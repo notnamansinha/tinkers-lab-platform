@@ -22,6 +22,12 @@ const BOOKING_KEYS = [
 const TIME_PATTERN = /^[0-9]{2}:[0-9]{2}$/
 const DATE_PATTERN = /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/
 
+function isRealDate(value: string): boolean {
+  if (!DATE_PATTERN.test(value)) return false
+  const date = new Date(`${value}T00:00:00Z`)
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value
+}
+
 interface CreateBookingInput {
   equipmentId: string
   machineId: string
@@ -51,19 +57,25 @@ export const createBooking = onCall(
     if (user.isActive === false) throw new HttpsError('permission-denied', 'Account is deactivated.')
 
     // ── 2. Validate input shape ────────────────────────────────────
-    if (!input.projectId || !input.equipmentId || !input.date) {
+    if (typeof input.projectId !== 'string' || !input.projectId.trim()
+      || typeof input.equipmentId !== 'string' || !input.equipmentId.trim()
+      || typeof input.date !== 'string' || !input.date) {
       throw new HttpsError('invalid-argument', 'Missing required booking fields.')
     }
-    if (!DATE_PATTERN.test(input.date)) {
+    if (!isRealDate(input.date)) {
       throw new HttpsError('invalid-argument', 'date must be YYYY-MM-DD.')
     }
-    if (!TIME_PATTERN.test(input.startTime) || !TIME_PATTERN.test(input.endTime)) {
+    if (typeof input.startTime !== 'string' || typeof input.endTime !== 'string'
+      || !TIME_PATTERN.test(input.startTime) || !TIME_PATTERN.test(input.endTime)) {
       throw new HttpsError('invalid-argument', 'startTime/endTime must be HH:MM.')
+    }
+    if (input.startTime > '23:59' || input.endTime > '23:59') {
+      throw new HttpsError('invalid-argument', 'startTime/endTime must be valid times.')
     }
     if (input.startTime >= input.endTime) {
       throw new HttpsError('invalid-argument', 'endTime must be after startTime.')
     }
-    if (!input.purpose || input.purpose.length > 500) {
+    if (typeof input.purpose !== 'string' || !input.purpose.trim() || input.purpose.trim().length > 500) {
       throw new HttpsError('invalid-argument', 'purpose is required (max 500 chars).')
     }
     if (input.safetyAgreementAccepted !== true) {
@@ -85,7 +97,7 @@ export const createBooking = onCall(
     if (project.userId !== uid && !isStaff) {
       throw new HttpsError('permission-denied', 'Booking requires an active project you own.')
     }
-    if (project.status !== 'active' && project.status !== 'pending') {
+    if (project.status !== 'active') {
       throw new HttpsError('failed-precondition', 'Project must be active to book machines.')
     }
 
@@ -96,6 +108,9 @@ export const createBooking = onCall(
     const equipment = equipmentSnap.data()!
     if (equipment.tier !== 'bookable' || equipment.confirmed !== true) {
       throw new HttpsError('failed-precondition', 'This machine is not bookable.')
+    }
+    if (input.machineId !== equipment.machineId) {
+      throw new HttpsError('invalid-argument', 'Machine identity does not match equipment.')
     }
     if (!['available', 'reserved'].includes(equipment.status)) {
       throw new HttpsError('failed-precondition', 'Machine is not available for booking.')
