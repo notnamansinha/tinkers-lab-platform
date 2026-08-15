@@ -5,31 +5,30 @@ import {
   getDocs,
   getCountFromServer,
   doc,
-  runTransaction,
   updateDoc,
   serverTimestamp,
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
-import { COLLECTIONS, SUBCOLLECTIONS } from './firestore'
+import { COLLECTIONS } from './firestore'
 import { logProjectActivity } from './activityLog'
-import { seedProjectMembersTx } from './projectMembers'
-import { parseTeamRoster } from '@/lib/teamMembers'
-import { cleanFirestoreData } from '@/lib/utils'
+import { createProjectCallable } from './functions'
 import type { Project, ProjectStatus } from '@/types'
 
 // ============================================================
 // PROJECT SERVICE  (Form 1 — Project Registration)
-// Free-tier optimised.
-// "Users register a project once; email is the join key." (Spec 2)
+// ⚠️ CREATION is server-enforced via the `createProject` Cloud
+// Function (functions/src/createProject.ts) — the atomic TL-XXX
+// counter lives server-side so no client can tamper with it.
+// This module handles reads + admin status updates.
 // ============================================================
 
 /**
  * Create a new project registration (Form 1).
- * Status starts as 'pending' — admin reviews and approves/rejects.
- * projectCode (TL-XXX) is generated atomically from counters/projects.
- * The Firestore document ID stays auto-generated (separate from projectCode).
- * Optional imageUrls/documentUrls (uploaded via FileUploader) are persisted
- * with the project.
+ * Delegates to the `createProject` Cloud Function, which atomically:
+ *  - increments counters/projects (server-side, tamper-proof)
+ *  - writes the project doc with its business code (TL-XXX)
+ *  - seeds the immutable activity timeline + relational team roster
+ * Returns the Firestore document ID.
  */
 export async function createProject(
   data: Omit<Project, 'id' | 'projectCode' | 'createdAt' | 'updatedAt' | 'status' | 'imageUrls' | 'documentUrls'> & {
@@ -37,58 +36,26 @@ export async function createProject(
     documentUrls?: string[]
   }
 ): Promise<string> {
-  const projectsCol = collection(db, COLLECTIONS.PROJECTS)
-  const counterRef = doc(db, COLLECTIONS.COUNTERS, 'projects')
-
-  // Pre-generate a random document ID (Firestore auto-ID), used inside the transaction.
-  const projectDocRef = doc(projectsCol)
-
-  const payload = cleanFirestoreData({
-    ...data,
-    status: 'pending',
-    imageUrls: data.imageUrls ?? [],
-    documentUrls: data.documentUrls ?? [],
+  const { projectId } = (await createProjectCallable({
+    title: data.title,
+    abstract: data.abstract,
+    contact: data.contact,
+    startDate: data.startDate,
+    endDate: data.endDate ?? '',
+    resourceLink: data.resourceLink ?? '',
+    expectedEquipmentNeeds: data.expectedEquipmentNeeds ?? [],
+    equipmentNeedsOther: data.equipmentNeedsOther ?? '',
     teamMembers: data.teamMembers ?? '',
     facultyMentor: data.facultyMentor ?? '',
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
-  })
-
-  await runTransaction(db, async (tx) => {
-    const counterSnap = await tx.get(counterRef)
-    const nextId = counterSnap.exists() && typeof counterSnap.data().nextId === 'number'
-      ? counterSnap.data().nextId
-      : 1
-    const projectCode = `TL-${String(nextId).padStart(3, '0')}`
-
-    // 1. Increment the counter (atomic)
-    tx.set(counterRef, { nextId: nextId + 1 }, { merge: true })
-    // 2. Write the project doc with its business code (atomic with counter)
-    tx.set(projectDocRef, { ...payload, projectCode })
-    // 3. Seed the immutable project timeline with its creation event (atomic)
-    const activityRef = doc(
-      collection(db, COLLECTIONS.PROJECTS, projectDocRef.id, SUBCOLLECTIONS.PROJECT_ACTIVITY_LOG),
-    )
-    tx.set(activityRef, {
-      type: 'created',
-      summary: `Project registered (${projectCode}) — pending review`,
-      resourceId: projectDocRef.id,
-      userId: payload.userId ?? '',
-      userName: payload.userName ?? '',
-      userEmail: payload.userEmail ?? '',
-      createdAt: serverTimestamp(),
-    })
-    // 4. Seed the relational team roster (atomic) — parsed from free-text
-    //    "Names and IDs" + the faculty mentor as a mentor-scoped member.
-    const roster = parseTeamRoster(typeof data.teamMembers === 'string' ? data.teamMembers : '')
-    const mentor = typeof data.facultyMentor === 'string' ? data.facultyMentor.trim() : ''
-    seedProjectMembersTx(tx, projectDocRef.id, [
-      ...(mentor ? [{ name: mentor, isMentor: true }] : []),
-      ...roster.map((m) => ({ name: m.name, universityId: m.universityId })),
-    ])
-  })
-
-  return projectDocRef.id
+    department: data.department ?? '',
+    universityId: data.universityId ?? '',
+    userType: data.userType ?? 'Student',
+    safetyAgreementAccepted: data.safetyAgreementAccepted,
+    termsAccepted: data.termsAccepted,
+    imageUrls: data.imageUrls ?? [],
+    documentUrls: data.documentUrls ?? [],
+  })).data
+  return projectId
 }
 
 /**
