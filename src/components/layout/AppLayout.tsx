@@ -76,10 +76,11 @@ export default function AppLayout() {
             <span
               className="hidden xl:inline uppercase leading-none"
               style={{
-                fontFamily: "'Gavency', 'Outfit', sans-serif",
+                fontFamily: "'Comic CAT', 'Outfit', sans-serif",
                 fontWeight: 900,
-                fontSize: '1.05rem',
+                fontSize: '1.1rem',
                 letterSpacing: '0.14em',
+                WebkitTextStroke: '0.8px currentColor',
                 color: '#FFFFFF',
               }}
             >

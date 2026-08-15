@@ -39,8 +39,9 @@ export function BrandLockup({ className, compact = false, ...props }: BrandLocku
           compact ? 'text-lg' : 'text-xl'
         )}
         style={{
-          fontFamily: "'Gavency', 'Outfit', sans-serif",
+          fontFamily: "'Comic CAT', 'Outfit', sans-serif",
           fontWeight: 900,
+          WebkitTextStroke: '0.8px currentColor',
           color: '#FFFFFF',
         }}
       >
