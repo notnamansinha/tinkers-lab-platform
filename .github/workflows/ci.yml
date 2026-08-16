@@ -45,7 +45,12 @@ jobs:
         with:
           node-version: 20
 
-      # Firebase emulators require Java (preinstalled on ubuntu-latest).
+      - name: Set up Java 21 (required by Firebase emulators)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
       - name: Install rules-test dependencies
         run: npm ci --prefix tests
 
