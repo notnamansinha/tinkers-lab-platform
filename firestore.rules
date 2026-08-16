@@ -62,29 +62,34 @@ service cloud.firestore {
     }
 
     // ================================================================
-    // BOOKINGS COLLECTION  (Form 2A — Tier 1 machines only)
+    // COUNTERS COLLECTION  (atomic project code counter)
+    // counters/projects → { nextId: N }
+    // ⚠️ WRITES ARE SERVER-ENFORCED: the `createProject` Cloud Function
+    // increments the counter inside a transaction with the Admin SDK.
+    // Direct client writes are denied so users cannot tamper with the
+    // counter and cause duplicate TL-XXX codes.
     // ================================================================
-    match /bookings/{bookingId} {
-      allow read: if isAuth() && (resource.data.userId == request.auth.uid || isStaff());
-      // Auto-confirm model (Spec 2): status must be 'approved' on create.
-      // Server-side validation: active user, own booking, valid time window, and the
-      // machine must be a confirmed, bookable (Tier 1) machine that is available/reserved.
-      allow create: if isActiveUser()
-                    && request.resource.data.userId == request.auth.uid
-                    && request.resource.data.keys().hasAll(['equipmentId', 'machineId', 'date', 'startTime', 'endTime', 'purpose', 'projectId', 'status', 'safetyAgreementAccepted'])
-                    && request.resource.data.keys().hasOnly(['equipmentId', 'machineId', 'machineName', 'userId', 'userEmail', 'userName', 'projectId', 'projectTitle', 'date', 'startTime', 'endTime', 'purpose', 'consumables', 'safetyAgreementAccepted', 'status', 'rejectionReason', 'cancelledBy', 'createdAt', 'updatedAt'])
-                    && request.resource.data.status == 'approved'
-                    && request.resource.data.safetyAgreementAccepted == true
-                    && request.resource.data.date is string
-                    && request.resource.data.date.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}')
-                    && request.resource.data.startTime is string
-                    && request.resource.data.endTime is string
-                    && request.resource.data.startTime.matches('[0-9]{2}:[0-9]{2}')
-                    && request.resource.data.endTime.matches('[0-9]{2}:[0-9]{2}')
-                    && request.resource.data.startTime < request.resource.data.endTime
-                    && get(/databases/$(database)/documents/equipment/$(request.resource.data.equipmentId)).data.tier == 'bookable'
-                    && get(/databases/$(database)/documents/equipment/$(request.resource.data.equipmentId)).data.confirmed == true
-                    && get(/databases/$(database)/documents/equipment/$(request.resource.data.equipmentId)).data.status in ['available', 'reserved'];
+    match /counters/{counterId} {
+      allow read: if isActiveUser();
+      allow write: if false;
+    }
+
+    // ================================================================
+    // BOOKINGS — PROJECT SUBCOLLECTION  (Form 2A — Tier 1 machines)
+    // projects/{projectId}/bookings/{bookingId}
+    // ================================================================
+    match /projects/{projectId}/bookings/{bookingId} {
+      // Readable by the project owner or staff (collection-group reads included)
+      allow read: if isAuth() && (
+        get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid
+        || isStaff()
+      );
+      // ⚠️ CREATION IS SERVER-ENFORCED: the `createBooking` Cloud Function
+      // (functions/src/createBooking.ts) performs the conflict check inside a
+      // transaction and writes with the Admin SDK, which bypasses rules. Direct
+      // client creation is denied so a malicious client cannot skip conflict
+      // detection or forge fields. Cancellation/status updates stay client-side.
+      allow create: if false;
       // Users can cancel own bookings (status/cancelledBy only); staff can fully update.
       allow update: if isAuth() && (
         (isActiveUser()
@@ -97,34 +102,84 @@ service cloud.firestore {
     }
 
     // ================================================================
-    // TOOL CHECKOUTS COLLECTION  (Form 2B — Tier 2 tools only)
+    // TOOL CHECKOUTS — PROJECT SUBCOLLECTION  (Form 2B — Tier 2 tools)
+    // projects/{projectId}/checkouts/{checkoutId}
     // ================================================================
-    match /toolCheckouts/{checkoutId} {
-      allow read: if isAuth() && (resource.data.userId == request.auth.uid || isStaff());
-      // Server-enforced schema: new checkouts must be 'checking_out', not overdue, with
-      // valid enums and no extra/injected fields.
-      allow create: if isActiveUser()
-                    && request.resource.data.userId == request.auth.uid
-                    && request.resource.data.keys().hasAll(['toolName', 'toolCategory', 'action', 'projectId', 'locationOfUse', 'conditionAtCheckout', 'quantity', 'expectedReturnDate'])
-                    && request.resource.data.keys().hasOnly(['userId', 'userEmail', 'userName', 'universityId', 'projectId', 'projectTitle', 'action', 'toolCategory', 'toolName', 'quantity', 'locationOfUse', 'outsideLocation', 'expectedReturnDate', 'expectedReturnTime', 'conditionAtCheckout', 'notes', 'isOverdue', 'createdAt', 'updatedAt'])
-                    && request.resource.data.action == 'checking_out'
-                    && request.resource.data.toolCategory in ['Power Tools', 'Hand Tools', 'Measurement Tools', 'Safety Equipment', 'Other']
-                    && request.resource.data.locationOfUse in ['in_lab', 'taking_outside']
-                    && request.resource.data.conditionAtCheckout in ['good', 'fair', 'damaged']
-                    && request.resource.data.isOverdue == false
-                    && request.resource.data.expectedReturnDate is string
-                    && request.resource.data.expectedReturnDate.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}')
-                    && (request.resource.data.locationOfUse == 'in_lab'
-                        || (request.resource.data.outsideLocation is string && request.resource.data.outsideLocation.size() > 0));
-      // Owner may only perform a return (and flip overdue flags); staff can update any.
+    match /projects/{projectId}/checkouts/{checkoutId} {
+      allow read: if isAuth() && (
+        get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid
+        || isStaff()
+      );
+      // Creation is server-enforced by createToolCheckout so identity, project status,
+      // date validity, and the activity entry are written atomically.
+      allow create: if false;
+      // Owners may only mark an active checkout overdue or perform one return;
+      // staff can update any checkout.
       allow update: if isAuth() && (
-        (isActiveUser()
-         && resource.data.userId == request.auth.uid
-         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['action', 'conditionAtReturn', 'returnedAt', 'notes', 'isOverdue', 'updatedAt']))
+        (isActiveUser() && resource.data.userId == request.auth.uid && (
+          (
+            resource.data.action == 'checking_out'
+            && (!resource.data.keys().hasAny(['returnedAt']) || resource.data.returnedAt == null)
+            && request.resource.data.action == 'returning'
+            && request.resource.data.returnedAt is timestamp
+            && request.resource.data.conditionAtReturn in ['good', 'fair', 'damaged']
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['action', 'conditionAtReturn', 'returnedAt', 'notes', 'updatedAt', 'isOverdue'])
+            && request.resource.data.isOverdue == false
+          )
+          || (
+            resource.data.action == 'checking_out'
+            && request.resource.data.isOverdue == true
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isOverdue', 'updatedAt'])
+          )
+        ))
         || isStaff()
       );
       allow delete: if isAdmin();
     }
+
+    // ================================================================
+    // PROJECT ACTIVITY LOG  (projects/{projectId}/activityLog/{logId})
+    // Immutable unified timeline — appended by the app on bookings,
+    // checkouts, returns, and project status changes.
+    // ================================================================
+    match /projects/{projectId}/activityLog/{logId} {
+      allow read: if isAuth() && (
+        get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid
+        || isStaff()
+      );
+      // The app appends owner checkout/return entries or staff status changes.
+      // Project creation and booking entries are written by Cloud Functions.
+      allow create: if isActiveUser()
+                    && (
+                      (
+                        get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid
+                        && request.resource.data.userId == request.auth.uid
+                        && request.resource.data.userName == getUserData().displayName
+                        && request.resource.data.userEmail == getUserData().email
+                        && (
+                          request.resource.data.type in ['checkout', 'return']
+                          || (
+                            request.resource.data.type == 'status_change'
+                            && request.resource.data.summary == 'Booking cancelled'
+                          )
+                        )
+                      )
+                      || (
+                        isStaff()
+                        && request.resource.data.userId == request.auth.uid
+                        && request.resource.data.userName == getUserData().displayName
+                        && request.resource.data.userEmail == getUserData().email
+                        && request.resource.data.type == 'status_change'
+                      )
+                    )
+                    && request.resource.data.keys().hasOnly(['type', 'summary', 'resourceId', 'userId', 'userName', 'userEmail', 'createdAt'])
+                    && request.resource.data.type in ['created', 'booking', 'checkout', 'return', 'status_change']
+                    && request.resource.data.summary is string
+                    && request.resource.data.summary.size() > 0
+                    && request.resource.data.summary.size() <= 300;
+      allow update, delete: if false; // Immutable log
+    }
+
 
     // ================================================================
     // INVENTORY COLLECTION  (admin stock management)
@@ -179,18 +234,41 @@ service cloud.firestore {
     match /projects/{projectId} {
       // Projects are only visible to their owner and staff — NOT all authenticated users.
       allow read: if isAuth() && (resource.data.userId == request.auth.uid || isStaff());
-      // Users self-register projects; status must start as 'pending'
-      allow create: if isActiveUser()
-                    && request.resource.data.userId == request.auth.uid
-                    && request.resource.data.status == 'pending'
-                    && request.resource.data.safetyAgreementAccepted == true
-                    && request.resource.data.termsAccepted == true;
+      // ⚠️ CREATION IS SERVER-ENFORCED: the `createProject` Cloud Function
+      // (functions/src/createProject.ts) validates input, increments the
+      // atomic counter, and seeds timeline + roster with the Admin SDK.
+      // Direct client creation is denied.
+      allow create: if false;
       // Users edit own pending/active projects (not status); admins change anything
       allow update: if isAuth() && (
-        (isActiveUser() && resource.data.userId == request.auth.uid && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['status']))
+        (isActiveUser()
+         && resource.data.userId == request.auth.uid
+         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+           'title', 'abstract', 'contact', 'startDate', 'endDate', 'resourceLink',
+           'expectedEquipmentNeeds', 'equipmentNeedsOther',
+           'safetyAgreementAccepted', 'termsAccepted', 'imageUrls', 'documentUrls', 'updatedAt'
+         ]))
         || isAdmin()
       );
       allow delete: if isAdmin();
+    }
+
+    // ================================================================
+    // PROJECT MEMBERS  (projects/{projectId}/projectMembers/{memberId})
+    // Structured roster — seeded at project creation, owner/staff editable.
+    // ================================================================
+    match /projects/{projectId}/projectMembers/{memberId} {
+      allow read: if isAuth() && (
+        get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid
+        || isStaff()
+      );
+      allow create, update: if isActiveUser() && (
+        get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid
+        || isStaff()
+      );
+      allow delete: if isAdmin()
+                    || (isActiveUser()
+                        && get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid);
     }
 
     // ================================================================
@@ -257,21 +335,12 @@ service cloud.firestore {
     match /feedback/{feedbackId} {
       // Only staff/admin can read feedback
       allow read: if isStaff();
-      // Authenticated users can create their own feedback — server-enforced schema + rate limiting
-      allow create: if isAuth()
-        && request.resource.data.userId == request.auth.uid
-        && request.resource.data.message is string
-        && request.resource.data.message.size() > 0
-        && request.resource.data.message.size() <= 2000
-        && request.resource.data.createdAt == request.time
-        // Exhaustive allowlist — rejects any extra field the client might inject
-        && request.resource.data.keys().hasOnly(['userId', 'message', 'createdAt'])
-        // Rate limit: at most 1 feedback per user per 5-minute window.
-        // The document ID encodes the user + current window, so a second write in the
-        // same window fails automatically (create on an existing document is denied).
-        // NOTE: the document ID is client-predictable; replace with a Cloud Function
-        // or server-enforced flow if stricter rate limiting is required.
-        && feedbackId == request.auth.uid + '_' + string(math.floor(request.time.toMillis() / 300000));
+      // ⚠️ CREATION IS SERVER-ENFORCED: the `submitFeedback` Cloud Function
+      // (functions/src/submitFeedback.ts) enforces a 5-minute cooldown via
+      // feedbackWindows/{uid} with the server clock and writes with the Admin
+      // SDK. Direct client creation is denied — the old client-predictable
+      // document-ID scheme is retired.
+      allow create: if false;
       // No one can edit or delete feedback
       allow update, delete: if false;
     }

@@ -5,10 +5,24 @@ service firebase.storage {
     // ================================================================
     // HELPER — staff role check (reads the Firestore user document)
     // ================================================================
-    function isStaff() {
+    function isActiveUser() {
       return request.auth != null
+        && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.isActive != false;
+    }
+
+    function isStaff() {
+      return isActiveUser()
         && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role
              in ['super_admin', 'faculty', 'lab_assistant'];
+    }
+
+    // ================================================================
+    // HELPER — project owner check (reads the Firestore project doc)
+    // ================================================================
+    function isProjectOwner(projectId) {
+      return isActiveUser()
+        && firestore.get(/databases/(default)/documents/projects/$(projectId)).data.userId
+             == request.auth.uid;
     }
 
     // ================================================================
@@ -21,6 +35,43 @@ service firebase.storage {
       allow write:  if isStaff()
                     && request.resource.size <= 5 * 1024 * 1024
                     && request.resource.contentType.matches('image/(jpeg|png|webp)');
+      allow delete: if isStaff();
+    }
+
+    // ================================================================
+    // PROJECT IMAGES (project gallery / proof-of-work)
+    // Read: any authenticated user. Write/delete: project owner or staff.
+    // ================================================================
+    match /projects/{projectId}/images/{fileName} {
+      allow read:   if request.auth != null;
+      allow write:  if (isProjectOwner(projectId) || isStaff())
+                    && request.resource.size <= 5 * 1024 * 1024
+                    && request.resource.contentType.matches('image/(jpeg|png|webp)');
+      allow delete: if isProjectOwner(projectId) || isStaff();
+    }
+
+    // ================================================================
+    // PROJECT DOCUMENTS (reports, CAD files, etc.)
+    // Read: any authenticated user. Write/delete: project owner or staff.
+    // Larger size budget and broader content types than images.
+    // ================================================================
+    match /projects/{projectId}/documents/{fileName} {
+      allow read:   if request.auth != null;
+      allow write:  if (isProjectOwner(projectId) || isStaff())
+                    && request.resource.size <= 10 * 1024 * 1024
+                    && request.resource.contentType.matches('application/(pdf|msword|vnd.openxmlformats-officedocument.wordprocessingml.document)|text/(plain|markdown)|image/(jpeg|png|webp)');
+      allow delete: if isProjectOwner(projectId) || isStaff();
+    }
+
+    // ================================================================
+    // WORKSHOP MATERIALS (slides, handouts, certificates)
+    // Read: any authenticated user. Write/delete: staff only.
+    // ================================================================
+    match /workshops/{workshopId}/{fileName} {
+      allow read:   if request.auth != null;
+      allow write:  if isStaff()
+                    && request.resource.size <= 10 * 1024 * 1024
+                    && request.resource.contentType.matches('application/(pdf|msword|vnd.openxmlformats-officedocument.wordprocessingml.document)|text/(plain|markdown)|image/(jpeg|png|webp)');
       allow delete: if isStaff();
     }
 

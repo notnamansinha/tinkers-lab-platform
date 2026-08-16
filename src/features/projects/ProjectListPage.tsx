@@ -110,7 +110,7 @@ export default function ProjectListPage() {
              <EntityCard key={p._firestoreId} as="button" onClick={() => navigate(`/projects/${p._firestoreId}`)} className="flex min-h-40 cursor-pointer flex-col justify-between p-5">
               <div>
                 <div className="flex justify-between items-start mb-3">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-white/40">ID: {p.id?.slice(0, 6)}</span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-white/40">ID: {p.projectCode || p._firestoreId?.slice(0, 6)}</span>
                   <span className={cn('px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider', getStatusBadge(p.status))}>
                     {p.status.replace('_', ' ')}
                   </span>

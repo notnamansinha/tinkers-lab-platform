@@ -4,10 +4,13 @@ import { useQuery } from '@tanstack/react-query'
 import { COLLECTIONS } from '@/services/firebase/firestore'
 import { doc, getDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
-import { ArrowLeft, Edit, Calendar, Clock, User, Mail, Phone, Building, IdCard, Users, Link2 } from 'lucide-react'
+import { getProjectActivity } from '@/services/firebase/activityLog'
+import { getProjectMembers } from '@/services/firebase/projectMembers'
+import { ArrowLeft, Edit, Calendar, Clock, User, Mail, Phone, Building, IdCard, Users, Link2, History, GraduationCap } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
-import type { Project } from '@/types'
+import type { Project, ActivityLogEntry, ProjectMember } from '@/types'
 import LoadingSpinner from '@/components/common/LoadingSpinner'
+import { formatRelativeTime, cn } from '@/lib/utils'
 
 const STATUS_STYLE: Record<string, string> = {
   pending:   'border-orange/30 bg-orange/10 text-orange',
@@ -48,8 +51,21 @@ export default function ProjectDetailPage() {
   const { data: project, isLoading } = useQuery({ queryKey: ['projects', id], queryFn: async () => {
       const snap = await getDoc(doc(db, COLLECTIONS.PROJECTS, id!))
       if (!snap.exists()) return null
-      return { id: snap.id, ...snap.data() } as Project
+      return { docId: snap.id, ...snap.data() } as Project & { docId: string }
     }, enabled: !!id })
+
+  const { data: activity = [] } = useQuery({
+    queryKey: ['projects', id, 'activity'],
+    queryFn: () => getProjectActivity(id!),
+    enabled: !!id,
+    staleTime: 30 * 1000,
+  })
+  const { data: roster = [] } = useQuery({
+    queryKey: ['projects', id, 'members'],
+    queryFn: () => getProjectMembers(id!),
+    enabled: !!id,
+    staleTime: 30 * 1000,
+  })
 
   if (isLoading) return <LoadingSpinner text="Loading…" />
   if (!project) return <div className="py-16 text-center text-white/50">Project not found. <Link to="/projects" className="text-indigo hover:underline">← Back</Link></div>
@@ -116,8 +132,79 @@ export default function ProjectDetailPage() {
       </div>
 
       <p className="text-center text-xs text-white/20 pb-2">
-        Project ID: {project.id}
+        Project ID: {project.projectCode}
       </p>
+
+      {(project.imageUrls?.length ?? 0) > 0 && (
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+          {project.imageUrls!.map((url) => (
+            <a key={url} href={url} target="_blank" rel="noreferrer" className="group overflow-hidden rounded-md border border-white/10">
+              <img src={url} alt="Project" className="aspect-video w-full object-cover transition-transform group-hover:scale-105" />
+            </a>
+          ))}
+        </div>
+      )}
+
+      {/* ── Team Roster ─────────────────────────────────────────── */}
+      <div className="rounded-card border border-hairline bg-charcoal p-6">
+        <div className="mb-4 flex items-center gap-2">
+          <Users className="h-4 w-4 text-white/40" />
+          <h2 className="text-xs font-black uppercase tracking-widest text-white/40">Team Roster</h2>
+        </div>
+        {roster.length === 0 ? (
+          <p className="text-sm text-white/40">No team members recorded yet.</p>
+        ) : (
+          <ul className="grid gap-2 sm:grid-cols-2">
+            {roster.map((member: ProjectMember) => (
+              <li key={member.id} className="flex items-center gap-2 rounded-md border border-white/10 bg-black/20 px-3 py-2">
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-indigo/20 text-white/60">
+                  {member.isMentor ? <GraduationCap className="h-4 w-4" /> : <User className="h-4 w-4" />}
+                </span>
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-white/85">{member.name}</p>
+                  <p className="text-[11px] text-white/40">
+                    {member.isMentor ? 'Faculty mentor' : 'Team member'}
+                    {member.universityId ? ` · ${member.universityId}` : ''}
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {/* ── Activity Log ─────────────────────────────────────────── */}
+      <div className="rounded-card border border-hairline bg-charcoal p-6">
+        <div className="mb-4 flex items-center gap-2">
+          <History className="h-4 w-4 text-white/40" />
+          <h2 className="text-xs font-black uppercase tracking-widest text-white/40">Activity Log</h2>
+        </div>
+        {activity.length === 0 ? (
+          <p className="text-sm text-white/40">No activity yet. Bookings, tool checkouts, and status changes will appear here.</p>
+        ) : (
+          <ol className="relative space-y-4 border-l border-white/10 pl-5">
+            {activity.map((entry: ActivityLogEntry) => (
+              <li key={entry.id} className="relative">
+                <span
+                  className={cn(
+                    'absolute -left-[26px] top-1 h-2.5 w-2.5 rounded-full',
+                    entry.type === 'booking' && 'bg-lime',
+                    entry.type === 'checkout' && 'bg-indigo',
+                    entry.type === 'return' && 'bg-orange',
+                    entry.type === 'status_change' && 'bg-pink',
+                  )}
+                />
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-xs font-bold uppercase tracking-wider text-white/50">{entry.type.replace('_', ' ')}</p>
+                  <span className="shrink-0 text-[10px] text-white/30">{formatRelativeTime(entry.createdAt)}</span>
+                </div>
+                <p className="mt-0.5 text-sm font-semibold text-white/85">{entry.summary}</p>
+                <p className="text-[11px] text-white/40">{entry.userName} · {entry.userEmail}</p>
+              </li>
+            ))}
+          </ol>
+        )}
+      </div>
     </div>
   )
 }

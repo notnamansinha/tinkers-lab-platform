@@ -13,11 +13,9 @@ import {
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { updateUserProfile, signOut } from '@/services/firebase/auth'
-import { COLLECTIONS } from '@/services/firebase/firestore'
-import { db } from '@/lib/firebase'
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
+import { submitFeedbackCallable } from '@/services/firebase/functions'
 import { toast } from 'sonner'
-import { cn, cleanFirestoreData } from '@/lib/utils'
+import { cn } from '@/lib/utils'
 import type { UserType } from '@/types'
 
 const FEEDBACK_WINDOW_MS = 5 * 60 * 1000 // 5 minutes
@@ -68,7 +66,7 @@ function Field({
 
 export default function ProfilePage() {
   const navigate = useNavigate()
-  const { user, profile, refetchProfile, isStaff, isAdmin } = useAuth()
+  const { user, profile, refetchProfile, isAdmin } = useAuth()
 
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -212,16 +210,11 @@ export default function ProfilePage() {
   const handleFeedbackSubmit = async () => {
     if (!user || !profile || feedbackBlocked) return
     setFeedbackSubmitting(true)
-    const windowId = Math.floor(Date.now() / FEEDBACK_WINDOW_MS)
-    const docId = `${user.uid}_${windowId}`
-    const payload = cleanFirestoreData({
-      userId: user.uid,
-      message: feedbackText.trim(),
-      createdAt: serverTimestamp(),
-    })
 
     try {
-      await setDoc(doc(db, COLLECTIONS.FEEDBACK, docId), payload)
+      // Server-enforced submission (Cloud Function) — 5-min rate limit is
+      // stamped server-side on feedbackWindows/{uid}, not client-predictable.
+      await submitFeedbackCallable({ message: feedbackText.trim() })
       localStorage.setItem(feedbackStorageKey, String(Date.now()))
       setCooldownRemaining(FEEDBACK_WINDOW_MS / 1000)
       setFeedbackText('')

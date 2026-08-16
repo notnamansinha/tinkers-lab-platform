@@ -17,9 +17,9 @@ const config = {
     },
     extend: {
       fontFamily: {
-        brand:   ['Outfit', 'Inter', 'Arial Black', 'sans-serif'],
-        sans:    ['Outfit', 'Inter', 'Arial', 'sans-serif'],
-        display: ['Outfit', 'Inter', 'Arial Black', 'sans-serif'],
+        brand:   ['Comic CAT', 'Outfit', 'Inter', 'Arial Black', 'sans-serif'],
+        sans:    ['Comic CAT', 'Outfit', 'Inter', 'Arial', 'sans-serif'],
+        display: ['Comic CAT', 'Outfit', 'Inter', 'Arial Black', 'sans-serif'],
         mono:    ['ui-monospace', 'SF Mono', 'JetBrains Mono', 'Courier New', 'monospace'],
       },
 
@@ -124,38 +124,38 @@ const config = {
       },
 
       fontSize: {
-        'hero': ['clamp(64px, 5vw, 72px)', { lineHeight: '1', fontWeight: '900' }],
-        'onboarding': ['clamp(40px, 4vw, 56px)', { lineHeight: '1.1', fontWeight: '800' }],
-        'empty-state': ['32px', { lineHeight: '1.2', fontWeight: '700' }],
-        'dashboard-title': ['28px', { lineHeight: '1.2', fontWeight: '700' }],
-        'card-title': ['clamp(22px, 2vw, 24px)', { lineHeight: '1.2', fontWeight: '700' }],
-        'widget-title': ['clamp(18px, 1.5vw, 20px)', { lineHeight: '1.2', fontWeight: '600' }],
-        'chart-title': ['18px', { lineHeight: '1.2', fontWeight: '700' }],
-        'form-heading': ['18px', { lineHeight: '1.2', fontWeight: '700' }],
+        'hero': ['clamp(68px, 6vw, 84px)', { lineHeight: '1', fontWeight: '900' }],
+        'onboarding': ['clamp(44px, 5vw, 64px)', { lineHeight: '1.08', fontWeight: '900' }],
+        'empty-state': ['clamp(28px, 4vw, 36px)', { lineHeight: '1.2', fontWeight: '800' }],
+        'dashboard-title': ['clamp(26px, 3.5vw, 32px)', { lineHeight: '1.15', fontWeight: '800' }],
+        'card-title': ['clamp(22px, 2.5vw, 26px)', { lineHeight: '1.2', fontWeight: '800' }],
+        'widget-title': ['clamp(19px, 2vw, 22px)', { lineHeight: '1.2', fontWeight: '700' }],
+        'chart-title': ['20px', { lineHeight: '1.2', fontWeight: '800' }],
+        'form-heading': ['20px', { lineHeight: '1.2', fontWeight: '800' }],
         
-        'sidebar-active': ['15px', { lineHeight: '1.4', fontWeight: '600' }],
-        'sidebar-normal': ['15px', { lineHeight: '1.4', fontWeight: '500' }],
-        'nav': ['15px', { lineHeight: '1.4', fontWeight: '500' }],
+        'sidebar-active': ['16px', { lineHeight: '1.4', fontWeight: '700' }],
+        'sidebar-normal': ['16px', { lineHeight: '1.4', fontWeight: '600' }],
+        'nav': ['16px', { lineHeight: '1.4', fontWeight: '600' }],
         
-        'input-label': ['13px', { lineHeight: '1', fontWeight: '500' }],
-        'input-text': ['16px', { lineHeight: '1.5', fontWeight: '400' }],
-        'dropdown-text': ['16px', { lineHeight: '1.5', fontWeight: '500' }],
-        'placeholder': ['16px', { lineHeight: '1.5', fontWeight: '400' }],
+        'input-label': ['14px', { lineHeight: '1.1', fontWeight: '700' }],
+        'input-text': ['17px', { lineHeight: '1.5', fontWeight: '600' }],
+        'dropdown-text': ['17px', { lineHeight: '1.5', fontWeight: '600' }],
+        'placeholder': ['16px', { lineHeight: '1.5', fontWeight: '500' }],
         
-        'btn': ['15px', { lineHeight: '1.2', fontWeight: '600' }],
+        'btn': ['16px', { lineHeight: '1.2', fontWeight: '800' }],
         
-        'kpi': ['clamp(32px, 3vw, 42px)', { lineHeight: '1', fontWeight: '700' }],
-        'card-stat': ['clamp(24px, 2.5vw, 28px)', { lineHeight: '1', fontWeight: '700' }],
+        'kpi': ['clamp(36px, 4vw, 48px)', { lineHeight: '1', fontWeight: '900' }],
+        'card-stat': ['clamp(26px, 3vw, 32px)', { lineHeight: '1', fontWeight: '800' }],
         
-        'table-th': ['14px', { lineHeight: '1.4', fontWeight: '600' }],
-        'table-td': ['14px', { lineHeight: '1.4', fontWeight: '400' }],
+        'table-th': ['15px', { lineHeight: '1.4', fontWeight: '800' }],
+        'table-td': ['15px', { lineHeight: '1.4', fontWeight: '600' }],
         
-        'chart-label': ['12px', { lineHeight: '1.4', fontWeight: '500' }],
-        'axis-label': ['11px', { lineHeight: '1.4', fontWeight: '500' }],
+        'chart-label': ['13px', { lineHeight: '1.4', fontWeight: '700' }],
+        'axis-label': ['12px', { lineHeight: '1.4', fontWeight: '600' }],
         
-        'helper': ['12px', { lineHeight: '1.4', fontWeight: '400' }],
-        'tooltip': ['13px', { lineHeight: '1.4', fontWeight: '500' }],
-        'badge': ['12px', { lineHeight: '1', fontWeight: '600' }],
+        'helper': ['13px', { lineHeight: '1.4', fontWeight: '600' }],
+        'tooltip': ['14px', { lineHeight: '1.4', fontWeight: '700' }],
+        'badge': ['13px', { lineHeight: '1', fontWeight: '800' }],
       },
 
       keyframes: {

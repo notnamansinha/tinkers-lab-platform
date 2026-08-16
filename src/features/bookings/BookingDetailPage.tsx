@@ -1,15 +1,11 @@
 import React from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { COLLECTIONS } from '@/services/firebase/firestore'
-import { doc, getDoc } from 'firebase/firestore'
-import { db } from '@/lib/firebase'
-import { updateBookingStatus } from '@/services/firebase/bookings'
+import { updateBookingStatus, getBookingById } from '@/services/firebase/bookings'
 import { useAuth } from '@/contexts/AuthContext'
 import { ArrowLeft, XCircle, Trash2 } from 'lucide-react'
 import { formatDateTime } from '@/lib/utils'
 import { toast } from 'sonner'
-import type { Booking } from '@/types'
 import LoadingSpinner from '@/components/common/LoadingSpinner'
 import { ConfirmDialog } from '@/components/common/ConfirmDialog'
 
@@ -21,7 +17,7 @@ import { Badge } from '@/components/ui/badge'
 export default function BookingDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { isStaff, user } = useAuth()
+  const { isStaff, user, profile } = useAuth()
   const qc = useQueryClient()
 
   const [rejectDialogOpen, setRejectDialogOpen] = React.useState(false)
@@ -31,11 +27,7 @@ export default function BookingDetailPage() {
 
   const { data: booking, isLoading } = useQuery({
     queryKey: ['bookings', id],
-    queryFn: async () => {
-      const snap = await getDoc(doc(db, COLLECTIONS.BOOKINGS, id!))
-      if (!snap.exists()) return null
-      return { id: snap.id, ...snap.data() } as Booking
-    },
+    queryFn: () => getBookingById(id!),
     enabled: !!id,
   })
 
@@ -45,7 +37,14 @@ export default function BookingDetailPage() {
   const reject = async () => {
     setActionLoading(true)
     try {
-      await updateBookingStatus(id!, 'rejected', { rejectionReason })
+      await updateBookingStatus(booking.projectId, id!, 'rejected', {
+        rejectionReason,
+        actor: {
+          uid: profile?.uid ?? user?.uid ?? 'admin',
+          name: profile?.displayName ?? 'Coordinator',
+          email: profile?.email ?? '',
+        },
+      })
       toast.success('Booking rejected')
       qc.invalidateQueries({ queryKey: ['bookings'] })
       setRejectDialogOpen(false)
@@ -60,7 +59,14 @@ export default function BookingDetailPage() {
   const cancel = async () => {
     setActionLoading(true)
     try {
-      await updateBookingStatus(id!, 'cancelled')
+      await updateBookingStatus(booking.projectId, id!, 'cancelled', {
+        cancelledBy: user?.uid ?? 'user',
+        actor: {
+          uid: profile?.uid ?? user?.uid ?? 'user',
+          name: profile?.displayName ?? booking.userName,
+          email: profile?.email ?? booking.userEmail,
+        },
+      })
       toast.success('Booking cancelled')
       navigate('/bookings')
     } catch (e) {

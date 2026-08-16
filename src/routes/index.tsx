@@ -36,6 +36,7 @@ const AdminDashboard = React.lazy(() => import('@/features/admin/AdminDashboard'
 const AdminUsersPage = React.lazy(() => import('@/features/admin/AdminUsersPage'))
 const AdminBookingsPage = React.lazy(() => import('@/features/admin/AdminBookingsPage'))
 const AdminProjectsPage = React.lazy(() => import('@/features/admin/AdminProjectsPage'))
+const AdminProjectDetailPage = React.lazy(() => import('@/features/admin/AdminProjectDetailPage'))
 const AdminInventoryPage = React.lazy(() => import('@/features/admin/AdminInventoryPage'))
 const AdminIssuesPage = React.lazy(() => import('@/features/admin/AdminIssuesPage'))
 const AdminAnnouncementsPage = React.lazy(() => import('@/features/admin/AdminAnnouncementsPage'))
@@ -135,6 +136,7 @@ export default function AppRoutes() {
           <Route path="/admin/users" element={<AdminRoute><AdminUsersPage /></AdminRoute>} />
           <Route path="/admin/bookings" element={<AdminRoute><AdminBookingsPage /></AdminRoute>} />
           <Route path="/admin/projects" element={<AdminRoute><AdminProjectsPage /></AdminRoute>} />
+          <Route path="/admin/projects/:id" element={<AdminRoute><AdminProjectDetailPage /></AdminRoute>} />
           <Route path="/admin/inventory" element={<AdminRoute><AdminInventoryPage /></AdminRoute>} />
           <Route path="/admin/issues" element={<AdminRoute><AdminIssuesPage /></AdminRoute>} />
           <Route path="/admin/announcements" element={<AdminRoute><AdminAnnouncementsPage /></AdminRoute>} />

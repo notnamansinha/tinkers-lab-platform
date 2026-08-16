@@ -7,7 +7,8 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { collection, query, orderBy, getDocs } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { COLLECTIONS } from '@/services/firebase/firestore'
-import { createBooking, getBookingsForSlot } from '@/services/firebase/bookings'
+import { getBookingsForSlot } from '@/services/firebase/bookings'
+import { createBookingCallable } from '@/services/firebase/functions'
 import { getUserProjects } from '@/services/firebase/projects'
 import { useAuth } from '@/contexts/AuthContext'
 import { ArrowLeft, AlertTriangle, CheckCircle2, Plus } from 'lucide-react'
@@ -151,16 +152,15 @@ export default function BookingFormPage() {
     if (!user || !profile) { toast.error('Please sign in'); return }
     if (!selectedMachine)  { toast.error('Machine not found'); return }
 
-    const selectedProject = projects.find(p => p.id === data.projectId)
+    const selectedProject = projects.find(p => p.docId === data.projectId)
 
     try {
-      await createBooking({
+      // Server-enforced creation (Cloud Function) — runs the conflict check
+      // transactionally so two clients cannot double-book a slot.
+      await createBookingCallable({
         equipmentId: data.equipmentId,
         machineId:   selectedMachine.machineId,
         machineName: selectedMachine.name,
-        userId:      user.uid,
-        userEmail:   user.email!,
-        userName:    profile.displayName,
         projectId:   data.projectId,
         projectTitle: selectedProject?.title ?? '',
         date:        data.date,
@@ -246,7 +246,7 @@ export default function BookingFormPage() {
               >
                 <option value="">— Select a project —</option>
                 {projects.map(p => (
-                  <option key={p.id} value={p.id}>{p.id} — {p.title}</option>
+                  <option key={p.docId} value={p.docId}>{p.projectCode} — {p.title}</option>
                 ))}
               </select>
               <button

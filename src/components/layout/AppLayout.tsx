@@ -3,7 +3,7 @@ import { ArrowLeft, Box, Calendar, LayoutDashboard, LogOut, MessageSquare, Shiel
 import { useAuth } from '@/contexts/AuthContext'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
-import { BrandLockup, FlowerMark } from '@/components/visual'
+import { BrandLockup, BrandMark } from '@/components/visual'
 
 const NAV_LINKS = [
   { name: 'Dashboard', shortName: 'Home', icon: LayoutDashboard, path: '/' },
@@ -72,8 +72,20 @@ export default function AppLayout() {
             className="mb-6 flex items-center justify-center gap-3 rounded-md px-2 py-2 text-left xl:justify-start xl:px-3"
             aria-label="Go to dashboard"
           >
-            <FlowerMark className="h-9 w-9" />
-            <span className="hidden font-brand text-xl lowercase text-pink xl:inline">tinkerers lab</span>
+            <BrandMark className="h-9 w-9" />
+            <span
+              className="hidden xl:inline uppercase leading-none"
+              style={{
+                fontFamily: "'Comic CAT', 'Outfit', sans-serif",
+                fontWeight: 900,
+                fontSize: '1.1rem',
+                letterSpacing: '0.14em',
+                WebkitTextStroke: '0.8px currentColor',
+                color: '#FFFFFF',
+              }}
+            >
+              TINKERERS LAB
+            </span>
           </button>
 
           <nav className="flex flex-col gap-1.5" aria-label="Main navigation">

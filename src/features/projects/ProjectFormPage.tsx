@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useForm, Controller } from 'react-hook-form'
 import { typedZodResolver } from '@/lib/form'
@@ -8,6 +8,7 @@ import { COLLECTIONS } from '@/services/firebase/firestore'
 import { doc, getDoc, updateDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { createProject } from '@/services/firebase/projects'
+import { FileUploader } from '@/components/common/FileUploader'
 import { useAuth } from '@/contexts/AuthContext'
 import { ArrowLeft, Save, Loader2, Check } from 'lucide-react'
 import { toast } from 'sonner'
@@ -71,7 +72,7 @@ export default function ProjectFormPage() {
     queryFn: async () => {
       const snap = await getDoc(doc(db, COLLECTIONS.PROJECTS, id!))
       if (!snap.exists()) return null
-      return { id: snap.id, ...snap.data() } as Project
+      return { docId: snap.id, ...snap.data() } as Project & { docId: string }
     },
     enabled: isEdit,
   })
@@ -89,8 +90,13 @@ export default function ProjectFormPage() {
     },
   })
 
+  const [imageUrls, setImageUrls] = useState<string[]>([])
+  const [documentUrls, setDocumentUrls] = useState<string[]>([])
+
   React.useEffect(() => {
     if (existing) {
+      setImageUrls(existing.imageUrls ?? [])
+      setDocumentUrls(existing.documentUrls ?? [])
       reset({
         title:    existing.title,
         abstract: existing.abstract,
@@ -123,6 +129,8 @@ export default function ProjectFormPage() {
           equipmentNeedsOther: data.equipmentNeedsOther || null,
           safetyAgreementAccepted: data.safetyAgreementAccepted,
           termsAccepted: data.termsAccepted,
+          imageUrls,
+          documentUrls,
         }))
         toast.success('Project updated')
         navigate(`/projects/${id}`)
@@ -145,6 +153,8 @@ export default function ProjectFormPage() {
           department: profile.department || 'General',
           teamMembers: typeof profile.teamMembers === 'string' ? profile.teamMembers : '',
           facultyMentor: profile.facultyAdvisor || '',
+          imageUrls,
+          documentUrls,
         })
         toast.success('Project registered! Pending review by a coordinator.')
         navigate(`/projects/${docId}`)
@@ -356,6 +366,40 @@ export default function ProjectFormPage() {
                 },
               }}
               error={errors.termsAccepted?.message}
+            />
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-card border border-hairline bg-charcoal p-6">
+          <CardHeader className="px-0">
+            <CardTitle className="text-sm font-bold text-white">Project Files</CardTitle>
+            <CardDescription className="text-xs text-white/50">
+              Upload project images and supporting documents (optional).
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4 px-0">
+            {!isEdit && (
+              <p className="text-xs text-white/50">
+                Save the project first, then add images or documents from its Edit page.
+              </p>
+            )}
+            <FileUploader
+              folder="projects"
+              entityId={id ?? 'draft'}
+              kind="images"
+              existingUrls={imageUrls}
+              onChange={setImageUrls}
+              disabled={!isEdit}
+              label="Upload project images"
+            />
+            <FileUploader
+              folder="projects"
+              entityId={id ?? 'draft'}
+              kind="documents"
+              existingUrls={documentUrls}
+              onChange={setDocumentUrls}
+              disabled={!isEdit}
+              label="Upload documents"
             />
           </CardContent>
         </Card>

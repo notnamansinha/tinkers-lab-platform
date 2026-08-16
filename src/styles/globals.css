@@ -1,3 +1,11 @@
+@font-face {
+  font-family: 'Comic CAT';
+  src: url('/fonts/Comic_CAT.otf') format('opentype');
+  font-weight: 400 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -82,6 +90,8 @@
   * {
     box-sizing: border-box;
     border-color: hsl(var(--border));
+    /* Suppress grey tap flash on all interactive elements on mobile */
+    -webkit-tap-highlight-color: transparent;
   }
 
   html {
@@ -95,12 +105,21 @@
     margin: 0;
     background: var(--color-ink);
     color: var(--color-paper);
-    font-family: 'Outfit', 'Inter', Arial, sans-serif;
-    font-size: 15px;
-    font-weight: 400;
-    line-height: 1.5;
+    font-family: 'Comic CAT', 'Outfit', 'Inter', Arial, sans-serif;
+    /* Big, thick, and bold body text tailored for OLED mobile screens */
+    font-size: clamp(16px, 1.2vw, 18px);
+    font-weight: 700;
+    -webkit-text-stroke: 0.5px currentColor;
+    line-height: 1.6;
+    letter-spacing: 0.025em;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    /* Synthesize maximum bold for the single-weight OTF */
+    font-synthesis: weight style;
+    /* Prevent text from being too small on some mobile browsers */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
 
   button,
@@ -108,6 +127,15 @@
   select,
   textarea {
     font: inherit;
+    /* Explicit max 16px/1.05rem prevents iOS Safari auto-zooming and increases readability */
+    font-size: max(16px, 1.05rem);
+    font-weight: 700;
+    -webkit-text-stroke: 0.45px currentColor;
+  }
+
+  button {
+    cursor: pointer;
+    touch-action: manipulation;
   }
 
   h1,
@@ -118,10 +146,13 @@
   h6 {
     margin: 0;
     color: inherit;
-    font-family: 'Outfit', 'Inter', Arial, sans-serif;
-    font-weight: 800;
-    letter-spacing: -0.035em;
-    line-height: 1.02;
+    font-family: 'Comic CAT', 'Outfit', 'Inter', Arial, sans-serif;
+    font-weight: 900;
+    /* Comic CAT uppercase headings with thick stroke for mobile impact */
+    letter-spacing: 0.05em;
+    line-height: 1.12;
+    text-transform: uppercase;
+    -webkit-text-stroke: 0.85px currentColor;
   }
 
   #root {
@@ -141,15 +172,20 @@
 @layer utilities {
   .font-brand,
   .font-data {
-    font-family: 'Outfit', 'Inter', Arial, sans-serif !important;
+    font-family: 'Comic CAT', 'Outfit', 'Inter', Arial, sans-serif !important;
   }
 
   .font-brand {
-    font-weight: 800 !important;
-    letter-spacing: -0.045em;
+    font-weight: 900 !important;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    -webkit-text-stroke: 0.85px currentColor;
   }
 
-  .font-data { font-variant-numeric: tabular-nums; }
+  .font-data {
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+  }
 
   @keyframes fade-in {
     from { opacity: 0; transform: translateY(6px); }
@@ -171,52 +207,61 @@
 
   .tl-input {
     width: 100%;
-    min-height: 48px;
-    border: 1px solid rgb(var(--color-paper-rgb) / 0.1);
+    min-height: 52px;
+    border: 1px solid rgb(var(--color-paper-rgb) / 0.12);
     border-radius: var(--radius-sm);
     outline: none;
     background: var(--color-brand-indigo-light);
     color: var(--color-paper);
-    padding: 12px 16px;
+    padding: 14px 18px;
+    font-size: 16px;
+    font-weight: 600;
+    -webkit-text-stroke: 0.4px currentColor;
     transition: border-color 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
   }
-  .tl-input::placeholder { color: rgb(var(--color-paper-rgb) / 0.45); }
+  .tl-input::placeholder { color: rgb(var(--color-paper-rgb) / 0.5); }
   .tl-input:focus {
     border-color: var(--color-accent-pink);
-    box-shadow: 0 0 0 3px rgb(var(--color-accent-pink-rgb) / 0.2);
+    box-shadow: 0 0 0 3px rgb(var(--color-accent-pink-rgb) / 0.25);
   }
 
   .tl-input-label,
   .tl-input-label-dark {
     display: block;
     margin-bottom: 8px;
-    color: rgb(var(--color-paper-rgb) / 0.68);
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    line-height: 1;
+    color: rgb(var(--color-paper-rgb) / 0.75);
+    /* 13px min: WCAG AA on small screens, thick uppercase */
+    font-size: 13px;
+    font-weight: 900;
+    letter-spacing: 0.12em;
+    line-height: 1.2;
     text-transform: uppercase;
+    -webkit-text-stroke: 0.5px currentColor;
   }
 
   .tl-pill-button,
   .tl-pill-button-secondary,
   .tl-pill-button-outline {
     display: inline-flex;
-    min-height: 44px;
+    /* 52px meets Apple HIG + Material touch target size on mobile */
+    min-height: 52px;
     align-items: center;
     justify-content: center;
     border-radius: var(--radius-full);
-    padding: 10px 24px;
-    font-size: 13px;
-    font-weight: 700;
-    letter-spacing: 0.04em;
+    padding: 14px 30px;
+    /* 16px bold for maximum mobile readability */
+    font-size: 16px;
+    font-weight: 900;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
+    -webkit-text-stroke: 0.65px currentColor;
+    touch-action: manipulation;
     transition: filter 180ms ease, transform 180ms ease, background-color 180ms ease;
   }
   .tl-pill-button { background: var(--color-accent-pink); color: var(--color-ink); }
   .tl-pill-button-secondary { background: var(--color-surface-dark-alt); color: var(--color-paper); }
   .tl-pill-button-outline {
-    border: 1px solid var(--color-line-dark);
+    border: 2px solid var(--color-line-dark);
     background: transparent;
     color: var(--color-paper);
   }
@@ -248,12 +293,22 @@
     padding: 24px;
   }
   .tl-display-title {
-    font-size: clamp(3rem, 7vw, 5rem);
-    font-weight: 800;
-    letter-spacing: -0.06em;
-    line-height: 0.92;
+    font-family: 'Comic CAT', 'Outfit', 'Inter', Arial, sans-serif;
+    font-size: clamp(3.25rem, 8vw, 5.5rem);
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    line-height: 1.0;
+    text-transform: uppercase;
+    -webkit-text-stroke: 1.2px currentColor;
   }
-  .tl-page-title { font-weight: 800; letter-spacing: -0.035em; }
+  .tl-page-title {
+    font-family: 'Comic CAT', 'Outfit', 'Inter', Arial, sans-serif;
+    font-size: clamp(1.65rem, 4.5vw, 2.5rem);
+    font-weight: 900;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    -webkit-text-stroke: 0.9px currentColor;
+  }
 
   .tl-form-panel,
   .premium-glass-card {
@@ -286,27 +341,34 @@
     background: var(--color-surface-dark-alt);
     color: var(--color-paper);
     padding: 12px 16px;
+    font-weight: 600;
   }
 
   .tl-kpi-tile {
     display: flex;
-    min-height: clamp(112px, 11vw, 136px);
+    min-height: clamp(120px, 12vw, 144px);
     flex-direction: column;
     justify-content: space-between;
     border-radius: var(--radius-lg);
-    padding: clamp(16px, 2vw, 24px);
+    padding: clamp(18px, 2.2vw, 26px);
   }
   .tl-kpi-label {
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.1em;
+    font-family: 'Comic CAT', 'Outfit', 'Inter', Arial, sans-serif;
+    /* Big and bold on mobile OLED screens */
+    font-size: clamp(13px, 1.7vw, 15px);
+    font-weight: 900;
+    /* Wide tracking + uppercase = maximum legibility for Comic CAT at small sizes */
+    letter-spacing: 0.15em;
     text-transform: uppercase;
+    -webkit-text-stroke: 0.6px currentColor;
   }
   .tl-kpi-value {
-    font-size: clamp(2rem, 4vw, 3rem);
-    font-weight: 800;
-    letter-spacing: -0.05em;
+    font-family: 'Comic CAT', 'Outfit', 'Inter', Arial, sans-serif;
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 900;
+    letter-spacing: 0.02em;
     line-height: 1;
+    -webkit-text-stroke: 1.1px currentColor;
   }
 
   .tl-stat-grid {

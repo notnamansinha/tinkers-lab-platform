@@ -2,11 +2,10 @@ import React, { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { COLLECTIONS } from '@/services/firebase/firestore'
-import { doc, getDoc, collection, query, where, getDocs, limit, addDoc, serverTimestamp } from 'firebase/firestore'
+import { doc, getDoc, collectionGroup, query, where, getDocs, limit } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { useAuth } from '@/contexts/AuthContext'
 import type { Equipment, Booking } from '@/types'
-import { toast } from 'sonner'
 import { ArrowLeft, Lock } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -53,7 +52,7 @@ const LAB_HOURS = ['09','10','11','12','13','14','15','16','17']
 export default function EquipmentDetailPage() {
   const { id }   = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { profile, user } = useAuth()
+  const { user } = useAuth()
 
   const [selectedDay,  setSelectedDay]  = useState<string>('')
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null)
@@ -74,11 +73,11 @@ export default function EquipmentDetailPage() {
     enabled: !!id,
   })
 
-  const { data: recentBookings = [], refetch } = useQuery({
+  const { data: recentBookings = [] } = useQuery({
     queryKey: ['bookings', 'equipment', id],
     queryFn: async () => {
       const q = query(
-        collection(db, COLLECTIONS.BOOKINGS),
+        collectionGroup(db, 'bookings'),
         where('equipmentId', '==', id!),
         limit(50)
       )
@@ -130,26 +129,9 @@ export default function EquipmentDetailPage() {
     if (!selectedSlot || !user) return
     setIsBooking(true)
     try {
-      await addDoc(collection(db, COLLECTIONS.BOOKINGS), {
-        equipmentId: id,
-        machineId:   equipment.machineId,
-        machineName: equipment.name,
-        userId:      user.uid,
-        userEmail:   user.email,
-        userName:    profile?.displayName || user.email,
-        date:        activeDay,
-        startTime:   `${selectedSlot}:00`,
-        endTime:     `${String(parseInt(selectedSlot) + 1).padStart(2, '0')}:00`,
-        status:      'approved',
-        purpose:     'Session',
-        createdAt:   serverTimestamp(),
-        updatedAt:   serverTimestamp(),
-      })
-      toast.success('Booking confirmed.')
-      setSelectedSlot(null)
-      refetch()
-    } catch {
-      toast.error('Conflict: This slot is unavailable.')
+      // Bookings must live under a project. Redirect to the full booking form
+      // (pre-selecting this machine) so the user picks a registered project.
+      navigate(`/bookings/new?machine=${encodeURIComponent(id!)}`)
     } finally {
       setIsBooking(false)
     }

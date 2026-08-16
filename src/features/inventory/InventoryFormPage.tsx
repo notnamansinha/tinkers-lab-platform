@@ -10,7 +10,7 @@ import { db } from '@/lib/firebase'
 import { useAuth } from '@/contexts/AuthContext'
 import { ArrowLeft, Save, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
-import { cn, cleanFirestoreData } from '@/lib/utils'
+import { cleanFirestoreData } from '@/lib/utils'
 import type { InventoryItem } from '@/types'
 import LoadingSpinner from '@/components/common/LoadingSpinner'
 

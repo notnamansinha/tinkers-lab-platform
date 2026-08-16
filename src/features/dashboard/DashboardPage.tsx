@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { collection, getDocs, query, where } from 'firebase/firestore'
+import { collection, collectionGroup, getDocs, query, where } from 'firebase/firestore'
 import { AlertTriangle, Box, CalendarDays, MessageSquare, Wrench, Bell } from 'lucide-react'
 import { db } from '@/lib/firebase'
 import { COLLECTIONS } from '@/services/firebase/firestore'
@@ -30,7 +30,7 @@ export default function DashboardPage() {
     queryKey: ['bookings', 'today', user?.uid],
     queryFn: async () => {
       const q = query(
-        collection(db, COLLECTIONS.BOOKINGS),
+        collectionGroup(db, 'bookings'),
         where('userId', '==', user!.uid),
         where('date', '==', today),
       )
@@ -58,7 +58,7 @@ export default function DashboardPage() {
       const today = todayStr()
       const nowTime = new Date().toTimeString().slice(0, 5)
       const q = query(
-        collection(db, COLLECTIONS.BOOKINGS),
+        collectionGroup(db, 'bookings'),
         where('userId', '==', user!.uid),
         where('date', '>=', today),
       )

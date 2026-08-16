@@ -22,7 +22,8 @@ const rawApiKey = import.meta.env.VITE_FIREBASE_API_KEY ||
       })()
     : undefined)
 
-const isEmulatorMode = import.meta.env.DEV && import.meta.env.VITE_USE_EMULATORS === 'true'
+const isTestMode = import.meta.env.MODE === 'test'
+const isEmulatorMode = (import.meta.env.DEV && import.meta.env.VITE_USE_EMULATORS === 'true') || isTestMode
 
 const firebaseConfig = {
   apiKey: rawApiKey || (isEmulatorMode ? 'fake-api-key-emulator' : ''),
@@ -67,7 +68,7 @@ export const db = initializeFirestore(app, {
 export const storage = getStorage(app)
 
 // Connect to emulators in development if needed
-if (import.meta.env.DEV && import.meta.env.VITE_USE_EMULATORS === 'true') {
+if (!isTestMode && import.meta.env.DEV && import.meta.env.VITE_USE_EMULATORS === 'true') {
   connectAuthEmulator(auth, 'http://localhost:9099')
   connectFirestoreEmulator(db, 'localhost', 8080)
   connectStorageEmulator(storage, 'localhost', 9199)

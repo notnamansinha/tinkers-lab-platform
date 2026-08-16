@@ -1,10 +1,9 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { collection, getDocs, orderBy, query, where } from 'firebase/firestore'
+import { collectionGroup, getDocs, orderBy, query, where } from 'firebase/firestore'
 import { ChevronLeft, ChevronRight, FileText, Plus } from 'lucide-react'
 import { db } from '@/lib/firebase'
-import { COLLECTIONS } from '@/services/firebase/firestore'
 import { useAuth } from '@/contexts/AuthContext'
 import { cn, todayStr } from '@/lib/utils'
 import type { Booking } from '@/types'
@@ -44,7 +43,7 @@ export default function BookingCalendarPage() {
   const { data: bookings = [] } = useQuery({
     queryKey: ['bookings', 'week', weekDays[0]],
     queryFn: async () => {
-      const reference = collection(db, COLLECTIONS.BOOKINGS)
+      const reference = collectionGroup(db, 'bookings')
       const bookingQuery = query(
         reference,
         where('date', '>=', weekDays[0]),
@@ -62,7 +61,7 @@ export default function BookingCalendarPage() {
   const { data: myBookings = [], isLoading: myBookingsLoading } = useQuery({
     queryKey: ['bookings', 'mine'],
     queryFn: async () => {
-      const reference = collection(db, COLLECTIONS.BOOKINGS)
+      const reference = collectionGroup(db, 'bookings')
       const bookingQuery = query(reference, where('userId', '==', user!.uid), orderBy('createdAt', 'desc'))
       const snapshot = await getDocs(bookingQuery)
       return snapshot.docs.map(document => ({ id: document.id, ...document.data() }) as Booking)

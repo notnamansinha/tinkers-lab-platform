@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint-build-unit:
+    name: Lint, Build & Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install app dependencies
+        run: npm ci
+
+      - name: Install Cloud Functions dependencies
+        run: npm ci --prefix functions
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type-check & build app
+        run: npm run build
+
+      - name: Compile Cloud Functions
+        run: npm --prefix functions run build
+
+      - name: Unit tests
+        run: npm test
+
+  rules-tests:
+    name: Firestore & Storage Rules Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Set up Java 21 (required by Firebase emulators)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Install rules-test dependencies
+        run: npm ci --prefix tests
+
+      - name: Run rules tests in emulators
+        run: npx firebase-tools emulators:exec --only firestore,storage --project demo-tinkers-lab "npm --prefix tests test"

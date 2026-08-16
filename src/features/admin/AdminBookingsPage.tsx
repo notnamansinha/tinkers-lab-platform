@@ -1,9 +1,9 @@
 import React, { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { collection, query, orderBy, getDocs } from 'firebase/firestore'
+import { collectionGroup, query, orderBy, getDocs } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
-import { COLLECTIONS } from '@/services/firebase/firestore'
 import { updateBookingStatus } from '@/services/firebase/bookings'
+import { useAuth } from '@/contexts/AuthContext'
 import { Search, Calendar, XCircle } from 'lucide-react'
 import { formatDateTime, cn } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -23,17 +23,18 @@ const STATUS_COLOR: Record<string, string> = {
 }
 
 export default function AdminBookingsPage() {
+  const { profile } = useAuth()
   const qc = useQueryClient()
   const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
-  const [rejectTargetId, setRejectTargetId] = useState<string | null>(null)
+  const [rejectTarget, setRejectTarget] = useState<Booking | null>(null)
   const [rejectionReason, setRejectionReason] = useState('')
   const [actionLoading, setActionLoading] = useState(false)
 
   const { data: bookings = [], isLoading } = useQuery({
     queryKey: ['admin', 'bookings'],
     queryFn: async () => {
-      const snap = await getDocs(query(collection(db, COLLECTIONS.BOOKINGS), orderBy('createdAt', 'desc')))
+      const snap = await getDocs(query(collectionGroup(db, 'bookings'), orderBy('createdAt', 'desc')))
       return snap.docs.map(d => ({ id: d.id, ...d.data() }) as Booking)
     },
     staleTime: 2 * 60 * 1000,
@@ -45,13 +46,20 @@ export default function AdminBookingsPage() {
   })
 
   const reject = async () => {
-    if (!rejectTargetId) return
+    if (!rejectTarget) return
     setActionLoading(true)
     try {
-      await updateBookingStatus(rejectTargetId, 'rejected', { rejectionReason })
+      await updateBookingStatus(rejectTarget.projectId, rejectTarget.id, 'rejected', {
+        rejectionReason,
+        actor: {
+          uid: profile?.uid ?? 'admin',
+          name: profile?.displayName ?? 'Coordinator',
+          email: profile?.email ?? '',
+        },
+      })
       toast.success('Booking rejected')
       qc.invalidateQueries({ queryKey: ['admin', 'bookings'] })
-      setRejectTargetId(null)
+      setRejectTarget(null)
       setRejectionReason('')
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Failed to reject booking')
@@ -123,7 +131,7 @@ export default function AdminBookingsPage() {
                   </TableCell>
                   <TableCell className="text-right">
                     {b.status === 'approved' && (
-                      <button onClick={() => { setRejectTargetId(b.id); setRejectionReason('') }} className="p-2 rounded-full hover:bg-[rgba(236,104,216,0.1)] text-[#EC68D8] transition-colors" aria-label="Reject booking">
+                      <button onClick={() => { setRejectTarget(b); setRejectionReason('') }} className="p-2 rounded-full hover:bg-[rgba(236,104,216,0.1)] text-[#EC68D8] transition-colors" aria-label="Reject booking">
                         <XCircle size={16} />
                       </button>
                     )}
@@ -136,8 +144,8 @@ export default function AdminBookingsPage() {
       </DataPanel>
 
       <ConfirmDialog
-        open={rejectTargetId !== null}
-        onOpenChange={(open) => { if (!open) setRejectTargetId(null) }}
+        open={rejectTarget !== null}
+        onOpenChange={(open) => { if (!open) setRejectTarget(null) }}
         title="Reject Booking"
         description="Optionally provide a reason for rejection."
         onConfirm={reject}

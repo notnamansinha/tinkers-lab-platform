@@ -13,7 +13,7 @@ import { KpiTile } from '@/components/common/KpiTile'
 import { toast } from 'sonner'
 
 export default function ToolCheckoutListPage() {
-  const { user, isStaff } = useAuth()
+  const { user, isStaff, profile } = useAuth()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [filter, setFilter] = useState<'all' | 'active' | 'overdue' | 'returned'>('all')
@@ -40,10 +40,14 @@ export default function ToolCheckoutListPage() {
     return true
   })
 
-  const handleQuickReturn = async (id: string) => {
-    setReturningId(id)
+  const handleQuickReturn = async (c: ToolCheckout) => {
+    setReturningId(c.id)
     try {
-      await returnTool(id, 'good')
+      await returnTool(c.projectId, c.id, 'good', undefined, {
+        uid: profile?.uid ?? user?.uid ?? c.userId,
+        name: profile?.displayName ?? c.userName,
+        email: profile?.email ?? c.userEmail,
+      })
       toast.success('Tool marked as returned!')
       queryClient.invalidateQueries({ queryKey: ['toolCheckouts'] })
     } catch {
@@ -165,7 +169,7 @@ export default function ToolCheckoutListPage() {
                     </div>
                     {!c.returnedAt && (
                       <button
-                        onClick={() => handleQuickReturn(c.id)}
+                        onClick={() => handleQuickReturn(c)}
                         disabled={returningId === c.id}
                         className={cn(
                           'shrink-0 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider border transition-all',

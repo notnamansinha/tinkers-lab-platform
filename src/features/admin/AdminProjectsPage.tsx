@@ -1,8 +1,10 @@
 import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { collection, query, orderBy, where, getDocs, doc, updateDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { COLLECTIONS } from '@/services/firebase/firestore'
+import { updateProjectStatus } from '@/services/firebase/projects'
 import { Search, FolderKanban, CheckCircle, XCircle } from 'lucide-react'
 import { formatDateTime, cn, cleanFirestoreData, debugLog } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -28,6 +30,7 @@ type ExtendedProject = Project & { docId: string; firestoreDocId?: string }
 export default function AdminProjectsPage() {
   const { profile } = useAuth()
   const qc = useQueryClient()
+  const navigate = useNavigate()
   const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
   const [rejectProject, setRejectProject] = useState<ExtendedProject | null>(null)
@@ -46,7 +49,6 @@ export default function AdminProjectsPage() {
           ...data,
           docId: d.id,
           firestoreDocId: d.id,
-          id: (data as any).id || d.id,
         } as ExtendedProject
       })
     },
@@ -64,11 +66,11 @@ export default function AdminProjectsPage() {
     setActionLoading(true)
     let targetDocId = projectItem.docId || projectItem.firestoreDocId || (projectItem as any)._id
 
-    // Fallback: If docId is not a Firestore doc ID (or is missing), query by sequential project code (e.g. "TL-001")
-    if (!targetDocId || targetDocId === projectItem.id) {
+    // Fallback: If docId is missing, query by the sequential project code (e.g. "TL-001")
+    if (!targetDocId) {
       try {
         const ref = collection(db, COLLECTIONS.PROJECTS)
-        const q = query(ref, where('id', '==', projectItem.id))
+        const q = query(ref, where('projectCode', '==', projectItem.projectCode))
         const snap = await getDocs(q)
         if (!snap.empty) {
           targetDocId = snap.docs[0].id
@@ -80,19 +82,23 @@ export default function AdminProjectsPage() {
 
     if (!targetDocId) {
       toast.error('Cannot update project: Missing document ID.')
+      setActionLoading(false)
       return
     }
 
     try {
-      const updates = cleanFirestoreData({
-        status,
-        rejectionReason: reason || null,
+      await updateProjectStatus(
+        targetDocId,
+        status as 'active' | 'rejected' | 'on_hold' | 'completed',
+        reason,
+        { uid: profile?.uid ?? 'admin', name: profile?.displayName || 'Admin', email: profile?.email || '' }
+      )
+      // Keep reviewedBy/reviewedAt audit metadata (not part of the core Project type)
+      await updateDoc(doc(db, COLLECTIONS.PROJECTS, targetDocId), cleanFirestoreData({
         reviewedBy: profile?.displayName || 'Admin',
+        reviewedByEmail: profile?.email || '',
         reviewedAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      })
-
-      await updateDoc(doc(db, COLLECTIONS.PROJECTS, targetDocId), updates)
+      }))
       toast.success(`Project marked as ${status}`)
       qc.invalidateQueries({ queryKey: ['admin', 'projects_v2'] })
     } catch (error: unknown) {
@@ -163,11 +169,17 @@ export default function AdminProjectsPage() {
             ) : filtered.length === 0 ? (
               <TableRow><TableCell colSpan={9} className="h-24 text-center text-white/50">No projects found.</TableCell></TableRow>
             ) : filtered.map((p, idx) => (
-              <TableRow key={p.docId || p.id || idx} className={cn('border-0', p.status === 'pending' && 'bg-orange/5')}>
+              <TableRow key={p.docId || p.projectCode || idx} className={cn('border-0', p.status === 'pending' && 'bg-orange/5')}>
                 <TableCell className="font-mono text-xs text-white/50">{filtered.length - idx}</TableCell>
                 <TableCell className="font-semibold text-white">
-                  <div>{p.title}</div>
-                  <div className="font-mono text-xs text-white/50">{p.id}</div>
+                  <button
+                    onClick={() => navigate(`/admin/projects/${p.docId || p.firestoreDocId}`)}
+                    className="text-left hover:underline underline-offset-2 transition-colors"
+                    title="View project details & logs"
+                  >
+                    <div>{p.title}</div>
+                    <div className="font-mono text-xs text-white/50">{p.projectCode}</div>
+                  </button>
                 </TableCell>
                 <TableCell>
                   <div className="text-sm font-medium text-white">{p.userName}</div>

@@ -114,7 +114,7 @@ function CheckoutForm({ projects, user, profile, qc }: any) {
   const suggestions = toolSuggestions[category] ?? []
 
   const onSubmit = async (data: CheckoutFormData) => {
-    const selectedProject = projects.find((p: any) => p.id === data.projectId)
+    const selectedProject = projects.find((p: any) => p.docId === data.projectId)
     try {
       await createToolCheckout({
         userId:      user.uid,
@@ -149,7 +149,7 @@ function CheckoutForm({ projects, user, profile, qc }: any) {
           <Field label="Project" required error={errors.projectId?.message}>
             <select {...register('projectId')} className={selectClass(errors.projectId?.message)}>
               <option value="">— Select a project —</option>
-              {projects.map((p: any) => <option key={p.id} value={p.id}>{p.id} — {p.title}</option>)}
+              {projects.map((p: any) => <option key={p.docId} value={p.docId}>{p.projectCode} — {p.title}</option>)}
             </select>
           </Field>
 
@@ -246,7 +246,7 @@ function CheckoutForm({ projects, user, profile, qc }: any) {
 }
 
 // ── Sub-component: Return Form ────────────────────────────────────────────────
-function ReturnForm({ activeCheckouts, qc }: { activeCheckouts: ToolCheckout[]; qc: any }) {
+function ReturnForm({ activeCheckouts, qc, profile }: { activeCheckouts: ToolCheckout[]; qc: any; profile: { uid: string; displayName: string; email: string } | null }) {
   const {
     register, handleSubmit, watch,
     formState: { errors, isSubmitting },
@@ -257,8 +257,17 @@ function ReturnForm({ activeCheckouts, qc }: { activeCheckouts: ToolCheckout[]; 
   const watchedCondition = watch('conditionAtReturn')
 
   const onSubmit = async (data: ReturnFormData) => {
+    const checkout = activeCheckouts.find(c => c.id === data.checkoutId)
+    if (!checkout) {
+      toast.error('Checkout not found. Refresh and try again.')
+      return
+    }
     try {
-      await returnTool(data.checkoutId, data.conditionAtReturn, data.notes)
+      await returnTool(checkout.projectId, data.checkoutId, data.conditionAtReturn, data.notes, {
+        uid: profile?.uid ?? checkout.userId,
+        name: profile?.displayName ?? checkout.userName,
+        email: profile?.email ?? checkout.userEmail,
+      })
       toast.success('Tool returned successfully. Thank you!')
       qc.invalidateQueries({ queryKey: ['toolCheckouts'] })
     } catch (e) {
@@ -350,7 +359,7 @@ export default function ToolCheckoutPage() {
 
   const { data: projects = [], isLoading: projectsLoading } = useQuery({
     queryKey: ['projects', 'user', user?.uid],
-    queryFn: () => getUserProjects(user!.uid),
+    queryFn: () => getUserProjects(user!.uid, 'active'),
     enabled: !!user,
     staleTime: 5 * 60 * 1000,
   })
@@ -366,7 +375,7 @@ export default function ToolCheckoutPage() {
   React.useEffect(() => {
     activeCheckouts.forEach(c => {
       if (isCheckoutOverdue(c) && !c.isOverdue) {
-        markCheckoutOverdue(c.id)
+        markCheckoutOverdue(c.projectId, c.id)
       }
     })
   }, [activeCheckouts])
@@ -440,7 +449,7 @@ export default function ToolCheckoutPage() {
 
       {mode === 'checkout'
         ? <CheckoutForm projects={projects} user={user} profile={profile} qc={qc} />
-        : <ReturnForm   activeCheckouts={activeCheckouts} qc={qc} />
+        : <ReturnForm   activeCheckouts={activeCheckouts} qc={qc} profile={profile} />
       }
     </div>
   )
