@@ -22,7 +22,7 @@ const rawApiKey = import.meta.env.VITE_FIREBASE_API_KEY ||
       })()
     : undefined)
 
-const isTestMode = import.meta.env.MODE === 'test' || Boolean(process.env.VITEST)
+const isTestMode = import.meta.env.MODE === 'test'
 const isEmulatorMode = (import.meta.env.DEV && import.meta.env.VITE_USE_EMULATORS === 'true') || isTestMode
 
 const firebaseConfig = {
