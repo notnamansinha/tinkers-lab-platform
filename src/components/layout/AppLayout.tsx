@@ -37,6 +37,13 @@ export default function AppLayout() {
 
   return (
     <div className="flex min-h-svh flex-col bg-black text-white">
+      {/* Skip link (WCAG 2.4.1) — visually hidden until keyboard focus */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-lime focus:px-4 focus:py-2 focus:text-sm focus:font-bold focus:text-black"
+      >
+        Skip to main content
+      </a>
       <header className="sticky top-0 z-40 flex h-16 items-center gap-3 border-b border-hairline bg-black px-4 md:hidden">
         {location.pathname.startsWith('/admin') && (
           <button
@@ -152,7 +159,7 @@ export default function AppLayout() {
           </div>
         </aside>
 
-        <main className="min-w-0 flex-1 pb-[var(--tl-mobile-nav-space)] md:pb-0">
+        <main id="main-content" className="min-w-0 flex-1 pb-[var(--tl-mobile-nav-space)] md:pb-0">
           <div className="hidden h-14 items-center justify-between border-b border-hairline px-2 md:flex xl:px-4">
             <div className="flex-1" />
             <BrandLockup compact />

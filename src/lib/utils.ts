@@ -39,6 +39,18 @@ export function todayStr(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
+/**
+ * Uploaded-file allow-list used when rendering user-supplied URLs.
+ * Project images/documents must come from our own Firebase Storage bucket —
+ * anything else (tracking pixels, mixed content, off-site phishing links)
+ * is dropped at render time as well as rejected server-side in createProject.
+ */
+export function isSafeStorageUrl(url: string | undefined | null): url is string {
+  return typeof url === 'string'
+    && /^https:\/\/firebasestorage\.googleapis\.com\//.test(url)
+    && url.length <= 500
+}
+
 export function generateId(prefix: string, count: number): string {
   return `${prefix}-${String(count + 1).padStart(3, '0')}`
 }

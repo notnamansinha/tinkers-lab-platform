@@ -21,7 +21,8 @@ import { ConfirmDialog } from '@/components/common/ConfirmDialog'
 import { PageHeader } from '@/components/common/PageHeader'
 import { DataPanel } from '@/components/common/DataPanel'
 import { Button } from '@/components/ui/button'
-import { formatDateTime, formatRelativeTime, cn, cleanFirestoreData } from '@/lib/utils'
+import { formatDateTime, formatRelativeTime, cn, cleanFirestoreData, isSafeStorageUrl } from '@/lib/utils'
+// Only render uploads from our own Storage bucket — server mirrors this in createProject.
 import { toast } from 'sonner'
 
 const STATUS_STYLE: Record<string, string> = {
@@ -114,8 +115,8 @@ export default function AdminProjectDetailPage() {
     enabled: !!id,
   })
 
-  const imageUrls = project?.imageUrls ?? []
-  const documentUrls = project?.documentUrls ?? []
+  const imageUrls = (project?.imageUrls ?? []).filter(isSafeStorageUrl)
+  const documentUrls = (project?.documentUrls ?? []).filter(isSafeStorageUrl)
 
   const updateStatus = async (status: 'active' | 'rejected' | 'on_hold' | 'completed', reason?: string) => {
     if (!project?.docId) return

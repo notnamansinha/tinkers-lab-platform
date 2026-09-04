@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
-import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore'
+import { collection, query, where, orderBy, limit, onSnapshot } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { COLLECTIONS } from '@/services/firebase/firestore'
 import { useAuth } from '@/contexts/AuthContext'
 import type { Notification } from '@/types'
+
+const NOTIFICATIONS_LIMIT = 50
 
 export function useNotifications() {
   const { user } = useAuth()
@@ -21,11 +23,12 @@ export function useNotifications() {
     const q = query(
       ref,
       where('userId', '==', user.uid),
-      orderBy('createdAt', 'desc')
+      orderBy('createdAt', 'desc'),
+      limit(NOTIFICATIONS_LIMIT), // bounded server-side — no unbounded scan
     )
 
     const unsubscribe = onSnapshot(q, (snap) => {
-      const data = snap.docs.slice(0, 50).map((d) => ({
+      const data = snap.docs.map((d) => ({
         id: d.id,
         ...d.data(),
       })) as Notification[]

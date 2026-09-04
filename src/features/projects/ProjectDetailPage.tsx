@@ -10,7 +10,7 @@ import { ArrowLeft, Edit, Calendar, Clock, User, Mail, Phone, Building, IdCard, 
 import { useAuth } from '@/contexts/AuthContext'
 import type { Project, ActivityLogEntry, ProjectMember } from '@/types'
 import LoadingSpinner from '@/components/common/LoadingSpinner'
-import { formatRelativeTime, cn } from '@/lib/utils'
+import { formatRelativeTime, cn, isSafeStorageUrl } from '@/lib/utils'
 
 const STATUS_STYLE: Record<string, string> = {
   pending:   'border-orange/30 bg-orange/10 text-orange',
@@ -135,9 +135,11 @@ export default function ProjectDetailPage() {
         Project ID: {project.projectCode}
       </p>
 
-      {(project.imageUrls?.length ?? 0) > 0 && (
+      {/* Gallery — only render uploads from our own Storage bucket (server
+          duplicates this allow-list in createProject) */}
+      {(project.imageUrls?.filter(isSafeStorageUrl).length ?? 0) > 0 && (
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-          {project.imageUrls!.map((url) => (
+          {project.imageUrls!.filter(isSafeStorageUrl).map((url) => (
             <a key={url} href={url} target="_blank" rel="noreferrer" className="group overflow-hidden rounded-md border border-white/10">
               <img src={url} alt="Project" className="aspect-video w-full object-cover transition-transform group-hover:scale-105" />
             </a>
