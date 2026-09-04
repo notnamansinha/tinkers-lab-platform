@@ -90,6 +90,16 @@ describe('storage — project files', () => {
     await assertSucceeds(put(storage, `projects/${PROJECT_ID_DOC}/documents/report.pdf`, new Uint8Array(100), 'application/pdf'))
   })
 
+  it('the project owner can read their own documents', async () => {
+    const storage = env.authenticatedContext(STUDENT).storage()
+    await assertSucceeds(storage.ref(`projects/${PROJECT_ID_DOC}/documents/report.pdf`).getMetadata())
+  })
+
+  it('a non-owner student CANNOT read another project\'s documents', async () => {
+    const storage = env.authenticatedContext(OTHER).storage()
+    await assertFails(storage.ref(`projects/${PROJECT_ID_DOC}/documents/report.pdf`).getMetadata())
+  })
+
   it('a non-owner student cannot upload to another project', async () => {
     const storage = env.authenticatedContext(OTHER).storage()
     await assertFails(put(storage, `projects/${PROJECT_ID_DOC}/documents/report.pdf`, new Uint8Array(100), 'application/pdf'))

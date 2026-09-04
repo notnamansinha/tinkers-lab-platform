@@ -28,6 +28,23 @@ const EXPECTED_NEEDS = [
   'Oscilloscope', 'Function Generator', 'Soldering Station', 'Hand Tools', 'Power Tools', 'Other',
 ]
 
+// Uploaded files must come from our own Firebase Storage bucket — anything
+// else (tracking pixels, phishing links, mixed http) is rejected server-side.
+const STORAGE_URL_PATTERN = /^https:\/\/firebasestorage\.googleapis\.com\//
+const MAX_FILE_URLS = 12
+
+function isAllowedFileUrl(value: unknown): value is string {
+  return typeof value === 'string'
+    && STORAGE_URL_PATTERN.test(value)
+    && value.length <= 500
+}
+
+function isValidFileUrls(value: unknown): value is string[] {
+  return Array.isArray(value)
+    && value.length <= MAX_FILE_URLS
+    && value.every(isAllowedFileUrl)
+}
+
 function isRealDate(value: string): boolean {
   if (!DATE_PATTERN.test(value)) return false
   const date = new Date(`${value}T00:00:00Z`)
@@ -88,6 +105,12 @@ export const createProject = onCall(
     }
     if (input.resourceLink && !/^https?:\/\//.test(input.resourceLink)) {
       throw new HttpsError('invalid-argument', 'resourceLink must be an http(s) URL.')
+    }
+    if (input.imageUrls !== undefined && !isValidFileUrls(input.imageUrls)) {
+      throw new HttpsError('invalid-argument', 'imageUrls must be https Firebase Storage URLs (max 12).')
+    }
+    if (input.documentUrls !== undefined && !isValidFileUrls(input.documentUrls)) {
+      throw new HttpsError('invalid-argument', 'documentUrls must be https Firebase Storage URLs (max 12).')
     }
     for (const key of Object.keys(input)) {
       if (!PROJECT_KEYS.includes(key as (typeof PROJECT_KEYS)[number])) {

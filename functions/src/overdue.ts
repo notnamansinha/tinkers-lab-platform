@@ -1,6 +1,6 @@
 import { onSchedule } from 'firebase-functions/v2/scheduler'
 import { getFirestore, FieldValue } from 'firebase-admin/firestore'
-import { notifyUser } from './lib/helpers'
+import { notifyUser, todayInIndia } from './lib/helpers'
 
 const db = getFirestore()
 
@@ -9,17 +9,14 @@ const db = getFirestore()
 // Previously isOverdue was client-computed only. This scheduled
 // function (02:00 Asia/Kolkata) flags every unreturned checkout
 // whose expected return date has passed, and notifies the owner.
+// "Today" is computed in Asia/Kolkata — the scheduler runs on
+// UTC, so using a UTC date here would flag checkouts a day late.
 // ============================================================
-
-function todayStr(): string {
-  const d = new Date()
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-}
 
 export const sweepOverdueCheckouts = onSchedule(
   { schedule: '0 2 * * *', timeZone: 'Asia/Kolkata', maxInstances: 1 },
   async () => {
-    const today = todayStr()
+    const today = todayInIndia()
     const snap = await db
       .collectionGroup('checkouts')
       .where('action', '==', 'checking_out')

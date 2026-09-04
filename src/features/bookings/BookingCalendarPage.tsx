@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { collectionGroup, getDocs, orderBy, query, where } from 'firebase/firestore'
+import { collection, collectionGroup, getDocs, orderBy, query, where } from 'firebase/firestore'
 import { ChevronLeft, ChevronRight, FileText, Plus } from 'lucide-react'
 import { db } from '@/lib/firebase'
 import { useAuth } from '@/contexts/AuthContext'
@@ -43,16 +43,18 @@ export default function BookingCalendarPage() {
   const { data: bookings = [] } = useQuery({
     queryKey: ['bookings', 'week', weekDays[0]],
     queryFn: async () => {
-      const reference = collectionGroup(db, 'bookings')
-      const bookingQuery = query(
+      // Machine-wide availability comes from the privacy-safe `slots`
+      // collection (server-written, no user identity) — reading other
+      // users' private booking docs is denied by the security rules.
+      const reference = collection(db, 'slots')
+      const slotQuery = query(
         reference,
         where('date', '>=', weekDays[0]),
         where('date', '<=', weekDays[6]),
-        where('status', 'in', ['pending', 'approved']),
         orderBy('date', 'asc'),
         orderBy('startTime', 'asc'),
       )
-      const snapshot = await getDocs(bookingQuery)
+      const snapshot = await getDocs(slotQuery)
       return snapshot.docs.map(document => ({ id: document.id, ...document.data() }) as Booking)
     },
     staleTime: 2 * 60 * 1000,

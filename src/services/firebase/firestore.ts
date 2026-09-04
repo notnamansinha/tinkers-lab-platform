@@ -20,6 +20,8 @@ export const COLLECTIONS = {
   AUDIT_LOGS: 'auditLogs',
   SETTINGS: 'settings',
   FEEDBACK: 'feedback',
+  // Privacy-safe machine occupancy (no user identity) — server-written.
+  SLOTS: 'slots',
   // Atomic counter docs — counters/projects → { nextId: N }
   COUNTERS: 'counters',
 } as const

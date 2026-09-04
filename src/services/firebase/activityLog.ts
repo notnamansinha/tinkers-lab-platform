@@ -3,20 +3,20 @@ import {
   query,
   orderBy,
   getDocs,
-  addDoc,
-  serverTimestamp,
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { COLLECTIONS, SUBCOLLECTIONS } from './firestore'
+import { appendActivityLogCallable, type AppendActivityLogInput } from './functions'
 import type { ActivityLogEntry, ActivityLogType } from '@/types'
 
 // ============================================================
 // PROJECT ACTIVITY LOG SERVICE
 // Unified chronological timeline stored under each project:
 //   projects/{projectDocId}/activityLog/{logId}
-// Gives a single place to see everything that happened on a
-// project — bookings, checkouts, returns, status changes —
-// without cross-collection joins.
+// ⚠️ APPENDS ARE SERVER-ENFORCED via the `appendActivityLog` Cloud
+// Function (functions/src/appendActivityLog.ts) — it validates
+// project ownership + entry type and stamps a SERVER timestamp.
+// Direct client writes are denied by firestore.rules.
 // ============================================================
 
 export interface NewActivityLogEntry {
@@ -29,26 +29,25 @@ export interface NewActivityLogEntry {
 }
 
 /**
- * Append an entry to a project's activityLog subcollection.
- * Immutable — there is intentionally no update/delete path.
+ * Append an entry to a project's activityLog subcollection via the
+ * server-enforced callable. Immutable — no update/delete path exists.
+ * The callable derives actor identity from the authenticated user, so the
+ * caller-supplied userId/userName/userEmail are intentionally ignored
+ * (kept in the signature for call-site compatibility).
  */
 export async function logProjectActivity(
   projectDocId: string,
   entry: NewActivityLogEntry
 ): Promise<string> {
-  const ref = collection(db, COLLECTIONS.PROJECTS, projectDocId, SUBCOLLECTIONS.PROJECT_ACTIVITY_LOG)
-  const docRef = await addDoc(ref, {
-    type: entry.type,
-    // Keep summaries within the rules-enforced 300-char limit (rejection reasons
-    // can be long). Truncate defensively so the log write never fails.
+  const result = await appendActivityLogCallable({
+    projectId: projectDocId,
+    type: entry.type as AppendActivityLogInput['type'],
+    // Keep summaries within the server-enforced 300-char limit (rejection
+    // reasons can be long). Truncate defensively so the call never fails.
     summary: entry.summary.length > 280 ? entry.summary.slice(0, 277) + '…' : entry.summary,
-    resourceId: entry.resourceId ?? null,
-    userId: entry.userId,
-    userName: entry.userName,
-    userEmail: entry.userEmail,
-    createdAt: serverTimestamp(),
+    resourceId: entry.resourceId,
   })
-  return docRef.id
+  return result.data.logId
 }
 
 /**

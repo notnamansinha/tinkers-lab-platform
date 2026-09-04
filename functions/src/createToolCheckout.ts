@@ -1,8 +1,10 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https'
 import { getFirestore, FieldValue } from 'firebase-admin/firestore'
-import { getUserProfile } from './lib/helpers'
+import { getUserProfile, todayInIndia } from './lib/helpers'
 
 const db = getFirestore()
+
+const MAX_OPEN_CHECKOUTS = 20
 
 const CHECKOUT_KEYS = [
   'projectId', 'toolCategory', 'toolName', 'quantity', 'locationOfUse',
@@ -26,14 +28,6 @@ interface CreateToolCheckoutInput {
   expectedReturnTime?: string
   conditionAtCheckout: 'good' | 'fair' | 'damaged'
   notes?: string
-}
-
-function todayInIndia(): string {
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit',
-  }).formatToParts(new Date())
-  const get = (type: string) => parts.find((part) => part.type === type)?.value ?? ''
-  return `${get('year')}-${get('month')}-${get('day')}`
 }
 
 function isRealDate(value: string): boolean {
@@ -90,6 +84,24 @@ export const createToolCheckout = onCall(
     }
     if (!CONDITIONS.includes(input.conditionAtCheckout)) {
       throw new HttpsError('invalid-argument', 'Invalid checkout condition.')
+    }
+
+    // ── Cap concurrent open checkouts (anti-hoarding) ───────────────
+    // A user cannot accumulate an unbounded pile of unreturned tools.
+    const openSnap = await db
+      .collectionGroup('checkouts')
+      .where('userId', '==', request.auth.uid)
+      .where('action', '==', 'checking_out')
+      .get()
+    let openCount = 0
+    for (const doc of openSnap.docs) {
+      if (doc.data().returnedAt == null) openCount += 1
+    }
+    if (openCount >= MAX_OPEN_CHECKOUTS) {
+      throw new HttpsError(
+        'resource-exhausted',
+        `You already have ${openCount} open tool checkouts. Return some tools before checking out more.`,
+      )
     }
 
     const projectRef = db.collection('projects').doc(input.projectId)

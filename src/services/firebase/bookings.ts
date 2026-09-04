@@ -22,7 +22,10 @@ import type { Booking, BookingStatus } from '@/types'
 // ⚠️ CREATION is server-enforced via the `createBooking` Cloud
 // Function (src/services/firebase/functions.ts) — direct client
 // creates are denied by firestore.rules so conflict detection
-// cannot be bypassed. This module handles reads + status updates.
+// cannot be bypassed.
+// ⚠️ MACHINE-WIDE AVAILABILITY comes from the privacy-safe `slots`
+// collection (no user identity), NOT from booking documents — the
+// rules keep booking docs owner/staff-only.
 // ============================================================
 
 /** collectionGroup reference for querying bookings across ALL projects */
@@ -31,22 +34,37 @@ function allBookings() {
 }
 
 /**
- * Get all approved bookings for a machine on a specific date.
- * Used by the slot picker UI to show booked times.
- * COLLECTION GROUP query — narrow: equipmentId + date.
+ * Privacy-safe machine availability record (written by createBooking).
+ * Contains no user identity — only occupancy.
+ */
+export interface BookingSlot {
+  id: string
+  equipmentId: string
+  machineId: string
+  machineName: string
+  date: string
+  startTime: string
+  endTime: string
+  bookingId: string
+  status: 'approved'
+}
+
+/**
+ * Get every approved slot for a machine on a specific date.
+ * Used by the slot picker UI to show occupied times. Readable by ANY
+ * authenticated user (no PII), so queries never hit permission denials.
  */
 export async function getBookingsForSlot(
   equipmentId: string,
   date: string
-): Promise<Booking[]> {
+): Promise<BookingSlot[]> {
   const q = query(
-    allBookings(),
+    collection(db, COLLECTIONS.SLOTS),
     where('equipmentId', '==', equipmentId),
     where('date', '==', date),
-    where('status', '==', 'approved')
   )
   const snap = await getDocs(q)
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Booking)
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as BookingSlot)
 }
 
 /**

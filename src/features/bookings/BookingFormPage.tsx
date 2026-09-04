@@ -152,8 +152,6 @@ export default function BookingFormPage() {
     if (!user || !profile) { toast.error('Please sign in'); return }
     if (!selectedMachine)  { toast.error('Machine not found'); return }
 
-    const selectedProject = projects.find(p => p.docId === data.projectId)
-
     try {
       // Server-enforced creation (Cloud Function) — runs the conflict check
       // transactionally so two clients cannot double-book a slot.
@@ -162,7 +160,8 @@ export default function BookingFormPage() {
         machineId:   selectedMachine.machineId,
         machineName: selectedMachine.name,
         projectId:   data.projectId,
-        projectTitle: selectedProject?.title ?? '',
+        // projectTitle is server-derived from the project doc — never sent by
+        // the client (the server rejects it as an unexpected field).
         date:        data.date,
         startTime:   data.startTime,
         endTime:     data.endTime,
@@ -389,7 +388,7 @@ export default function BookingFormPage() {
                   {existingBookings.map(b => (
                     <div key={b.id} className="flex items-center gap-2 text-xs text-foreground">
                       <span className="w-2 h-2 rounded-full bg-destructive shrink-0" />
-                      {b.startTime} – {b.endTime} ({b.userName})
+                      {b.startTime} – {b.endTime}
                     </div>
                   ))}
                 </div>

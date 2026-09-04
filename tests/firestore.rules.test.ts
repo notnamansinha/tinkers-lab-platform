@@ -48,6 +48,18 @@ const seedData = async () => {
     await db.doc('projects/project-of-a/activityLog/e1').set({
       type: 'booking', summary: 'Booked X', userId: 'student-a', createdAt: new Date(),
     })
+    // A registration owned by student-a (workshop-registration update tests).
+    await db.doc('workshopRegistrations/reg1').set({
+      workshopId: 'w1', workshopTitle: 'Soldering 101', userId: 'student-a',
+      userName: 'A', userEmail: 'a@x.com', status: 'registered',
+      certificateIssued: false, createdAt: new Date(), updatedAt: new Date(),
+    })
+    // A slot doc as the createBooking function would write it.
+    await db.doc('slots/bambu-x1c_2026-01-05_10:00').set({
+      equipmentId: 'bambu-x1c', machineId: 'bambu-x1c', machineName: 'Bambu X1C',
+      date: '2026-01-05', startTime: '10:00', endTime: '11:00',
+      bookingId: 'b2', status: 'approved', createdAt: new Date(),
+    })
   })
 }
 
@@ -192,10 +204,10 @@ describe('feedback (server-enforced creation)', () => {
   })
 })
 
-describe('activityLog (immutable timeline)', () => {
-  it('the project owner can append an entry', async () => {
+describe('activityLog (immutable, server-appended timeline)', () => {
+  it('direct client appends are denied (function-only)', async () => {
     const db = env.authenticatedContext(STUDENT_A).firestore()
-    await assertSucceeds(db.doc('projects/project-of-a/activityLog/e2').set({
+    await assertFails(db.doc('projects/project-of-a/activityLog/e2').set({
       type: 'checkout', summary: 'Checked out Y', userId: 'student-a',
       userName: 'X', userEmail: 'x@x.com', createdAt: new Date(),
     }))
@@ -212,6 +224,63 @@ describe('activityLog (immutable timeline)', () => {
     await assertFails(db.doc('projects/project-of-a/activityLog/e3').set({
       type: 'checkout', summary: 'Forged entry', userId: STUDENT_B,
       userName: 'Someone else', userEmail: 'other@example.com', createdAt: new Date(),
+    }))
+  })
+})
+
+describe('slots (privacy-safe machine occupancy)', () => {
+  it('any authenticated user can read a slot', async () => {
+    const db = env.authenticatedContext(STUDENT_B).firestore()
+    await assertSucceeds(db.doc('slots/bambu-x1c_2026-01-05_10:00').get())
+  })
+
+  it('unauthenticated users cannot read slots', async () => {
+    const db = env.unauthenticatedContext().firestore()
+    await assertFails(db.doc('slots/bambu-x1c_2026-01-05_10:00').get())
+  })
+
+  it('clients cannot write slots (server-written only)', async () => {
+    const db = env.authenticatedContext(STAFF).firestore()
+    await assertFails(db.doc('slots/bambu-x1c_2026-01-05_11:00').set({
+      equipmentId: 'bambu-x1c', date: '2026-01-05', startTime: '11:00',
+      endTime: '12:00', bookingId: 'x', status: 'approved',
+    }))
+  })
+})
+
+describe('workshopRegistrations', () => {
+  it('the owner can cancel their own registration', async () => {
+    const db = env.authenticatedContext(STUDENT_A).firestore()
+    await assertSucceeds(db.doc('workshopRegistrations/reg1').update({
+      status: 'cancelled', updatedAt: new Date(),
+    }))
+  })
+
+  it('the owner can leave feedback/rating after a workshop', async () => {
+    const db = env.authenticatedContext(STUDENT_A).firestore()
+    await assertSucceeds(db.doc('workshopRegistrations/reg1').update({
+      feedback: 'Great session!', rating: 5, updatedAt: new Date(),
+    }))
+  })
+
+  it('the owner cannot self-mark as attended or claim a certificate', async () => {
+    const db = env.authenticatedContext(STUDENT_A).firestore()
+    await assertFails(db.doc('workshopRegistrations/reg1').update({
+      status: 'attended', certificateIssued: true, updatedAt: new Date(),
+    }))
+  })
+
+  it('the owner cannot change their identity or workshop on the doc', async () => {
+    const db = env.authenticatedContext(STUDENT_A).firestore()
+    await assertFails(db.doc('workshopRegistrations/reg1').update({
+      userName: 'Forged Name', userId: STUDENT_B, updatedAt: new Date(),
+    }))
+  })
+
+  it('a non-owner cannot modify someone else\'s registration', async () => {
+    const db = env.authenticatedContext(STUDENT_B).firestore()
+    await assertFails(db.doc('workshopRegistrations/reg1').update({
+      status: 'cancelled', updatedAt: new Date(),
     }))
   })
 })

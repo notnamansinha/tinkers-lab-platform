@@ -40,10 +40,12 @@ service firebase.storage {
 
     // ================================================================
     // PROJECT IMAGES (project gallery / proof-of-work)
-    // Read: any authenticated user. Write/delete: project owner or staff.
+    // Read/write/delete: project owner or staff — matches the Firestore
+    // project-doc read rule (owner/staff only). Private proof-of-work must
+    // not be readable by arbitrary authenticated users.
     // ================================================================
     match /projects/{projectId}/images/{fileName} {
-      allow read:   if request.auth != null;
+      allow read:   if isProjectOwner(projectId) || isStaff();
       allow write:  if (isProjectOwner(projectId) || isStaff())
                     && request.resource.size <= 5 * 1024 * 1024
                     && request.resource.contentType.matches('image/(jpeg|png|webp)');
@@ -52,11 +54,10 @@ service firebase.storage {
 
     // ================================================================
     // PROJECT DOCUMENTS (reports, CAD files, etc.)
-    // Read: any authenticated user. Write/delete: project owner or staff.
-    // Larger size budget and broader content types than images.
+    // Read/write/delete: project owner or staff — same parity as images.
     // ================================================================
     match /projects/{projectId}/documents/{fileName} {
-      allow read:   if request.auth != null;
+      allow read:   if isProjectOwner(projectId) || isStaff();
       allow write:  if (isProjectOwner(projectId) || isStaff())
                     && request.resource.size <= 10 * 1024 * 1024
                     && request.resource.contentType.matches('application/(pdf|msword|vnd.openxmlformats-officedocument.wordprocessingml.document)|text/(plain|markdown)|image/(jpeg|png|webp)');

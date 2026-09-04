@@ -1,7 +1,7 @@
 import { onCall } from 'firebase-functions/v2/https'
 import { HttpsError } from 'firebase-functions/v2/https'
 import { getFirestore, FieldValue } from 'firebase-admin/firestore'
-import { getUserProfile } from './lib/helpers'
+import { getUserProfile, todayInIndia } from './lib/helpers'
 
 const db = getFirestore()
 
@@ -14,13 +14,21 @@ const db = getFirestore()
 
 const BOOKING_KEYS = [
   'equipmentId', 'machineId', 'machineName', 'userId', 'userEmail', 'userName',
-  'projectId', 'projectTitle', 'date', 'startTime', 'endTime', 'purpose',
+  'projectId', 'date', 'startTime', 'endTime', 'purpose',
   'consumables', 'safetyAgreementAccepted', 'status', 'rejectionReason',
   'cancelledBy', 'createdAt', 'updatedAt',
 ] as const
 
+// projectTitle is deliberately NOT in the allowlist: it is always derived
+// server-side from the project doc, so a client-supplied title is rejected.
+
 const TIME_PATTERN = /^[0-9]{2}:[0-9]{2}$/
 const DATE_PATTERN = /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/
+
+// Sanity cap so a single payload cannot blow up the consumables map.
+const MAX_CONSUMABLES_KEYS = 100
+const MAX_CONSUMABLES_KEY_LEN = 50
+const MAX_CONSUMABLES_VALUE_LEN = 200
 
 function isRealDate(value: string): boolean {
   if (!DATE_PATTERN.test(value)) return false
@@ -28,17 +36,29 @@ function isRealDate(value: string): boolean {
   return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value
 }
 
+/** Values must be plain strings/numbers — no nested objects, no non-json shapes. */
+function isPlainConsumables(value: unknown): value is Record<string, string | number> {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) return false
+  const entries = Object.entries(value)
+  if (entries.length > MAX_CONSUMABLES_KEYS) return false
+  for (const [key, v] of entries) {
+    if (key.length === 0 || key.length > MAX_CONSUMABLES_KEY_LEN) return false
+    if (typeof v !== 'string' && typeof v !== 'number') return false
+    if (typeof v === 'string' && v.length > MAX_CONSUMABLES_VALUE_LEN) return false
+  }
+  return true
+}
+
 interface CreateBookingInput {
   equipmentId: string
   machineId: string
   machineName?: string
   projectId: string
-  projectTitle?: string
   date: string
   startTime: string
   endTime: string
   purpose: string
-  consumables?: Record<string, unknown>
+  consumables?: Record<string, string | number>
   safetyAgreementAccepted: boolean
 }
 
@@ -77,6 +97,13 @@ export const createBooking = onCall(
     }
     if (typeof input.purpose !== 'string' || !input.purpose.trim() || input.purpose.trim().length > 500) {
       throw new HttpsError('invalid-argument', 'purpose is required (max 500 chars).')
+    }
+    // No backdated bookings — a booking slot in the past is meaningless.
+    if (input.date < todayInIndia()) {
+      throw new HttpsError('invalid-argument', 'date must not be in the past.')
+    }
+    if (input.consumables !== undefined && !isPlainConsumables(input.consumables)) {
+      throw new HttpsError('invalid-argument', 'consumables must be a flat map of string/number values.')
     }
     if (input.safetyAgreementAccepted !== true) {
       throw new HttpsError('invalid-argument', 'Safety agreement must be accepted.')
@@ -151,7 +178,8 @@ export const createBooking = onCall(
         userEmail: user.email ?? '',
         userName: user.displayName ?? '',
         projectId: input.projectId,
-        projectTitle: input.projectTitle ?? project.title ?? '',
+        // Server-derived — never trust a client-supplied title.
+        projectTitle: project.title ?? '',
         date: input.date,
         startTime: input.startTime,
         endTime: input.endTime,
@@ -163,6 +191,22 @@ export const createBooking = onCall(
         updatedAt: FieldValue.serverTimestamp(),
       }
       tx.set(bookingRef, bookingPayload)
+
+      // Privacy-safe machine availability: a slot doc carries NO user
+      // identity — just occupancy — so the calendar can be read by any
+      // authenticated user without leaking who booked what.
+      const slotId = `${input.equipmentId}_${input.date}_${input.startTime}`
+      tx.set(db.collection('slots').doc(slotId), {
+        equipmentId: input.equipmentId,
+        machineId: input.machineId,
+        machineName: input.machineName ?? equipment.name ?? '',
+        date: input.date,
+        startTime: input.startTime,
+        endTime: input.endTime,
+        bookingId,
+        status: 'approved',
+        createdAt: FieldValue.serverTimestamp(),
+      })
 
       // Append to the immutable project timeline.
       const logRef = db

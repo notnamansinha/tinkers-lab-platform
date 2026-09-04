@@ -147,36 +147,12 @@ service cloud.firestore {
         get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid
         || isStaff()
       );
-      // The app appends owner checkout/return entries or staff status changes.
-      // Project creation and booking entries are written by Cloud Functions.
-      allow create: if isActiveUser()
-                    && (
-                      (
-                        get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid
-                        && request.resource.data.userId == request.auth.uid
-                        && request.resource.data.userName == getUserData().displayName
-                        && request.resource.data.userEmail == getUserData().email
-                        && (
-                          request.resource.data.type in ['checkout', 'return']
-                          || (
-                            request.resource.data.type == 'status_change'
-                            && request.resource.data.summary == 'Booking cancelled'
-                          )
-                        )
-                      )
-                      || (
-                        isStaff()
-                        && request.resource.data.userId == request.auth.uid
-                        && request.resource.data.userName == getUserData().displayName
-                        && request.resource.data.userEmail == getUserData().email
-                        && request.resource.data.type == 'status_change'
-                      )
-                    )
-                    && request.resource.data.keys().hasOnly(['type', 'summary', 'resourceId', 'userId', 'userName', 'userEmail', 'createdAt'])
-                    && request.resource.data.type in ['created', 'booking', 'checkout', 'return', 'status_change']
-                    && request.resource.data.summary is string
-                    && request.resource.data.summary.size() > 0
-                    && request.resource.data.summary.size() <= 300;
+      // ⚠️ APPENDS ARE SERVER-ENFORCED: the `appendActivityLog` Cloud Function
+      // (functions/src/appendActivityLog.ts) verifies the caller owns the project
+      // (or is staff), validates the entry type/summary, and stamps a SERVER
+      // timestamp. Direct client creation is denied so a malicious client cannot
+      // forge entries, fake actors, or backdate the timeline.
+      allow create: if false;
       allow update, delete: if false; // Immutable log
     }
 
@@ -224,7 +200,18 @@ service cloud.firestore {
     match /workshopRegistrations/{regId} {
       allow read: if isAuth() && (resource.data.userId == request.auth.uid || isStaff());
       allow create: if isActiveUser() && request.resource.data.userId == request.auth.uid;
-      allow update: if isStaff() || (isAuth() && resource.data.userId == request.auth.uid);
+      // Owners may only cancel their registration or leave post-workshop
+      // feedback/rating. Identity, workshop, status (except cancel), and
+      // certificate fields are staff-only.
+      allow update: if isStaff()
+                    || (
+                      isActiveUser()
+                      && resource.data.userId == request.auth.uid
+                      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'feedback', 'rating', 'updatedAt'])
+                      && (!request.resource.data.keys().hasAny(['status']) || request.resource.data.status == 'cancelled')
+                      && (!request.resource.data.keys().hasAny(['rating']) || (request.resource.data.rating is int && request.resource.data.rating >= 1 && request.resource.data.rating <= 5))
+                      && (!request.resource.data.keys().hasAny(['feedback']) || (request.resource.data.feedback is string && request.resource.data.feedback.size() <= 500))
+                    );
       allow delete: if isAdmin();
     }
 
@@ -343,6 +330,20 @@ service cloud.firestore {
       allow create: if false;
       // No one can edit or delete feedback
       allow update, delete: if false;
+    }
+
+    // ================================================================
+    // BOOKING SLOT OCCUPANCY  (privacy-safe machine availability)
+    // slots/{equipmentId}_{date}_{startTime}
+    // Written by the createBooking Cloud Function (and synced by
+    // syncBookingSlot on status changes). Contains ONLY machine/date/time
+    // occupancy — no user identity, purpose, or project info — so any
+    // authenticated user can render the booking calendar and slot picker
+    // without exposing other users' private booking details.
+    // ================================================================
+    match /slots/{slotId} {
+      allow read: if isAuth();
+      allow write: if false; // Server-written only (Admin SDK bypasses rules)
     }
 
     // ================================================================

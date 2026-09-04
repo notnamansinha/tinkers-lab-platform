@@ -73,3 +73,24 @@ export const submitFeedbackCallable = httpsCallable<{ message: string }, { feedb
   functions,
   'submitFeedback',
 )
+
+export interface AppendActivityLogInput {
+  projectId: string
+  type: 'checkout' | 'return' | 'status_change'
+  summary: string
+  resourceId?: string
+}
+
+/**
+ * Server-enforced timeline append — validates project ownership and stamps a
+ * server timestamp, so clients can neither forge entries nor backdate them.
+ */
+export const appendActivityLogCallable = httpsCallable<AppendActivityLogInput, { logId: string }>(
+  functions,
+  'appendActivityLog',
+)
+
+export const deleteMyAccountCallable = httpsCallable<Record<string, never>, { deleted: true }>(
+  functions,
+  'deleteMyAccount',
+)
