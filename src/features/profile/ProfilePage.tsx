@@ -10,10 +10,11 @@ import {
   AlertCircle,
   Loader2,
   ShieldCheck,
+  Trash2,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { updateUserProfile, signOut } from '@/services/firebase/auth'
-import { submitFeedbackCallable } from '@/services/firebase/functions'
+import { submitFeedbackCallable, deleteMyAccountCallable } from '@/services/firebase/functions'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import type { UserType } from '@/types'
@@ -204,6 +205,29 @@ export default function ProfilePage() {
       setEditError(e instanceof Error ? e.message : 'Failed to save profile')
     } finally {
       setSaving(false)
+    }
+  }
+
+  /**
+   * Delete the account + all owned data via the server-enforced callable,
+   * then sign out locally. The auth account is deleted server-side, so
+   * outstanding tokens stop working immediately.
+   */
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+
+  const handleDeleteAccount = async () => {
+    if (!user) return
+    setDeleting(true)
+    try {
+      await deleteMyAccountCallable({})
+      await signOut()
+      navigate('/login')
+      toast.success('Your account and data have been deleted.')
+    } catch {
+      toast.error('Failed to delete your account. Please try again.')
+      setDeleting(false)
+      setConfirmDelete(false)
     }
   }
 
@@ -604,6 +628,59 @@ export default function ProfilePage() {
           <ChevronRight size={16} className="text-white/30" />
         </button>
       )}
+
+      {/* Delete account (danger zone) */}
+      <div className="rounded-card border border-pink/20 bg-charcoal overflow-hidden">
+        <div className="flex items-center gap-3 px-6 py-4">
+          <Trash2 size={18} className="text-pink" />
+          <div className="flex-1">
+            <p className="text-sm font-bold text-white">Delete Account</p>
+            <p className="text-xs text-white/40">
+              Permanently deletes your profile, projects, bookings, checkouts, and uploads. This cannot be undone.
+            </p>
+          </div>
+        </div>
+        <div className="border-t border-hairline px-6 py-4">
+          {!confirmDelete ? (
+            <button
+              id="profile-delete-btn"
+              type="button"
+              onClick={() => setConfirmDelete(true)}
+              className="flex w-full items-center justify-center gap-2 rounded-full border border-pink/30 bg-pink/10 py-3 text-sm font-bold text-pink transition-all hover:bg-pink/20 hover:border-pink/60"
+            >
+              <Trash2 size={16} />
+              Delete my account and data
+            </button>
+          ) : (
+            <div className="space-y-3">
+              <p className="flex items-start gap-2 text-xs font-bold text-pink">
+                <AlertCircle size={15} className="mt-0.5 shrink-0" />
+                This permanently removes your account, projects, bookings, activity history, and uploaded files. Are you sure?
+              </p>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setConfirmDelete(false)}
+                  disabled={deleting}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-full border border-hairline bg-near-black py-2.5 text-sm font-bold text-white transition-colors hover:bg-white/10 disabled:opacity-50"
+                >
+                  Keep my account
+                </button>
+                <button
+                  id="profile-delete-confirm-btn"
+                  type="button"
+                  onClick={handleDeleteAccount}
+                  disabled={deleting}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-full bg-pink py-2.5 text-sm font-bold text-black transition-all hover:brightness-110 disabled:opacity-50"
+                >
+                  {deleting ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
+                  {deleting ? 'Deleting…' : 'Yes, delete everything'}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Log Out */}
       <button

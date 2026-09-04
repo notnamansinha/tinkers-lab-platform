@@ -67,6 +67,19 @@ export const db = initializeFirestore(app, {
 // Firebase Storage (images, manuals, safety docs)
 export const storage = getStorage(app)
 
+// Optional App Check (ReCAPTCHA Enterprise) — lightweight and gated on an env
+// var so it is a complete no-op until the console is provisioned AND the
+// deployer flips enforceAppCheck: true on the Cloud Functions. See
+// docs/firebase/DEPLOYMENT.md §10 before enabling.
+if (import.meta.env.VITE_FIREBASE_APP_CHECK_KEY) {
+  void import('firebase/app-check').then(({ initializeAppCheck, ReCaptchaEnterpriseProvider }) => {
+    initializeAppCheck(app, {
+      provider: new ReCaptchaEnterpriseProvider(import.meta.env.VITE_FIREBASE_APP_CHECK_KEY),
+      isTokenAutoRefreshEnabled: true,
+    })
+  })
+}
+
 // Connect to emulators in development if needed
 if (!isTestMode && import.meta.env.DEV && import.meta.env.VITE_USE_EMULATORS === 'true') {
   connectAuthEmulator(auth, 'http://localhost:9099')
