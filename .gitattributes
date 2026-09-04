@@ -1,0 +1,15 @@
+# Normalize line endings — prevents Windows/WSL CRLF churn in diffs
+* text=auto eol=lf
+
+# Binary assets
+*.otf binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.gif binary
+*.svg text eol=lf
+*.mp4 binary
