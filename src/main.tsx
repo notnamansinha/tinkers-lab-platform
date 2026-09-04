@@ -37,6 +37,16 @@ async function bootstrap() {
         </ErrorBoundary>
       </React.StrictMode>,
     )
+
+    // PWA: register the service worker after first paint (no inline script in
+    // index.html — keeps the CSP hash-free and self-hosted).
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(() => {
+          // SW registration is progressive enhancement — never block the app.
+        })
+      })
+    }
   } catch (err: any) {
     renderConfigError(err?.message || 'Failed to initialize the application.')
   }
