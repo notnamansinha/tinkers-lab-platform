@@ -38,7 +38,8 @@ Rules cannot run queries or transactions, so these invariants are enforced in [`
 
 - **Users**: self-create `role='student'` only; owners may edit own non-sensitive fields; `role`/`isActive`/`email` are `super_admin`-only.
 - **Projects**: visible only to owner or staff (no cross-user PII leak). Status changes are admin-only; users edit their own non-status fields.
-- **Bookings/checkouts/activityLog**: project-scoped subcollections; collection-group reads still require project ownership or staff role.
+- **Bookings/checkouts/activityLog**: project-scoped subcollections; collection-group reads still require project ownership or staff role. Machine-wide availability is exposed via the privacy-safe `slots` collection (no user identity), so the calendar and slot picker work without leaking who booked what.
+- **Activity log appends are server-enforced**: the `appendActivityLog` Cloud Function validates ownership and stamps a server timestamp — clients can neither forge entries nor backdate the timeline.
 - **Deactivation**: `isActive = false` revokes self-service + elevated access immediately server-side (catalog reads remain available to any authenticated user).
 - **Immutable collections**: `auditLogs`, `activityLog`, `feedback` — nobody can update or delete.
 - **Rate limiting**: the `submitFeedback` callable caps feedback at 1 per user per 5-minute window using `feedbackWindows/{uid}` and the server clock.

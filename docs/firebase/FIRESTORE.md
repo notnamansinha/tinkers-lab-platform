@@ -35,7 +35,8 @@ Cloud Functions enforce the transactional write paths and invariants that client
 | 2 | `projects` | `projects/{docId}` | Auto random + `projectCode` (`TL-XXX`) | **Cloud Function** (`createProject`) |
 | 3 | Project bookings | `projects/{projectId}/bookings/{bookingId}` | Auto | **Cloud Function** (`createBooking`) |
 | 4 | Project checkouts | `projects/{projectId}/checkouts/{checkoutId}` | Auto | **Cloud Function** (`createToolCheckout`) |
-| 5 | Project activity log | `projects/{projectId}/activityLog/{logId}` | Auto | Owner/staff appends + Cloud Functions |
+| 5 | Project activity log | `projects/{projectId}/activityLog/{logId}` | Auto | **Cloud Function** (`appendActivityLog`) |
+| 5c | Booking slot occupancy | `slots/{equipmentId}_{date}_{startTime}` | Fixed pattern | **Cloud Function** (`createBooking` / `syncBookingSlot`) |
 | 5b | Project members | `projects/{projectId}/projectMembers/{memberId}` | Auto | **Cloud Function** (seed) / owner / staff |
 | 6 | `counters` | `counters/projects` | Fixed: `projects` | **Cloud Function only** |
 | 7 | `equipment` | `equipment/{docId}` | Auto | Staff (seeded) |
@@ -256,7 +257,8 @@ Defined in [`firestore.rules`](../../firestore.rules) (rules_version 2).
 | `projects` | owner or staff | **function only** (deny direct) | owner (not `status`) or admin | admin |
 | `projects/{id}/bookings` | project owner or staff | **function only** (deny direct — conflict detection can't be bypassed) | owner (cancel only) or staff | admin |
 | `projects/{id}/checkouts` | project owner or staff | **function only** (deny direct — validates active project, identity, dates, and writes timeline atomically) | owner (return/overdue-only keys) or staff | admin |
-| `projects/{id}/activityLog` | project owner or staff | owner checkout/return or booking-cancel entry; staff status change; functions for created/booking | **nobody** | **nobody** |
+| `projects/{id}/activityLog` | project owner or staff | **function only** (`appendActivityLog`; deny direct) | **nobody** | **nobody** |
+| `slots` | any auth (occupancy only — no identity) | **function only** (deny direct) | **nobody** | **nobody** |
 | `projects/{id}/projectMembers` | project owner or staff | project owner or staff | project owner or staff | owner or admin |
 | `counters` | active user | **function only** (deny direct) | — | — |
 | `equipment` | any auth | staff | staff | staff |
@@ -264,7 +266,7 @@ Defined in [`firestore.rules`](../../firestore.rules) (rules_version 2).
 | `inventoryTransactions` | any auth | **staff** | admin | admin |
 | `maintenance` | any auth | staff | staff | admin |
 | `workshops` | any auth | staff | staff | admin |
-| `workshopRegistrations` | owner or staff | active, own | staff or owner | admin |
+| `workshopRegistrations` | owner or staff | active, own | staff; owner may cancel / leave feedback+rating only | admin |
 | `notifications` | own only | **staff** | own `isRead` only | admin |
 | `announcements` | any auth | staff | staff | staff |
 | `issues` | owner or staff | active, own, `status='open'`, valid enums, description ≥ 20, **exhaustive allowlist** | **staff only** | admin |
@@ -303,13 +305,14 @@ Defined in [`firestore.rules`](../../firestore.rules) (rules_version 2).
 
 ## 6. Composite Indexes
 
-Defined in [`firestore.indexes.json`](../../firestore.indexes.json) (20 composite indexes). Bookings/checkouts/activityLog are **collection-group scoped**:
+Defined in [`firestore.indexes.json`](../../firestore.indexes.json) (23 composite indexes). Bookings/checkouts/activityLog are **collection-group scoped**; occupancy slots are scoped:
 
 | Collection group | Index fields |
 |---|---|
 | `bookings` (CG) | `date↑, startTime↑` · `userId↑, createdAt↓` · `date↑, status↑, createdAt↓` · `status↑, date↑, startTime↑` · `equipmentId↑, date↑, status↑` · `machineId↑, date↑, status↑` · `userId↑, date↑` · `userId↑, status↑` |
 | `checkouts` (CG) | `userId↑, createdAt↓` · `action↑, createdAt↓` · `isOverdue↑, expectedReturnDate↑` · `userId↑, action↑, createdAt↓` |
 | `activityLog` (CG) | `type↑, createdAt↓` · `userId↑, createdAt↓` |
+| `slots` | `equipmentId↑, date↑` · `date↑, startTime↑` |
 | `notifications` | `userId↑, createdAt↓` |
 | `inventory` | `status↑, createdAt↓` |
 | `inventoryTransactions` | `itemId↑, createdAt↓` |
