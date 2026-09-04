@@ -38,6 +38,18 @@ service cloud.firestore {
       return isActiveUser() && getUserRole() in ['super_admin', 'faculty', 'lab_assistant'];
     }
 
+    // Uploaded-file URL allow-list — mirrors createProject. Client edits to
+    // imageUrls/documentUrls are constrained server-side, not just at create.
+    function isSafeStorageUrl(value) {
+      return value is string
+        && value.size() <= 500
+        && value.matches('^https://firebasestorage\\.googleapis\\.com/.*$');
+    }
+
+    function hasOnlySafeStorageUrls(list) {
+      return list is list && list.size() <= 12 && list.all(isSafeStorageUrl);
+    }
+
     // ================================================================
     // USERS COLLECTION
     // ================================================================
@@ -226,7 +238,8 @@ service cloud.firestore {
       // atomic counter, and seeds timeline + roster with the Admin SDK.
       // Direct client creation is denied.
       allow create: if false;
-      // Users edit own pending/active projects (not status); admins change anything
+      // Users edit own pending/active projects (not status); admins change anything.
+      // imageUrls/documentUrls must stay on our Storage bucket even on edits.
       allow update: if isAuth() && (
         (isActiveUser()
          && resource.data.userId == request.auth.uid
@@ -234,7 +247,9 @@ service cloud.firestore {
            'title', 'abstract', 'contact', 'startDate', 'endDate', 'resourceLink',
            'expectedEquipmentNeeds', 'equipmentNeedsOther',
            'safetyAgreementAccepted', 'termsAccepted', 'imageUrls', 'documentUrls', 'updatedAt'
-         ]))
+         ])
+         && (!request.resource.data.keys().hasAny(['imageUrls']) || hasOnlySafeStorageUrls(request.resource.data.imageUrls))
+         && (!request.resource.data.keys().hasAny(['documentUrls']) || hasOnlySafeStorageUrls(request.resource.data.documentUrls)))
         || isAdmin()
       );
       allow delete: if isAdmin();
