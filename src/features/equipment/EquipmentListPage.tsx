@@ -139,7 +139,7 @@ export default function EquipmentListPage() {
               <EntityCard key={e.id}>
                 <div className="aspect-[16/10] relative bg-black/60 overflow-hidden shrink-0 border-b border-hairline">
                   {e.imageUrls?.[0] ? (
-                    <img src={e.imageUrls[0]} alt={e.name} className="w-full h-full object-cover opacity-85 group-hover:opacity-100 transition-all duration-300 group-hover:scale-105" />
+                    <img src={e.imageUrls[0]} alt={e.name} loading="lazy" className="w-full h-full object-cover opacity-85 group-hover:opacity-100 transition-all duration-300 group-hover:scale-105" />
                   ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center text-white/20 gap-2">
                       <Wrench className="h-8 w-8 text-white/20" />
