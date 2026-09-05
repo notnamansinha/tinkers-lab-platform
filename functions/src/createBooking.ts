@@ -29,6 +29,8 @@ const DATE_PATTERN = /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/
 const MAX_CONSUMABLES_KEYS = 100
 const MAX_CONSUMABLES_KEY_LEN = 50
 const MAX_CONSUMABLES_VALUE_LEN = 200
+// Anti-abuse rate limit: at most 10 bookings per user per day (IST).
+const MAX_BOOKINGS_PER_DAY = 10
 
 function isRealDate(value: string): boolean {
   if (!DATE_PATTERN.test(value)) return false
@@ -128,7 +130,19 @@ export const createBooking = onCall(
       throw new HttpsError('failed-precondition', 'Project must be active to book machines.')
     }
 
-    // ── 4. Validate the machine is bookable (Tier-1, confirmed) ────
+    // ── 4b. Rate limit — at most 10 bookings per user per day (IST) ─────
+    const today = todayInIndia()
+    const dailyCount = await db
+      .collectionGroup('bookings')
+      .where('userId', '==', uid)
+      .where('date', '==', today)
+      .count()
+      .get()
+    if (dailyCount.data().count >= MAX_BOOKINGS_PER_DAY) {
+      throw new HttpsError('resource-exhausted', `You can make at most ${MAX_BOOKINGS_PER_DAY} bookings per day. Please try again tomorrow.`)
+    }
+
+    // ── 5. Validate the machine is bookable (Tier-1, confirmed) ────
     const equipmentRef = db.collection('equipment').doc(input.equipmentId)
     const equipmentSnap = await equipmentRef.get()
     if (!equipmentSnap.exists) throw new HttpsError('not-found', 'Equipment not found.')

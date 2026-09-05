@@ -293,6 +293,16 @@ describe('createProject', () => {
     const nextId = (await adminDb.doc('counters/projects').get()).data()?.nextId as number
     expect(nextId).toBeGreaterThan(1)
   })
+
+  it('rejects the 6th project within one hour (rate limit)', async () => {
+    const uid = await createAuthUser('rater@tinkers.test')
+    await adminDb.doc(`users/${uid}`).set(baseProfile('rater@tinkers.test', 'student'))
+    await signInAs('rater@tinkers.test')
+    for (let i = 0; i < 5; i++) {
+      await call('createProject', { ...valid(), title: `Rate limited ${i}` })
+    }
+    await expectCode(call('createProject', valid()), 'resource-exhausted')
+  })
 })
 
 // ─────────────────────────────────────────────────────────────
@@ -425,6 +435,7 @@ describe('createBooking', () => {
     expect(logs.docs.some((d) => d.data().type === 'booking')).toBe(true)
   })
 
+
   it('rejects a conflicting time slot (aborted)', async () => {
     await signInAs(EMAILS.student)
     const date = '2099-03-01'
@@ -448,6 +459,22 @@ describe('createBooking', () => {
     const results = await Promise.allSettled([call('createBooking', payload), call('createBooking', payload)])
     const ok = results.filter((r) => r.status === 'fulfilled').length
     expect(ok).toBe(1)
+  })
+  it('rejects the 11th booking on the same day (rate limit)', async () => {
+    await signInAs(EMAILS.student)
+    // today in Asia/Kolkata — the same clock the functions rate limit uses
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit',
+    }).formatToParts(new Date())
+    const get = (type: string) => parts.find((p) => p.type === type)?.value ?? ''
+    const today = `${get('year')}-${get('month')}-${get('day')}`
+    // 10 non-conflicting hour slots on today's date
+    for (let i = 0; i < 10; i++) {
+      const start = `${String(i).padStart(2, '0')}:00`
+      const end = `${String(i).padStart(2, '0')}:50`
+      await call('createBooking', { ...valid(), date: today, startTime: start, endTime: end })
+    }
+    await expectCode(call('createBooking', { ...valid(), date: today, startTime: '23:00', endTime: '23:50' }), 'resource-exhausted')
   })
 })
 
