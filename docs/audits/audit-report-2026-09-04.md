@@ -134,3 +134,36 @@ States: React Query default loading/error handling exists; `ErrorBoundary` is st
 ---
 
 *Audit method: read-only. No files were modified. All findings cite `file:line`. Inferences are marked as such inline (notably F-03, which relies on documented Firestore query+rules semantics — confirm once the build is restored). Server-side rules were reviewed line-by-line; no `allow ... if true` rules exist, and the default-deny guard at `firestore.rules:352-354` is correctly `false`.*
+
+---
+
+## 18. Remediation Status (2026-09-04, implementation pass)
+
+All in-repo findings are implemented and committed (see `git log --oneline` from `d576080`). Verification: app build ✔, functions build ✔, 27 unit tests ✔, rules tests (Firestore+Storage, incl. new slots/registration/read-parity cases) typecheck ✔ (emulator run requires Java — runs in CI), `npm audit` root = 0 vulns.
+
+| ID | Status | Notes |
+|----|--------|-------|
+| F-01 | **Done (repo) / ⚠️ user action required** | Full history scrubbed + force-pushed to `main`/`fixes`/`testing` (ruleset temporarily disabled, restored). Local object store verified token-free. **Remaining:** (1) REVOKE the Figma token in Figma settings — the leaked string is inert only after revocation; (2) request GitHub support purge of stale closed-PR head refs `refs/pull/1/head` (728403961d) and `refs/pull/2/head` (cfa62478ce) which still contain the old file (not deletable via API). |
+| F-02 | Done | Merge resolved; `.gitattributes` added (CRLF normalization); stray shell artifacts removed; `functions/.gitignore` anchored to `/lib/` |
+| F-03 | Done | Privacy-safe `slots` collection (server-written, no identity) — slot picker + calendar read slots; `syncBookingSlot`/`cleanupBookingSlot` triggers; slots indexes added |
+| F-04 | Done | History blobs (~26 MB) removed in scrub; commit hygiene noted; `tl-platform` remote left in place (documented) |
+| F-05 | Done | `todayInIndia()` shared helper used by overdue sweep + createToolCheckout |
+| F-06 | Done | Storage project images/documents reads restricted to owner/staff + tests |
+| F-07 | Done | `workshopRegistrations` owner updates limited to cancel/feedback/rating |
+| F-08 | Done | `appendActivityLog` callable — server ownership/type validation + server timestamps; client appends denied |
+| F-09 | Done | SW registration moved to `main.tsx` (CSP hash dropped); `sw.js` served `no-cache` |
+| F-10 | Done (app) / partial | Root lockfile: 0 vulns. Functions: 12 moderate remain (transitive gaxios/teeny-request — fix requires firebase-admin v14 major; deferred). Tests pkg: dev-only, emulator-gated |
+| F-11 | Partial — rollout staged | App Check client init (env-gated) + deployment runbook; `enforceAppCheck` flips require a coordinated console+deploy release |
+| F-12 | Done | SW: cache pruning on activate, offline fallback to app shell, cache version `tl-v2` |
+| F-13 | Done | `FormField` label↔input association + `role=alert` errors; skip-to-content link; `main` landmark |
+| F-14 | Done | `deleteMyAccount` Cloud Function (full cascade) + Profile UI with confirmation |
+| F-15 | Done | Past-date rejection (IST), server-derived `projectTitle`, consumables shape validation |
+| F-16 | Done | Open-checkout cap (20) in `createToolCheckout` |
+| F-17 | Done | Notifications `limit(50)` server-side |
+| F-18 | Done | `createProject` + rules constrain file URLs to Firebase Storage; client render-filters via `isSafeStorageUrl` |
+| F-19 | Done | `.env.example` documents both API-key forms + App Check var |
+| F-20 | Done | `setGlobalOptions({ region: 'asia-south1' })` |
+| F-21 | Info | Extra remote left as-is (team collaboration config) |
+| F-22 | Info | Dormant `workshopRegistrations` surface kept (README advertises the feature) but constrained |
+
+**Deployment follow-ups (outside this repo pass):** deploy the new Cloud Functions (they run in `asia-south1` on first deploy), deploy rules/indexes, enable Firestore PITR or scheduled exports (see DEPLOYMENT.md §8), and coordinate the App Check rollout (DEPLOYMENT.md §10).
