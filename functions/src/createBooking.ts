@@ -130,19 +130,7 @@ export const createBooking = onCall(
       throw new HttpsError('failed-precondition', 'Project must be active to book machines.')
     }
 
-    // ── 4b. Rate limit — at most 10 bookings per user per day (IST) ─────
-    const today = todayInIndia()
-    const dailyCount = await db
-      .collectionGroup('bookings')
-      .where('userId', '==', uid)
-      .where('date', '==', today)
-      .count()
-      .get()
-    if (dailyCount.data().count >= MAX_BOOKINGS_PER_DAY) {
-      throw new HttpsError('resource-exhausted', `You can make at most ${MAX_BOOKINGS_PER_DAY} bookings per day. Please try again tomorrow.`)
-    }
-
-    // ── 5. Validate the machine is bookable (Tier-1, confirmed) ────
+    // ── 4. Validate the machine is bookable (Tier-1, confirmed) ────
     const equipmentRef = db.collection('equipment').doc(input.equipmentId)
     const equipmentSnap = await equipmentRef.get()
     if (!equipmentSnap.exists) throw new HttpsError('not-found', 'Equipment not found.')
@@ -157,6 +145,12 @@ export const createBooking = onCall(
       throw new HttpsError('failed-precondition', 'Machine is not available for booking.')
     }
 
+    // ── 4b. Rate limit — at most 10 bookings per user per day (IST) ─────
+    // Evaluated INSIDE the booking transaction so a retrying transaction
+    // re-counts against committed state (the slot doc serializes same-slot
+    // races; the count closes cross-machine bursts on retry).
+    const today = todayInIndia()
+
     // ── 5. Conflict detection + atomic write (server-side) ─────────
     const bookingId = db.collection('projects').doc(input.projectId)
       .collection('bookings').doc().id
@@ -166,6 +160,11 @@ export const createBooking = onCall(
       .where('equipmentId', '==', input.equipmentId)
       .where('date', '==', input.date)
       .where('status', '==', 'approved')
+    const dailyCountRef = () => db
+      .collectionGroup('bookings')
+      .where('userId', '==', uid)
+      .where('date', '==', today)
+      .count()
 
     await db.runTransaction(async (tx) => {
       // Re-read inside the transaction for isolation.
@@ -178,6 +177,11 @@ export const createBooking = onCall(
             `Time slot conflicts with an existing booking (${b.startTime}–${b.endTime}).`,
           )
         }
+      }
+
+      const dailyCount = await tx.get(dailyCountRef())
+      if (dailyCount.data().count >= MAX_BOOKINGS_PER_DAY) {
+        throw new HttpsError('resource-exhausted', `You can make at most ${MAX_BOOKINGS_PER_DAY} bookings per day. Please try again tomorrow.`)
       }
 
       const bookingRef = db

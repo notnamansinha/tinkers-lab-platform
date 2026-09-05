@@ -302,6 +302,24 @@ describe('createProject', () => {
     }
     await expectCode(call('createProject', valid()), 'resource-exhausted')
   })
+
+  it('concurrent bursts cannot exceed the 5-per-hour cap (counter-serialized)', async () => {
+    const uid = await createAuthUser('rater2@tinkers.test')
+    await adminDb.doc(`users/${uid}`).set(baseProfile('rater2@tinkers.test', 'student'))
+    await signInAs('rater2@tinkers.test')
+    for (let i = 0; i < 4; i++) {
+      await call('createProject', { ...valid(), title: `Seed burst ${i}` })
+    }
+    const rs = await Promise.allSettled([
+      call('createProject', valid()), call('createProject', valid()),
+      call('createProject', valid()),
+    ])
+    expect(rs.filter((r) => r.status === 'fulfilled').length).toBe(1)
+    const rejected = rs.filter((r) => r.status === 'rejected')
+    for (const r of rejected) {
+      expect((r.reason as { code?: string }).code?.replace(/^functions\//, '')).toBe('resource-exhausted')
+    }
+  })
 })
 
 // ─────────────────────────────────────────────────────────────
@@ -578,6 +596,30 @@ describe('createToolCheckout', () => {
       })
     }
     await expectCode(call('createToolCheckout', { ...valid(), toolName: 'One too many' }), 'resource-exhausted')
+  })
+
+  it('concurrent creations cannot exceed the 20-open cap (transactional count)', async () => {
+    const fresh = await createAuthUser('race-cap@tinkers.test')
+    await adminDb.doc(`users/${fresh}`).set(baseProfile('race-cap@tinkers.test', 'student'))
+    await adminDb.doc(`projects/${fresh}-proj`).set({
+      userId: fresh, status: 'active', title: 'R', abstract: 'x'.repeat(60),
+      safetyAgreementAccepted: true, termsAccepted: true, projectCode: 'TL-RACE',
+    })
+    await signInAs('race-cap@tinkers.test')
+    const ref = adminDb.collection(`projects/${fresh}-proj/checkouts`)
+    for (let i = 0; i < 19; i++) {
+      await ref.add({ userId: fresh, action: 'checking_out', toolName: `T${i}`, quantity: 1, isOverdue: false, expectedReturnDate: '2099-01-01', returnedAt: null })
+    }
+    const payload = {
+      projectId: `${fresh}-proj`, toolCategory: 'Hand Tools', toolName: 'Hammer',
+      quantity: 1, locationOfUse: 'in_lab', expectedReturnDate: '2099-08-01',
+      conditionAtCheckout: 'good',
+    }
+    const rs = await Promise.allSettled([
+      call('createToolCheckout', payload), call('createToolCheckout', payload),
+      call('createToolCheckout', payload), call('createToolCheckout', payload),
+    ])
+    expect(rs.filter((r) => r.status === 'fulfilled').length).toBe(1)
   })
 })
 

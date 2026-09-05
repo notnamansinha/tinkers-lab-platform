@@ -73,6 +73,35 @@ describe('createToolCheckout', () => {
     expect(id).toBe('new-1')
     expect(spy).toHaveBeenCalledWith(expect.objectContaining({ toolName: 'Hammer', quantity: 1 }))
   })
+
+  it('omits undefined optional fields from the callable payload (in-lab flows)', async () => {
+    const spy = vi.mocked(createToolCheckoutCallable).mockResolvedValue({ data: { checkoutId: 'x' } } as never)
+    await createToolCheckout({
+      projectId: 'p1', toolCategory: 'Hand Tools', toolName: 'Hammer', quantity: 1,
+      locationOfUse: 'in_lab', outsideLocation: undefined,
+      expectedReturnDate: '2099-01-01', expectedReturnTime: undefined,
+      conditionAtCheckout: 'good', notes: undefined, action: 'checking_out', userId: 'u1',
+    } as never)
+    const forwarded = spy.mock.calls[0][0] as unknown as Record<string, unknown>
+    expect(forwarded).not.toHaveProperty('outsideLocation')
+    expect(forwarded).not.toHaveProperty('expectedReturnTime')
+    expect(forwarded).not.toHaveProperty('notes')
+    expect(forwarded.locationOfUse).toBe('in_lab')
+  })
+
+  it('includes optional fields only when provided (taking-outside flows)', async () => {
+    const spy = vi.mocked(createToolCheckoutCallable).mockResolvedValue({ data: { checkoutId: 'x' } } as never)
+    await createToolCheckout({
+      projectId: 'p1', toolCategory: 'Hand Tools', toolName: 'Hammer', quantity: 1,
+      locationOfUse: 'taking_outside', outsideLocation: 'Chem Lab',
+      expectedReturnDate: '2099-01-01', expectedReturnTime: '16:00',
+      conditionAtCheckout: 'good', notes: 'handle with care', action: 'checking_out', userId: 'u1',
+    } as never)
+    const forwarded = spy.mock.calls[0][0] as unknown as Record<string, unknown>
+    expect(forwarded.outsideLocation).toBe('Chem Lab')
+    expect(forwarded.expectedReturnTime).toBe('16:00')
+    expect(forwarded.notes).toBe('handle with care')
+  })
 })
 
 describe('isCheckoutOverdue', () => {

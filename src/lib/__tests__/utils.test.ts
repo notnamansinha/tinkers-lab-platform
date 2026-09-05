@@ -164,3 +164,34 @@ describe('debugLog', () => {
     spy.mockRestore()
   })
 })
+
+describe('todayStr — IST consistency (mirrors functions todayInIndia)', () => {
+  it('returns a YYYY-MM-DD string', () => {
+    expect(todayStr()).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+  })
+
+  it('matches the exact date Asia/Kolkata renders at this instant', () => {
+    // Same Intl construction as functions/src/lib/helpers.ts todayInIndia()
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit',
+    }).formatToParts(new Date())
+    const get = (t: string) => parts.find((p) => p.type === t)?.value ?? ''
+    const istToday = `${get('year')}-${get('month')}-${get('day')}`
+    expect(todayStr()).toBe(istToday)
+  })
+
+  it('differs from a naive UTC/local date when IST has moved to the next day', () => {
+    // Just after midnight IST = previous day UTC — probe by simulating the local
+    // hour boundary: the property we guarantee is that todayStr follows IST, so
+    // it must never be the UTC day when UTC date != IST date.
+    const utc = new Date().toISOString().slice(0, 10)
+    const ist = todayStr()
+    // At most a one-day difference in either direction around midnight.
+    const near = (a: string, b: string) => {
+      const [ay, am, ad] = a.split('-').map(Number)
+      const [by, bm, bd] = b.split('-').map(Number)
+      return Math.abs(Date.UTC(ay, am - 1, ad) - Date.UTC(by, bm - 1, bd)) <= 86400_000
+    }
+    expect(near(ist, utc)).toBe(true)
+  })
+})

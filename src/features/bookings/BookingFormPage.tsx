@@ -14,6 +14,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { ArrowLeft, AlertTriangle, CheckCircle2, Plus } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn, todayStr } from '@/lib/utils'
+import { buildConsumablesPayload } from '@/lib/consumables'
 import type { Equipment } from '@/types'
 
 import { Button } from '@/components/ui/button'
@@ -167,13 +168,17 @@ export default function BookingFormPage() {
         endTime:     data.endTime,
         purpose:     data.purpose,
         safetyAgreementAccepted: data.safetyAgreementAccepted,
-        consumables: (is3DPrinter || isLaserCutter) ? {
-          filamentType:            data.filamentType,
-          filamentColor:           data.filamentColor,
-          filamentQuantityGrams:   data.filamentQuantityGrams,
-          materialType:            data.materialType,
-          materialSize:            data.materialSize,
-        } : undefined,
+        // The callable serializer encodes undefined object members as null, and
+        // the server rejects null consumable values — send only filled fields.
+        consumables: (is3DPrinter || isLaserCutter)
+          ? buildConsumablesPayload({
+              filamentType:          data.filamentType,
+              filamentColor:         data.filamentColor,
+              filamentQuantityGrams: data.filamentQuantityGrams,
+              materialType:          data.materialType,
+              materialSize:          data.materialSize,
+            })
+          : undefined,
       })
       toast.success('Booking confirmed! Check your bookings page for details.')
       qc.invalidateQueries({ queryKey: ['bookings'] })

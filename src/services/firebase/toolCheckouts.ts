@@ -13,7 +13,7 @@ import {
 import { db } from '@/lib/firebase'
 import { COLLECTIONS, SUBCOLLECTIONS } from './firestore'
 import { todayStr } from '@/lib/utils'
-import { createToolCheckoutCallable } from './functions'
+import { createToolCheckoutCallable, type CreateToolCheckoutInput } from './functions'
 import { logProjectActivity } from './activityLog'
 import type { ToolCheckout, ToolCondition } from '@/types'
 
@@ -42,18 +42,24 @@ function allCheckoutsRef() {
 export async function createToolCheckout(
   data: Omit<ToolCheckout, 'id' | 'createdAt' | 'updatedAt' | 'isOverdue' | 'returnedAt' | 'conditionAtReturn'>
 ): Promise<string> {
-  const { data: result } = await createToolCheckoutCallable({
+  // Optional fields (outsideLocation, expectedReturnTime, notes) may be
+  // undefined for legitimate flows (e.g. in-lab checkouts). The callable
+  // serializer encodes undefined object members as null, which the server
+  // rejects ("outsideLocation must be text"). Strip them first.
+  const payload: CreateToolCheckoutInput = {
     projectId: data.projectId,
     toolCategory: data.toolCategory,
     toolName: data.toolName,
     quantity: data.quantity,
     locationOfUse: data.locationOfUse,
-    outsideLocation: data.outsideLocation,
     expectedReturnDate: data.expectedReturnDate,
-    expectedReturnTime: data.expectedReturnTime,
     conditionAtCheckout: data.conditionAtCheckout,
-    notes: data.notes,
-  })
+  }
+  if (data.outsideLocation !== undefined) payload.outsideLocation = data.outsideLocation
+  if (data.expectedReturnTime !== undefined) payload.expectedReturnTime = data.expectedReturnTime
+  if (data.notes !== undefined) payload.notes = data.notes
+
+  const { data: result } = await createToolCheckoutCallable(payload)
   return result.checkoutId
 }
 
