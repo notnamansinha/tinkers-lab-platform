@@ -99,7 +99,7 @@ and applying them to this lab equipment booking platform.
 ├──────────┬──────────────────────────────────────────────────┤
 │          │  ┌──── INDIGO PANEL ─────┐┌── INDIGO PANEL ────┐ │
 │ DASHBOARD│  │ STRATEGY SELECTOR     ││ AI QUERY INPUT     │ │  ← two indigo action bars
-│ EARNINGS │  │ [dropdown] [EDIT btn] ││ [text input] [✿]   │ │
+│ EARNINGS │  │ [dropdown] [EDIT btn] ││ [text input] []   │ │
 │ SPENDING │  └───────────────────────┘└────────────────────┘ │
 │ INVEST.. │  ┌────────────── CREAM KPI STRIP ──────────────┐ │
 │ FUTURE.. │  │ NET WORTH│ DEBT │ SAVINGS│ ASSETS│ INCOME│EXP│ │  ← 6-cell stat strip

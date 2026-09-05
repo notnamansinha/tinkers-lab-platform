@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, beforeEach, afterAll } from 'vitest'
-import { initializeApp, deleteApp, type FirebaseApp } from 'firebase/app'
+import { initializeApp, deleteApp as firebaseDeleteApp, type FirebaseApp } from 'firebase/app'
 import {
   getAuth, connectAuthEmulator, createUserWithEmailAndPassword,
   signInWithEmailAndPassword, signOut, type Auth,
@@ -7,7 +7,6 @@ import {
 import { getFunctions, connectFunctionsEmulator, httpsCallable } from 'firebase/functions'
 import { initializeApp as adminInit, type App as AdminApp } from 'firebase-admin/app'
 import { getFirestore as getAdminFs, type Firestore as AdminDb } from 'firebase-admin/firestore'
-import { pathToFileURL } from 'node:url'
 const OVERDUE_LIB = new URL('../functions/lib/overdue.js', import.meta.url).href
 const FUNCTIONS_ADMIN_APP = new URL('../functions/node_modules/firebase-admin/lib/app/index.js', import.meta.url).href
 
@@ -70,7 +69,7 @@ const expectCode = async (p: Promise<unknown>, code: string) => {
     await p
     throw new Error(`expected error code ${code} but call succeeded`)
   } catch (e) {
-    const err = e as { code?: string }
+    const err = e as { code?: string; message?: string }
     if (err?.message?.includes('expected error code')) throw e
     // The web SDK prefixes callable error codes with "functions/" — normalize.
     const actual = (err?.code ?? '').replace(/^functions\//, '')
@@ -150,8 +149,8 @@ beforeEach(async () => {
 })
 
 afterAll(async () => {
-  await deleteApp(app)
-  await adminApp.delete()
+  await firebaseDeleteApp(app);
+  await (adminApp as unknown as { delete: () => Promise<void> }).delete()
 })
 
 // ─────────────────────────────────────────────────────────────

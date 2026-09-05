@@ -1,4 +1,4 @@
-# 🛡 Security Model — Tinkers' Lab Platform
+#  Security Model — Tinkers' Lab Platform
 
 > How the platform enforces access control, and where the boundaries are.
 >
@@ -31,8 +31,12 @@ Rules cannot run queries or transactions, so these invariants are enforced in [`
 | No double-booking of machine slots | `createBooking` (transactional conflict check) | `projects/{id}/bookings` create denied |
 | Atomic, tamper-proof `TL-XXX` codes | `createProject` (server-side counter) | `counters` + `projects` create denied |
 | 1 feedback / 5 min (server clock) | `submitFeedback` (`feedbackWindows/{uid}`) | `feedback` create denied |
+| Max 5 projects / rolling hour | `createProject` (count query, `projects userId+createdAt` index) | `projects` create denied |
+| Max 10 bookings / IST day | `createBooking` (collection-group count) | `bookings` create denied |
+| Max 20 open tool checkouts | `createToolCheckout` | `checkouts` create denied |
 | Overdue tools flagged daily | `sweepOverdueCheckouts` (02:00 IST) | n/a |
 | Approve/reject/overdue notifications | `notifyOnProjectUpdate`, `notifyOnBookingUpdate` | `notifications` client-create staff-only |
+| Slot occupancy lifecycle | `syncBookingSlot`, `cleanupBookingSlot` | `slots` client-write denied |
 
 ## 3. Access-control highlights
 
@@ -49,7 +53,14 @@ Rules cannot run queries or transactions, so these invariants are enforced in [`
 - **Transactional email** (booking approved/rejected, overdue reminders) — notifications are in-app today; email is a Phase 9 item.
 - **`isOverdue` between sweeps** is client-computed for instant UI feedback; the daily sweep is authoritative.
 - **Roster/timeline writes by the project owner** are allowed by design (they manage their own project's members and can append log entries); status fields themselves are still admin-gated.
-- **No secrets in the repo** — see §5. Service-account keys (needed only for admin/CI tooling and migration scripts) are git-ignored everywhere including `functions/` and `tests/`.
+- **Agreements are sticky**: `safetyAgreementAccepted` / `termsAccepted` cannot be flipped back to `false` by an owner edit once accepted.
+- **Deactivation**: `isActive = false` revokes self-service and elevated access; `isOwner` read of the user's own profile stays available so the user can see why they were deactivated. Catalog reads (equipment/slots) are `isAuth()`-gated by design.
+- **No secrets in the repo** — see section 5. Service-account keys (needed only for admin/CI tooling and migration scripts) are git-ignored everywhere including `functions/` and `tests/`.
+
+Automated coverage: 375 emulator tests (`npm run test:rules`) pin every rule above, plus
+240 Firestore-rule attack vectors (IDOR, self-escalation, field injection, image-URL
+injection, oversized payloads) and 86 Cloud Function tests (validation, transaction
+isolation, rate limits, triggers).
 
 ## 5. Secrets hygiene
 

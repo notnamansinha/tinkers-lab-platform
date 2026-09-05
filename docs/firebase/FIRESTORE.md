@@ -1,4 +1,4 @@
-# 🔥 Firestore Reference — Tinkers' Lab Platform
+#  Firestore Reference — Tinkers' Lab Platform
 
 > **Authoritative reference for Cloud Firestore in this project**: collection layout, document schemas, security-rule behavior, and composite indexes.
 >
@@ -319,7 +319,7 @@ Defined in [`firestore.indexes.json`](../../firestore.indexes.json) (23 composit
 | `maintenance` | `equipmentId↑, createdAt↓` |
 | `projects` | `status↑, createdAt↓` · `userId↑, status↑, createdAt↓` · `userEmail↑, status↑, createdAt↓` |
 
-Single-field queries need no explicit index. ⚠️ **Deploy via `firebase deploy --only firestore:indexes`** — collection-group indexes are not auto-created like single-field ones. See [`DEPLOYMENT.md`](DEPLOYMENT.md).
+Single-field queries need no explicit index.  **Deploy via `firebase deploy --only firestore:indexes`** — collection-group indexes are not auto-created like single-field ones. See [`DEPLOYMENT.md`](DEPLOYMENT.md).
 
 ---
 

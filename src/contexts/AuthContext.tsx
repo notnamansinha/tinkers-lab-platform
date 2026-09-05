@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState, type ReactNode }
 import type { User } from 'firebase/auth'
 import { type DocumentData, type DocumentSnapshot } from 'firebase/firestore'
 import type { UserProfile, UserRole } from '@/types'
-import { normalizeRole, isAdminRole, isStaffRole } from '@/lib/roles'
+import { isAdminRole, isStaffRole } from '@/lib/roles'
 import { debugLog } from '@/lib/utils'
 
 interface AuthContextValue {
