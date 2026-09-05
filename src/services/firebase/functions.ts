@@ -20,7 +20,6 @@ export interface CreateBookingInput {
   machineId: string
   machineName?: string
   projectId: string
-  projectTitle?: string
   date: string
   startTime: string
   endTime: string
