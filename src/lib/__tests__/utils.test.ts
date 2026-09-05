@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, afterEach } from 'vitest'
 import { serverTimestamp, Timestamp } from 'firebase/firestore'
-import { cn, cleanFirestoreData, formatDate, formatRelativeTime, todayStr } from '@/lib/utils'
+import { cn, cleanFirestoreData, formatDate, formatDateTime, formatRelativeTime, todayStr, isSafeStorageUrl, generateId, mapDocs, debugLog } from '@/lib/utils'
 
 describe('cleanFirestoreData', () => {
   it('strips undefined values at the top level', () => {
@@ -83,5 +83,84 @@ describe('cn', () => {
   it('merges and dedupes tailwind classes', () => {
     expect(cn('px-2', 'px-3')).toBe('px-3')
     expect(cn('bg-red-500', undefined, '', 'text-black')).toBe('bg-red-500 text-black')
+  })
+})
+
+describe('isSafeStorageUrl', () => {
+  it('accepts Firebase Storage bucket URLs', () => {
+    expect(isSafeStorageUrl('https://firebasestorage.googleapis.com/v0/b/demo/o/a.png')).toBe(true)
+  })
+
+  it('rejects non-Firebase URLs (javascript:, http://evil.com)', () => {
+    expect(isSafeStorageUrl('javascript:alert(1)')).toBe(false)
+    expect(isSafeStorageUrl('http://evil.com/tracking.gif')).toBe(false)
+    expect(isSafeStorageUrl('https://cdn.evil.com/a.png')).toBe(false)
+    expect(isSafeStorageUrl('data:image/png;base64,AAAA')).toBe(false)
+  })
+
+  it('rejects URLs longer than 500 chars', () => {
+    expect(isSafeStorageUrl(`https://firebasestorage.googleapis.com/${'x'.repeat(520)}`)).toBe(false)
+    expect(isSafeStorageUrl(`https://firebasestorage.googleapis.com/${'x'.repeat(460)}`)).toBe(true)
+  })
+
+  it('rejects null/undefined', () => {
+    expect(isSafeStorageUrl(null)).toBe(false)
+    expect(isSafeStorageUrl(undefined)).toBe(false)
+  })
+})
+
+describe('generateId', () => {
+  it('zero-pads the counter (1-indexed)', () => {
+    expect(generateId('TL', 0)).toBe('TL-001')
+    expect(generateId('TL', 41)).toBe('TL-042')
+    expect(generateId('TL', 999)).toBe('TL-1000')
+  })
+})
+
+describe('formatDateTime', () => {
+  it('returns an em dash for null/undefined', () => {
+    expect(formatDateTime(null)).toBe('—')
+    expect(formatDateTime(undefined)).toBe('—')
+  })
+
+  it('formats a Date with time', () => {
+    const out = formatDateTime(new Date(2026, 0, 15, 9, 30))
+    expect(out).toContain('2026')
+    expect(out).toContain('09:30')
+  })
+})
+
+describe('mapDocs', () => {
+  it('merges the document id into each row', () => {
+    const snap = {
+      docs: [
+        { id: 'a', data: () => ({ name: 'x' }) },
+        { id: 'b', data: () => ({ name: 'y' }) },
+      ],
+    }
+    expect(mapDocs(snap as never)).toEqual([
+      { name: 'x', id: 'a' },
+      { name: 'y', id: 'b' },
+    ])
+  })
+})
+
+describe('debugLog', () => {
+  afterEach(() => { vi.unstubAllEnvs() })
+
+  it('logs when running in dev mode', () => {
+    vi.stubEnv('DEV', true)
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    debugLog('a', 1)
+    expect(spy).toHaveBeenCalledWith('a', 1)
+    spy.mockRestore()
+  })
+
+  it('does not log outside dev mode', () => {
+    vi.stubEnv('DEV', false)
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    debugLog('a', 1)
+    expect(spy).not.toHaveBeenCalled()
+    spy.mockRestore()
   })
 })
