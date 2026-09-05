@@ -47,7 +47,23 @@ service cloud.firestore {
     }
 
     function hasOnlySafeStorageUrls(list) {
-      return list is list && list.size() <= 12 && list.all(isSafeStorageUrl);
+      // Positional bound-checking instead of list.all(lambda) — identical
+      // semantics (max 12 entries, every entry a safe storage URL) but the
+      // Firestore Emulator does not support lambda expressions in rules.
+      return list is list
+        && list.size() <= 12
+        && (list.size() == 0 || isSafeStorageUrl(list[0]))
+        && (list.size() <= 1 || isSafeStorageUrl(list[1]))
+        && (list.size() <= 2 || isSafeStorageUrl(list[2]))
+        && (list.size() <= 3 || isSafeStorageUrl(list[3]))
+        && (list.size() <= 4 || isSafeStorageUrl(list[4]))
+        && (list.size() <= 5 || isSafeStorageUrl(list[5]))
+        && (list.size() <= 6 || isSafeStorageUrl(list[6]))
+        && (list.size() <= 7 || isSafeStorageUrl(list[7]))
+        && (list.size() <= 8 || isSafeStorageUrl(list[8]))
+        && (list.size() <= 9 || isSafeStorageUrl(list[9]))
+        && (list.size() <= 10 || isSafeStorageUrl(list[10]))
+        && (list.size() <= 11 || isSafeStorageUrl(list[11]));
     }
 
     // ================================================================
@@ -125,8 +141,8 @@ service cloud.firestore {
       // Creation is server-enforced by createToolCheckout so identity, project status,
       // date validity, and the activity entry are written atomically.
       allow create: if false;
-      // Owners may only mark an active checkout overdue or perform one return;
-      // staff can update any checkout.
+      // Owners may only mark an ACTIVE (unreturned) checkout overdue or perform
+      // one return; staff can update any checkout.
       allow update: if isAuth() && (
         (isActiveUser() && resource.data.userId == request.auth.uid && (
           (
@@ -140,6 +156,7 @@ service cloud.firestore {
           )
           || (
             resource.data.action == 'checking_out'
+            && (!resource.data.keys().hasAny(['returnedAt']) || resource.data.returnedAt == null)
             && request.resource.data.isOverdue == true
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isOverdue', 'updatedAt'])
           )
@@ -212,18 +229,34 @@ service cloud.firestore {
     match /workshopRegistrations/{regId} {
       allow read: if isAuth() && (resource.data.userId == request.auth.uid || isStaff());
       allow create: if isActiveUser() && request.resource.data.userId == request.auth.uid;
-      // Owners may only cancel their registration or leave post-workshop
-      // feedback/rating. Identity, workshop, status (except cancel), and
-      // certificate fields are staff-only.
-      allow update: if isStaff()
-                    || (
-                      isActiveUser()
-                      && resource.data.userId == request.auth.uid
-                      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'feedback', 'rating', 'updatedAt'])
-                      && (!request.resource.data.keys().hasAny(['status']) || request.resource.data.status == 'cancelled')
-                      && (!request.resource.data.keys().hasAny(['rating']) || (request.resource.data.rating is int && request.resource.data.rating >= 1 && request.resource.data.rating <= 5))
-                      && (!request.resource.data.keys().hasAny(['feedback']) || (request.resource.data.feedback is string && request.resource.data.feedback.size() <= 500))
-                    );
+      // Staff can update any registration. Owners may only cancel their
+      // registration or leave post-workshop feedback/rating. Each path is its
+      // own allow statement (multiple allow statements OR together) so the
+      // Firestore Emulator can evaluate them without nested-lambda issues.
+      allow update: if isStaff();
+      allow update: if isActiveUser()
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt'])
+        && request.resource.data.status == 'cancelled';
+      allow update: if isActiveUser()
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rating', 'updatedAt'])
+        && request.resource.data.rating is int
+        && request.resource.data.rating >= 1
+        && request.resource.data.rating <= 5;
+      allow update: if isActiveUser()
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['feedback', 'updatedAt'])
+        && request.resource.data.feedback is string
+        && request.resource.data.feedback.size() <= 500;
+      allow update: if isActiveUser()
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['feedback', 'rating', 'updatedAt'])
+        && request.resource.data.feedback is string
+        && request.resource.data.feedback.size() <= 500
+        && request.resource.data.rating is int
+        && request.resource.data.rating >= 1
+        && request.resource.data.rating <= 5;
       allow delete: if isAdmin();
     }
 
@@ -248,6 +281,10 @@ service cloud.firestore {
            'expectedEquipmentNeeds', 'equipmentNeedsOther',
            'safetyAgreementAccepted', 'termsAccepted', 'imageUrls', 'documentUrls', 'updatedAt'
          ])
+         // Agreements, once accepted at registration, cannot be un-accepted by an edit
+         // (they may only be re-confirmed as true — flipping to false is denied).
+         && (!request.resource.data.keys().hasAny(['safetyAgreementAccepted']) || request.resource.data.safetyAgreementAccepted == true)
+         && (!request.resource.data.keys().hasAny(['termsAccepted']) || request.resource.data.termsAccepted == true)
          && (!request.resource.data.keys().hasAny(['imageUrls']) || hasOnlySafeStorageUrls(request.resource.data.imageUrls))
          && (!request.resource.data.keys().hasAny(['documentUrls']) || hasOnlySafeStorageUrls(request.resource.data.documentUrls)))
         || isAdmin()
