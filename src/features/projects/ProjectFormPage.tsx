@@ -42,6 +42,11 @@ const schema = z.object({
   equipmentNeedsOther: z.string().optional(),
   safetyAgreementAccepted: z.boolean().refine(v => v === true, 'You must accept the safety agreement'),
   termsAccepted: z.boolean().refine(v => v === true, 'You must accept the terms'),
+}).superRefine((data, ctx) => {
+  // Mirror the server check: an end date before the start date is invalid.
+  if (data.endDate && data.startDate && data.endDate < data.startDate) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['endDate'], message: 'End date must be on or after the start date' })
+  }
 })
 type FormData = z.infer<typeof schema>
 
