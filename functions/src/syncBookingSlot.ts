@@ -61,14 +61,13 @@ export const syncBookingSlot = onDocumentUpdated(
     const bookingId = event.params.bookingId
 
     if (after.status === 'approved') {
-      // Idempotent — covers re-approvals and time-slot edits.
+      // Idempotent — covers re-approvals and time-slot edits. Always ensure the
+      // CURRENT slot exists; if the occupancy moved, remove the OLD slot so
+      // availability doesn't show stale occupancy at the previous time.
       const moved = before.equipmentId !== after.equipmentId
         || before.date !== after.date
         || before.startTime !== after.startTime
-      if (!moved) return
       if (moved && before.equipmentId && before.date && before.startTime) {
-        // Booking edited in place — remove the OLD slot so availability
-        // doesn't show stale occupancy at the previous time.
         await removeSlot(before)
       }
       await upsertSlot(bookingId, after)
