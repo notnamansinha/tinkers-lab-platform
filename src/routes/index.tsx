@@ -1,8 +1,8 @@
 import React from 'react'
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
-import { useAuth } from '@/contexts/AuthContext'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import AppLayout from '@/components/layout/AppLayout'
 import LoadingSpinner from '@/components/common/LoadingSpinner'
+import { ProtectedRoute, AdminRoute, OnboardingRoute, PublicRoute } from './guards'
 
 const LoginPage = React.lazy(() => import('@/features/auth/LoginPage'))
 const OnboardingPage = React.lazy(() => import('@/features/auth/OnboardingPage'))
@@ -41,45 +41,6 @@ const AdminInventoryPage = React.lazy(() => import('@/features/admin/AdminInvent
 const AdminIssuesPage = React.lazy(() => import('@/features/admin/AdminIssuesPage'))
 const AdminAnnouncementsPage = React.lazy(() => import('@/features/admin/AdminAnnouncementsPage'))
 const AdminEquipmentPage     = React.lazy(() => import('@/features/admin/AdminEquipmentPage'))
-
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, profile, loading } = useAuth()
-  const location = useLocation()
-
-  if (loading) return <LoadingSpinner fullScreen />
-  if (!user) return <Navigate to="/login" state={{ from: location }} replace />
-  if (!profile || !profile.contact) return <Navigate to="/onboarding" replace />
-  return <>{children}</>
-}
-
-function AdminRoute({ children }: { children: React.ReactNode }) {
-  const { user, profile, isAdmin, loading } = useAuth()
-  const location = useLocation()
-
-  if (loading) return <LoadingSpinner fullScreen />
-  if (!user) return <Navigate to="/login" state={{ from: location }} replace />
-  if (!profile || !profile.contact) return <Navigate to="/onboarding" replace />
-  if (!isAdmin) return <Navigate to="/" replace />
-  return <>{children}</>
-}
-
-function OnboardingRoute({ children }: { children: React.ReactNode }) {
-  const { user, profile, loading } = useAuth()
-  if (loading) return <LoadingSpinner fullScreen />
-  if (!user) return <Navigate to="/login" replace />
-  if (profile?.contact && window.location.pathname === '/onboarding') return <Navigate to="/profile" replace />
-  return <>{children}</>
-}
-
-function PublicRoute({ children }: { children: React.ReactNode }) {
-  const { user, profile, authReady } = useAuth()
-  if (!authReady) return <>{children}</>
-  if (user) {
-    if (!profile || !profile.contact) return <Navigate to="/onboarding" replace />
-    return <Navigate to="/" replace />
-  }
-  return <>{children}</>
-}
 
 export default function AppRoutes() {
   return (
