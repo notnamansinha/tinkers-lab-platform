@@ -30,7 +30,7 @@ All must pass. CI runs the same checks plus the emulator suite on a fresh checko
 
 ## 3. Test inventory
 
-### 3.1 Unit + component tests (vitest, `npm test`) — 95 tests, 8 files
+### 3.1 Unit + component tests (vitest, `npm test`) — 104 tests, 10 files
 
 | Area | File | Covers |
 |---|---|---|
@@ -42,8 +42,9 @@ All must pass. CI runs the same checks plus the emulator suite on a fresh checko
 | Checkout service | `src/services/firebase/__tests__/toolCheckouts.test.ts` | return flow, overdue logic, active/overdue collections, anti-hoarding query shape |
 | Overdue (client) | `src/services/firebase/__tests__/overdue.test.ts` | `isCheckoutOverdue` guards |
 | Route guards | `src/routes/__tests__/guards.test.tsx` | Protected/Admin/Onboarding/Public redirects and render logic (jsdom) |
+| Consumables payload | `src/lib/__tests__/consumables.test.ts` | undefined/null/empty pruning before callable serialization |
 
-### 3.2 Emulator suite (`npm run test:rules`) — 375 tests, 3 files
+### 3.2 Emulator suite (`npm run test:rules`) — 391 tests, 5 files
 
 Runs against the Firestore, Storage, Functions and Auth emulators.
 Requires Java 21 and a fresh `npm ci` of the `tests/` and `functions/` packages.
@@ -52,7 +53,9 @@ Requires Java 21 and a fresh `npm ci` of the `tests/` and `functions/` packages.
 |---|---|---|
 | `tests/firestore.rules.test.ts` | 240 | Every collection + attack vector: IDOR, role self-escalation, deactivation, field injection (status/agreements/URLs), oversized payloads, immutable collections, default deny |
 | `tests/storage.rules.test.ts` | 49 | Equipment/project/workshop prefixes, size + MIME limits, owner/staff access, deletes, default deny |
-| `tests/functions.test.ts` | 86 | All callables + triggers: input validation, transaction isolation (concurrent TL codes, single-winner slot booking), feedback rate limit, anti-hoarding, notification & slot-sync triggers, account-deletion cascade |
+| `tests/functions.test.ts` | 90 | All callables + triggers: input validation, transaction isolation (concurrent TL codes, single-winner slot booking, serialized caps), feedback rate limit, anti-hoarding, notification & slot-sync triggers, account-deletion cascade |
+| `tests/fuzz.test.ts` | 13 | Adversarial fuzzing of every callable: NaN/Infinity, __proto__/constructor keys, typed-mismatch scalars, RTL/null-byte strings, oversized fields — asserts no internal/500 escapes |
+| `tests/journey.test.ts` | 1 | Full user lifecycle with security rules ENFORCED (client SDK): signup → project → admin approve → book → check out → return → feedback → delete account |
 
 ## 4. Manual QA checklist (core flows)
 
