@@ -30,7 +30,7 @@ All must pass. CI runs the same checks plus the emulator suite on a fresh checko
 
 ## 3. Test inventory
 
-### 3.1 Unit + component tests (vitest, `npm test`) — 104 tests, 10 files
+### 3.1 Unit + component tests (vitest, `npm test`) — 173 tests, 15 files
 
 | Area | File | Covers |
 |---|---|---|
@@ -43,6 +43,12 @@ All must pass. CI runs the same checks plus the emulator suite on a fresh checko
 | Overdue (client) | `src/services/firebase/__tests__/overdue.test.ts` | `isCheckoutOverdue` guards |
 | Route guards | `src/routes/__tests__/guards.test.tsx` | Protected/Admin/Onboarding/Public redirects and render logic (jsdom) |
 | Consumables payload | `src/lib/__tests__/consumables.test.ts` | undefined/null/empty pruning before callable serialization |
+| Page interaction (workshops) | `src/features/__tests__/workshops.interactions.test.tsx` | Register button → server-enforced callable, closed/full button states, search, staff authoring form create/edit/validation |
+| Page interaction (bookings) | `src/features/__tests__/booking.interactions.test.tsx` | Booking form gating + slot selection + consumables payload; tool checkout in-lab/taking-outside contracts; issue reporting payload |
+| Page interaction (admin) | `src/features/__tests__/admin.interactions.test.tsx` | Project approve/reject/hold/complete, role changes + self-downgrade guard, deactivate, booking reject, equipment delete, announcement create |
+| Page interaction (profile) | `src/features/__tests__/profile.interactions.test.tsx` | Profile edit validation + filtered save fields, feedback word-limit/cooldown, delete two-step, notifications mark read |
+| Page interaction (dashboard) | `src/features/__tests__/dashboard.interactions.test.tsx` | Today's-sessions status filter, overdue alert, seed flow, KPI counts |
+| Page interaction (auth) | `src/features/__tests__/auth.interactions.test.tsx` | Google sign-in success/error/loading, onboarding wizard step gating + profile write |
 
 ### 3.2 Emulator suite (`npm run test:rules`) — 391 tests, 5 files
 

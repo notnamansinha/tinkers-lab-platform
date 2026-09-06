@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
-import { ProtectedRoute, AdminRoute, OnboardingRoute, PublicRoute } from '../guards'
+import { ProtectedRoute, AdminRoute, StaffRoute, OnboardingRoute, PublicRoute } from '../guards'
 import type { User } from 'firebase/auth'
 import type { UserProfile } from '@/types'
 
@@ -116,6 +116,35 @@ describe('AdminRoute', () => {
   it('redirects to onboarding when the profile is incomplete', () => {
     mockAuth({ user: currentUser, profile: null, isAdmin: true })
     harness(G, '/admin-panel')
+    expect(screen.getByText('ONBOARDING')).toBeInTheDocument()
+  })
+})
+
+describe('StaffRoute', () => {
+  const G = <Route path='/staff-panel' element={<StaffRoute><div>STAFF-SECRET</div></StaffRoute>} />
+
+  it('renders children for any staff role (lab assistant)', () => {
+    mockAuth({ user: currentUser, profile: { contact: 'x' }, isStaff: true })
+    harness(G, '/staff-panel')
+    expect(screen.getByText('STAFF-SECRET')).toBeInTheDocument()
+  })
+
+  it('redirects a student (non-staff) to the home route', () => {
+    mockAuth({ user: currentUser, profile: { contact: 'x' }, isStaff: false })
+    harness(G, '/staff-panel')
+    expect(screen.getByText('HOME-PAGE')).toBeInTheDocument()
+    expect(screen.queryByText('STAFF-SECRET')).not.toBeInTheDocument()
+  })
+
+  it('redirects to login when unauthenticated', () => {
+    mockAuth({ user: null })
+    harness(G, '/staff-panel')
+    expect(screen.getByText('LOGIN-PAGE')).toBeInTheDocument()
+  })
+
+  it('redirects to onboarding when the profile is incomplete', () => {
+    mockAuth({ user: currentUser, profile: null, isStaff: true })
+    harness(G, '/staff-panel')
     expect(screen.getByText('ONBOARDING')).toBeInTheDocument()
   })
 })

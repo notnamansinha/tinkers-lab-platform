@@ -45,7 +45,9 @@ const bookingSchema = z.object({
   // Consumables — 3D Printer
   filamentType:            z.string().optional(),
   filamentColor:           z.string().optional(),
-  filamentQuantityGrams:   z.coerce.number().optional(),
+  // Empty input coerces to 0 via z.coerce.number — treat it as "not provided"
+  // so procurement reports never see phantom 0g line items.
+  filamentQuantityGrams:   z.preprocess((v) => (v === '' || v == null ? undefined : v), z.coerce.number().optional()),
   // Consumables — Laser Cutter
   materialType:  z.string().optional(),
   materialSize:  z.string().optional(),
