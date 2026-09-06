@@ -30,7 +30,7 @@ All must pass. CI runs the same checks plus the emulator suite on a fresh checko
 
 ## 3. Test inventory
 
-### 3.1 Unit + component tests (vitest, `npm test`) — 182 tests, 16 files
+### 3.1 Unit + component tests (vitest, `npm test`) — 191 tests, 17 files
 
 | Area | File | Covers |
 |---|---|---|
@@ -50,6 +50,7 @@ All must pass. CI runs the same checks plus the emulator suite on a fresh checko
 | Page interaction (dashboard) | `src/features/__tests__/dashboard.interactions.test.tsx` | Today's-sessions status filter, overdue alert, seed flow, KPI counts |
 | Page interaction (auth) | `src/features/__tests__/auth.interactions.test.tsx` | Google sign-in success/error/loading, onboarding wizard step gating + profile write |
 | Panel batch 2 | `src/features/__tests__/panels2.interactions.test.tsx` | Equipment create/edit payloads, project edit cleaned payload, inventory + maintenance authoring, reports tabs, admin issue resolution, calendar render, checkout quick-return |
+| Panel batch 3 | `src/features/__tests__/panels3.interactions.test.tsx` | Equipment detail Book→form routing, booking cancel dialog, stock-checkout quantity guard, remaining list/detail smoke coverage |
 
 ### 3.2 Emulator suite (`npm run test:rules`) — 391 tests, 5 files
 
