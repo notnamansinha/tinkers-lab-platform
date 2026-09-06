@@ -63,9 +63,6 @@ import IssueFormPage from '../issues/IssueFormPage'
 
 const mToast = vi.mocked(toast)
 
-function useRealTimers() {
-  vi.useRealTimers()
-}
 
 /** Wait until a select has an option matching the label, then return it. */
 async function selectByOption(name: string, optionLabel: RegExp, value: string) {

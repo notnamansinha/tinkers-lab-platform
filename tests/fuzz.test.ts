@@ -124,7 +124,7 @@ describe('createProject — adversarial payloads', () => {
   })
 
   it('treats __proto__ / constructor keys as unexpected fields (no prototype pollution)', async () => {
-    await assertCleanErrors('createProject', [
+    const r = await assertCleanErrors('createProject', [
       JSON.parse('{"title":"A valid fuzz project","abstract":"' + 'x'.repeat(60) + '","contact":"x","startDate":"2099-05-01","expectedEquipmentNeeds":["3D Printer"],"safetyAgreementAccepted":true,"termsAccepted":true,"__proto__":{"isAdmin":true}}'),
       { ...valid, constructor: { prototype: { role: 'super_admin' } } },
     ])

@@ -12,7 +12,7 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { makeQueryClient } from './helpers'
 import { useAuth } from '@/contexts/AuthContext'
 import { toast } from 'sonner'
-import { renderPage, snapDoc, snapDocs, currentUser, adminProfile, flush } from './helpers'
+import { renderPage, snapDoc, snapDocs, adminProfile, flush } from './helpers'
 
 const mockFirestore = vi.hoisted(() => ({
   collection: vi.fn(() => 'col'),

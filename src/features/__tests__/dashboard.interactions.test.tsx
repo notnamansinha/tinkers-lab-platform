@@ -4,7 +4,7 @@
 // "Today's sessions"), overdue alert branching, empty-states, and the
 // primary navigation actions. AdminDashboard seed/kpi flows.
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { fireEvent, screen, waitFor } from '@testing-library/react'
+import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useAuth } from '@/contexts/AuthContext'
 import { toast } from 'sonner'
