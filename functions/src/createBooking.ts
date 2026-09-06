@@ -1,7 +1,7 @@
 import { onCall } from 'firebase-functions/v2/https'
 import { HttpsError } from 'firebase-functions/v2/https'
 import { getFirestore, FieldValue } from 'firebase-admin/firestore'
-import { getUserProfile, todayInIndia } from './lib/helpers'
+import { getUserProfile, todayInIndia, nowTimeInIndia } from './lib/helpers'
 
 const db = getFirestore()
 
@@ -103,6 +103,14 @@ export const createBooking = onCall(
     // No backdated bookings — a booking slot in the past is meaningless.
     if (input.date < todayInIndia()) {
       throw new HttpsError('invalid-argument', 'date must not be in the past.')
+    }
+    // Booking slots for TODAY must still be in the future — otherwise users
+    // can book 09:00–10:00 at 2pm and create phantom past sessions.
+    if (input.date === todayInIndia() && input.endTime <= nowTimeInIndia()) {
+      throw new HttpsError(
+        'invalid-argument',
+        'The chosen slot has already passed for today. Pick a later time slot.',
+      )
     }
     if (input.consumables !== undefined && !isPlainConsumables(input.consumables)) {
       throw new HttpsError('invalid-argument', 'consumables must be a flat map of string/number values.')

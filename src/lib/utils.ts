@@ -48,6 +48,19 @@ export function todayStr(): string {
 }
 
 /**
+ * Current wall-clock time (HH:MM, 24h) in Asia/Kolkata — mirrors
+ * nowTimeInIndia() in the Cloud Functions so the client disables already-
+ * passed booking slots for "today" exactly like the server rejects them.
+ */
+export function nowTimeStr(): string {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: false,
+  }).formatToParts(new Date())
+  const get = (type: string) => parts.find((part) => part.type === type)?.value ?? ''
+  return `${get('hour')}:${get('minute')}`
+}
+
+/**
  * Uploaded-file allow-list used when rendering user-supplied URLs.
  * Project images/documents must come from our own Firebase Storage bucket —
  * anything else (tracking pixels, mixed content, off-site phishing links)

@@ -1,13 +1,14 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { collection, query, orderBy, getDocs, addDoc, doc, updateDoc } from 'firebase/firestore'
+import { collection, query, orderBy, getDocs } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { COLLECTIONS } from '@/services/firebase/firestore'
+import { registerForWorkshopCallable } from '@/services/firebase/functions'
 import { useAuth } from '@/contexts/AuthContext'
 import { Search, Plus, Users, Calendar, MapPin, GraduationCap } from 'lucide-react'
 import { toast } from 'sonner'
-import type { Workshop, WorkshopRegistration } from '@/types'
+import type { Workshop } from '@/types'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -36,18 +37,19 @@ export default function WorkshopListPage() {
   const register = async (workshopId: string, workshopTitle: string) => {
     if (!user || !profile) { toast.error('Please sign in'); return }
     try {
-      await addDoc(collection(db, COLLECTIONS.WORKSHOP_REGISTRATIONS), {
-        workshopId, workshopTitle,
-        userId: user.uid, userName: profile.displayName, userEmail: user.email!,
-        status: 'registered', certificateIssued: false,
-      } as Omit<WorkshopRegistration,'id'|'createdAt'|'updatedAt'>)
-      
-      const wRef = doc(db, COLLECTIONS.WORKSHOPS, workshopId)
-      await updateDoc(wRef, { registeredCount: (workshops.find(w => w.id === workshopId)?.registeredCount ?? 0) + 1 })
-      
-      toast.success('Registered successfully!')
+      // Server-enforced registration (Cloud Function): active + capacity +
+      // duplicate checks and the seat-count increment happen atomically, so
+      // the button can no longer half-succeed and error on the counter
+      // update (that client two-step write was denied by security rules).
+      await registerForWorkshopCallable({ workshopId })
+      toast.success(`Registered for ${workshopTitle}!`)
       qc.invalidateQueries({ queryKey: ['workshops'] })
-    } catch (e) { toast.error(e instanceof Error ? e.message : 'Failed') }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Failed'
+      // No-stack error for the common case — the duplicate/capacity reasons
+      // come back as clean messages from the callable.
+      toast.error(msg === '[object Object]' ? 'Failed to register' : msg)
+    }
   }
 
   return (

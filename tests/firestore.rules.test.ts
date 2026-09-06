@@ -1155,19 +1155,15 @@ describe('issues — read/update/delete', () => {
 // ================================================================
 // WORKSHOP REGISTRATIONS
 // ================================================================
-describe('workshopRegistrations — create', () => {
-  it('an active user can register themselves (self only)', async () => {
+describe('workshopRegistrations — create (server-enforced)', () => {
+  it('direct client registration is denied — registerForWorkshop callable is the only path', async () => {
+    // The old flow created the registration client-side but was then denied
+    // the workshops.registeredCount increment → every student click failed
+    // while piling up duplicates. Creation now lives in the Cloud Function
+    // (atomic capacity/duplicate checks + counter increment), so any direct
+    // client create is rejected.
     const db = env.authenticatedContext(STUDENT_A).firestore()
-    await assertSucceeds(db.doc('workshopRegistrations/reg-self').set({
-      workshopId: 'w1', workshopTitle: 'Soldering 101', userId: STUDENT_A,
-      userName: 'A', userEmail: 'a@x.com', status: 'registered',
-      certificateIssued: false, createdAt: new Date(), updatedAt: new Date(),
-    }))
-  })
-
-  it('a user cannot register under another user\'s identity', async () => {
-    const db = env.authenticatedContext(STUDENT_B).firestore()
-    await assertFails(db.doc('workshopRegistrations/reg-other').set({
+    await assertFails(db.doc('workshopRegistrations/reg-self').set({
       workshopId: 'w1', workshopTitle: 'Soldering 101', userId: STUDENT_A,
       userName: 'A', userEmail: 'a@x.com', status: 'registered',
       certificateIssued: false, createdAt: new Date(), updatedAt: new Date(),

@@ -228,7 +228,13 @@ service cloud.firestore {
     // ================================================================
     match /workshopRegistrations/{regId} {
       allow read: if isAuth() && (resource.data.userId == request.auth.uid || isStaff());
-      allow create: if isActiveUser() && request.resource.data.userId == request.auth.uid;
+      // 📝 CREATION IS SERVER-ENFORCED: `registerForWorkshop` (Cloud Function)
+      // transactionally checks active/capacity/duplicate BEFORE writing the
+      // registration and incrementing workshops.registeredCount together.
+      // Direct client creation is denied — the old client-only flow could
+      // create the registration but was denied the counter increment, so
+      // every student click failed and retries stacked duplicates.
+      allow create: if false;
       // Staff can update any registration. Owners may only cancel their
       // registration or leave post-workshop feedback/rating. Each path is its
       // own allow statement (multiple allow statements OR together) so the

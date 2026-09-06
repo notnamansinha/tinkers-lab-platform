@@ -93,3 +93,14 @@ export const deleteMyAccountCallable = httpsCallable<Record<string, never>, { de
   functions,
   'deleteMyAccount',
 )
+
+/**
+ * Server-enforced workshop registration — transactional active/capacity/
+ * duplicate checks plus the seat-count increment (see functions/src/
+ * registerForWorkshop.ts). The old client flow was denied the counter
+ * update by security rules, so every student click failed silently.
+ */
+export const registerForWorkshopCallable = httpsCallable<
+  { workshopId: string },
+  { registrationId: string }
+>(functions, 'registerForWorkshop')

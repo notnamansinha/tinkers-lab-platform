@@ -120,9 +120,9 @@ describe('full user journey (rules enforced)', () => {
     }
     expect(notifs!.docs.some((d) => d.data().type === 'project_approved')).toBe(true)
 
-    // ── 3. Owner books the printer via the callable ──
+    // ── 3. Owner books the printer via the callable (tomorrow, IST) ──
     await signIn(OWNER_EMAIL)
-    const date = todayIST()
+    const date = addDaysIST(1)
     const bookRes = await client('createBooking', {
       projectId, equipmentId: 'journey-3dp', machineId: 'journey-3dp',
       machineName: 'Journey Printer', date, startTime: '10:00', endTime: '11:00',
@@ -194,4 +194,10 @@ function todayIST(): string {
   }).formatToParts(new Date())
   const get = (t: string) => parts.find((p) => p.type === t)?.value ?? ''
   return `${get('year')}-${get('month')}-${get('day')}`
+}
+
+function addDaysIST(days: number): string {
+  const d = new Date(`${todayIST()}T00:00:00Z`)
+  d.setUTCDate(d.getUTCDate() + days)
+  return d.toISOString().slice(0, 10)
 }
