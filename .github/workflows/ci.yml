@@ -35,8 +35,8 @@ jobs:
       - name: Unit tests
         run: npm test
 
-  rules-tests:
-    name: Firestore & Storage Rules Tests
+  emulator-tests:
+    name: Rules & Cloud Function Emulator Tests (373)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -54,5 +54,8 @@ jobs:
       - name: Install rules-test dependencies
         run: npm ci --prefix tests
 
-      - name: Run rules tests in emulators
-        run: npx firebase-tools emulators:exec --only firestore,storage --project demo-tinkers-lab "npm --prefix tests test"
+      - name: Compile Cloud Functions (emulator loads lib/index.js)
+        run: npm ci --prefix functions && npm --prefix functions run build
+
+      - name: Run rules + functions tests in emulators
+        run: npx firebase-tools emulators:exec --only firestore,storage,functions,auth --project demo-tinkers-lab "npm --prefix tests test"

@@ -13,7 +13,8 @@ import { getUserProjects } from '@/services/firebase/projects'
 import { useAuth } from '@/contexts/AuthContext'
 import { ArrowLeft, AlertTriangle, CheckCircle2, Plus } from 'lucide-react'
 import { toast } from 'sonner'
-import { cn, todayStr } from '@/lib/utils'
+import { cn, todayStr, nowTimeStr } from '@/lib/utils'
+import { buildConsumablesPayload } from '@/lib/consumables'
 import type { Equipment } from '@/types'
 
 import { Button } from '@/components/ui/button'
@@ -44,7 +45,9 @@ const bookingSchema = z.object({
   // Consumables — 3D Printer
   filamentType:            z.string().optional(),
   filamentColor:           z.string().optional(),
-  filamentQuantityGrams:   z.coerce.number().optional(),
+  // Empty input coerces to 0 via z.coerce.number — treat it as "not provided"
+  // so procurement reports never see phantom 0g line items.
+  filamentQuantityGrams:   z.preprocess((v) => (v === '' || v == null ? undefined : v), z.coerce.number().optional()),
   // Consumables — Laser Cutter
   materialType:  z.string().optional(),
   materialSize:  z.string().optional(),
@@ -115,6 +118,19 @@ export default function BookingFormPage() {
   const watchProjectId   = watch('projectId')
   const watchDate        = watch('date')
   const watchStart       = watch('startTime')
+  const nowHM            = nowTimeStr()
+  const bookingToday     = watchDate === todayStr()
+  // A slot has already passed today when its end time has elapsed (server
+  // rejects those with 'The chosen slot has already passed for today').
+  const timePassedToday = (t: string) => bookingToday && t <= nowHM
+  // A start slot is unusable today once one hour from it has already elapsed
+  // (no valid end time later than it remains).
+  const startPassedToday = (t: string) => {
+    if (!bookingToday) return false
+    const [h, m] = t.split(':').map(Number)
+    const next = `${String((h + 1) % 24).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+    return next <= nowHM
+  }
   const selectedMachine  = machines.find(m => m.id === watchEquipmentId)
   const is3DPrinter      = selectedMachine?.category === 'Digital Fabrication' && selectedMachine?.name.toLowerCase().includes('printer')
   const isLaserCutter    = selectedMachine?.name.toLowerCase().includes('laser')
@@ -167,13 +183,17 @@ export default function BookingFormPage() {
         endTime:     data.endTime,
         purpose:     data.purpose,
         safetyAgreementAccepted: data.safetyAgreementAccepted,
-        consumables: (is3DPrinter || isLaserCutter) ? {
-          filamentType:            data.filamentType,
-          filamentColor:           data.filamentColor,
-          filamentQuantityGrams:   data.filamentQuantityGrams,
-          materialType:            data.materialType,
-          materialSize:            data.materialSize,
-        } : undefined,
+        // The callable serializer encodes undefined object members as null, and
+        // the server rejects null consumable values — send only filled fields.
+        consumables: (is3DPrinter || isLaserCutter)
+          ? buildConsumablesPayload({
+              filamentType:          data.filamentType,
+              filamentColor:         data.filamentColor,
+              filamentQuantityGrams: data.filamentQuantityGrams,
+              materialType:          data.materialType,
+              materialSize:          data.materialSize,
+            })
+          : undefined,
       })
       toast.success('Booking confirmed! Check your bookings page for details.')
       qc.invalidateQueries({ queryKey: ['bookings'] })
@@ -327,18 +347,22 @@ export default function BookingFormPage() {
                         <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
                           {TIME_SLOTS.slice(0, -1).map(t => {
                             const booked = isTimeBooked(t)
+                            const past = startPassedToday(t)
+                            const disabled = booked || past
                             return (
                               <button
                                 key={t} type="button"
-                                onClick={() => !booked && field.onChange(t)}
-                                disabled={booked}
+                                onClick={() => !disabled && field.onChange(t)}
+                                disabled={disabled}
                                 className={cn(
                                    'min-h-10 rounded-lg border-2 px-1 py-2 text-xs font-medium transition-all',
                                   booked
                                     ? 'bg-destructive/10 border-destructive/20 text-destructive/50 cursor-not-allowed line-through'
-                                    : field.value === t
-                                      ? 'bg-primary border-primary text-primary-foreground'
-                                      : 'bg-background border-border hover:border-primary/50 text-foreground'
+                                    : past
+                                      ? 'opacity-30 cursor-not-allowed border-border'
+                                      : field.value === t
+                                        ? 'bg-primary border-primary text-primary-foreground'
+                                        : 'bg-background border-border hover:border-primary/50 text-foreground'
                                 )}
                               >{t}</button>
                             )
@@ -356,7 +380,8 @@ export default function BookingFormPage() {
                           {TIME_SLOTS.slice(1).map(t => {
                             const booked = isTimeBooked(t)
                             const beforeStart = watchStart && t <= watchStart
-                            const disabled = booked || !!beforeStart
+                            const past = timePassedToday(t)
+                            const disabled = booked || !!beforeStart || past
                             return (
                               <button
                                 key={t} type="button"
@@ -368,9 +393,11 @@ export default function BookingFormPage() {
                                     ? 'bg-destructive/10 border-destructive/20 text-destructive/50 cursor-not-allowed line-through'
                                     : beforeStart
                                       ? 'opacity-30 cursor-not-allowed border-border'
-                                      : field.value === t
-                                        ? 'bg-primary border-primary text-primary-foreground'
-                                        : 'bg-background border-border hover:border-primary/50 text-foreground'
+                                      : past
+                                        ? 'opacity-30 cursor-not-allowed border-border'
+                                        : field.value === t
+                                          ? 'bg-primary border-primary text-primary-foreground'
+                                          : 'bg-background border-border hover:border-primary/50 text-foreground'
                                 )}
                               >{t}</button>
                             )

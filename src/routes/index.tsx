@@ -1,8 +1,8 @@
 import React from 'react'
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
-import { useAuth } from '@/contexts/AuthContext'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import AppLayout from '@/components/layout/AppLayout'
 import LoadingSpinner from '@/components/common/LoadingSpinner'
+import { ProtectedRoute, AdminRoute, StaffRoute, OnboardingRoute, PublicRoute } from './guards'
 
 const LoginPage = React.lazy(() => import('@/features/auth/LoginPage'))
 const OnboardingPage = React.lazy(() => import('@/features/auth/OnboardingPage'))
@@ -42,45 +42,6 @@ const AdminIssuesPage = React.lazy(() => import('@/features/admin/AdminIssuesPag
 const AdminAnnouncementsPage = React.lazy(() => import('@/features/admin/AdminAnnouncementsPage'))
 const AdminEquipmentPage     = React.lazy(() => import('@/features/admin/AdminEquipmentPage'))
 
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, profile, loading } = useAuth()
-  const location = useLocation()
-
-  if (loading) return <LoadingSpinner fullScreen />
-  if (!user) return <Navigate to="/login" state={{ from: location }} replace />
-  if (!profile || !profile.contact) return <Navigate to="/onboarding" replace />
-  return <>{children}</>
-}
-
-function AdminRoute({ children }: { children: React.ReactNode }) {
-  const { user, profile, isAdmin, loading } = useAuth()
-  const location = useLocation()
-
-  if (loading) return <LoadingSpinner fullScreen />
-  if (!user) return <Navigate to="/login" state={{ from: location }} replace />
-  if (!profile || !profile.contact) return <Navigate to="/onboarding" replace />
-  if (!isAdmin) return <Navigate to="/" replace />
-  return <>{children}</>
-}
-
-function OnboardingRoute({ children }: { children: React.ReactNode }) {
-  const { user, profile, loading } = useAuth()
-  if (loading) return <LoadingSpinner fullScreen />
-  if (!user) return <Navigate to="/login" replace />
-  if (profile?.contact && window.location.pathname === '/onboarding') return <Navigate to="/profile" replace />
-  return <>{children}</>
-}
-
-function PublicRoute({ children }: { children: React.ReactNode }) {
-  const { user, profile, authReady } = useAuth()
-  if (!authReady) return <>{children}</>
-  if (user) {
-    if (!profile || !profile.contact) return <Navigate to="/onboarding" replace />
-    return <Navigate to="/" replace />
-  }
-  return <>{children}</>
-}
-
 export default function AppRoutes() {
   return (
     <React.Suspense fallback={<LoadingSpinner fullScreen />}>
@@ -98,8 +59,8 @@ export default function AppRoutes() {
 
           <Route path="/equipment" element={<EquipmentListPage />} />
           <Route path="/equipment/:id" element={<EquipmentDetailPage />} />
-          <Route path="/equipment/new" element={<EquipmentFormPage />} />
-          <Route path="/equipment/:id/edit" element={<EquipmentFormPage />} />
+          <Route path="/equipment/new" element={<StaffRoute><EquipmentFormPage /></StaffRoute>} />
+          <Route path="/equipment/:id/edit" element={<StaffRoute><EquipmentFormPage /></StaffRoute>} />
 
           <Route path="/bookings" element={<BookingCalendarPage />} />
           <Route path="/bookings/new" element={<BookingFormPage />} />
@@ -107,21 +68,21 @@ export default function AppRoutes() {
 
           <Route path="/inventory" element={<InventoryListPage />} />
           <Route path="/inventory/:id" element={<InventoryDetailPage />} />
-          <Route path="/inventory/new" element={<InventoryFormPage />} />
-          <Route path="/inventory/:id/edit" element={<InventoryFormPage />} />
+          <Route path="/inventory/new" element={<StaffRoute><InventoryFormPage /></StaffRoute>} />
+          <Route path="/inventory/:id/edit" element={<StaffRoute><InventoryFormPage /></StaffRoute>} />
           <Route path="/checkout" element={<ToolCheckoutPage />} />
           <Route path="/checkout/history" element={<ToolCheckoutListPage />} />
-          <Route path="/stock/checkout" element={<CheckoutPage />} />
+          <Route path="/stock/checkout" element={<StaffRoute><CheckoutPage /></StaffRoute>} />
 
           <Route path="/maintenance" element={<MaintenanceListPage />} />
           <Route path="/maintenance/:id" element={<MaintenanceDetailPage />} />
-          <Route path="/maintenance/new" element={<MaintenanceFormPage />} />
-          <Route path="/maintenance/:id/edit" element={<MaintenanceFormPage />} />
+          <Route path="/maintenance/new" element={<StaffRoute><MaintenanceFormPage /></StaffRoute>} />
+          <Route path="/maintenance/:id/edit" element={<StaffRoute><MaintenanceFormPage /></StaffRoute>} />
 
           <Route path="/workshops" element={<WorkshopListPage />} />
           <Route path="/workshops/:id" element={<WorkshopDetailPage />} />
-          <Route path="/workshops/new" element={<WorkshopFormPage />} />
-          <Route path="/workshops/:id/edit" element={<WorkshopFormPage />} />
+          <Route path="/workshops/new" element={<StaffRoute><WorkshopFormPage /></StaffRoute>} />
+          <Route path="/workshops/:id/edit" element={<StaffRoute><WorkshopFormPage /></StaffRoute>} />
 
           <Route path="/projects" element={<ProjectListPage />} />
           <Route path="/projects/new" element={<ProjectFormPage />} />

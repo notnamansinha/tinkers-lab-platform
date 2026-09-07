@@ -1,4 +1,4 @@
-# 🗄 Firebase Storage — Tinkers' Lab Platform
+#  Firebase Storage — Tinkers' Lab Platform
 
 > Storage layout, security rules, and the equipment-image upload pipeline.
 >
@@ -67,4 +67,4 @@ sequenceDiagram
 firebase deploy --only storage
 ```
 
-> ⚠️ Like Firestore rules, Storage rules are **server-side enforcement** — the client UI only mirrors them for UX.
+>  Like Firestore rules, Storage rules are **server-side enforcement** — the client UI only mirrors them for UX.

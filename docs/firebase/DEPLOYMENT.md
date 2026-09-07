@@ -1,4 +1,4 @@
-# 🚀 Deployment Guide — Tinkers' Lab Platform
+#  Deployment Guide — Tinkers' Lab Platform
 
 > How to deploy Hosting, Firestore rules, composite indexes, and Storage rules to Firebase.
 >
@@ -25,8 +25,8 @@ npm run lint         # oxlint — should pass before shipping
 
 - SPA rewrites (`**` → `/index.html`)
 - Long cache for hashed `js|css` assets (`max-age=31536000`)
-- `no-cache` on `index.html`
-- Security headers on everything: `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`, `Strict-Transport-Security` (1 year, includeSubDomains), and a `Content-Security-Policy` tuned for Firebase services.
+- `no-cache` on `index.html` and `sw.js` (the service worker must always fetch fresh)
+- Security headers on everything: `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`, `Strict-Transport-Security` (1 year, includeSubDomains), `Permissions-Policy: camera=(), microphone=(), geolocation=()`, and a `Content-Security-Policy` tuned for Firebase services (no `unsafe-eval`; `connect-src` covers `*.googleapis.com`, `*.firebaseio.com`, `*.firebase.com`).
 
 ## 3. Configure environment
 
@@ -48,7 +48,7 @@ See [`ENVIRONMENT.md`](ENVIRONMENT.md) for the full variable list. **Never commi
 | `npm run deploy:functions` | Cloud Functions (`functions/` — build + deploy) |
 | `firebase deploy` | Everything |
 
-> ⚠️ **Collection-group indexes are not auto-created** like single-field indexes — you must deploy `firestore:indexes` before collection-group queries (bookings/checkouts/activityLog admin views, conflict checks) will work in a fresh project.
+>  **Collection-group indexes are not auto-created** like single-field indexes — you must deploy `firestore:indexes` before collection-group queries (bookings/checkouts/activityLog admin views, conflict checks) will work in a fresh project.
 
 ## 5. Order of operations for a fresh project
 
@@ -71,7 +71,7 @@ VITE_USE_EMULATORS=true npm run dev
 
 The app connects to **all four** emulators automatically when `import.meta.env.DEV` and `VITE_USE_EMULATORS === 'true'` — including the functions emulator (`localhost:5001`) so `createProject` / `createBooking` / `submitFeedback` work locally. Firestore uses persistent local cache for offline support & reduced reads.
 
-> ⚠️ The emulator suite needs **Java**. Security-rule tests run under `npm run test:rules` — see [`development/TESTING.md`](../development/TESTING.md).
+>  The emulator suite needs **Java**. Security-rule tests run under `npm run test:rules` — see [`development/TESTING.md`](../development/TESTING.md).
 
 ## 7. Function region
 
@@ -110,12 +110,16 @@ Platform abuse protection (quota theft via stolen ID tokens) is **not** yet enfo
 
 | Function | Trigger | Purpose |
 |---|---|---|
-| createProject | onCall | Atomic TL-XXX counter + project + timeline + roster |
-| createBooking | onCall | Transactional conflict detection + booking + occupancy slot |
-| createToolCheckout | onCall | Validated checkout creation (open-checkout cap) |
+| createProject | onCall | Atomic TL-XXX counter + project + timeline + roster; max 5 registrations per rolling hour (`resource-exhausted`) |
+| createBooking | onCall | Transactional conflict detection + booking + occupancy slot; max 10 bookings per IST day |
+| createToolCheckout | onCall | Validated checkout creation (open-checkout cap of 20) |
 | appendActivityLog | onCall | Server-stamped, forge-proof timeline appends |
 | deleteMyAccount | onCall | Full data-erasure cascade |
 | submitFeedback | onCall | 5-minute server-side feedback rate limit |
 | notifyOnProjectUpdate / notifyOnBookingUpdate | onDocumentUpdated | In-app notifications |
 | syncBookingSlot / cleanupBookingSlot | onDocumentUpdated / onDocumentDeleted | Privacy-safe slot occupancy lifecycle |
 | sweepOverdueCheckouts | onSchedule 02:00 IST | Overdue flags + notifications |
+
+The project rate limit reads `projects (userId, createdAt DESC)` — a composite index added in
+`firestore.indexes.json`. Deploy it with `firebase deploy --only firestore:indexes` before
+initializing a fresh environment (see section 5).

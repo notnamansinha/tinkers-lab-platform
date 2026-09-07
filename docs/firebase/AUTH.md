@@ -1,4 +1,4 @@
-# 🔐 Authentication & Authorization — Tinkers' Lab Platform
+#  Authentication & Authorization — Tinkers' Lab Platform
 
 > How identity and permissions work: Google sign-in, profile bootstrapping, the role model, and route guards.
 >
@@ -68,4 +68,4 @@ All routes are lazy-loaded (`React.lazy`) with a shared `<LoadingSpinner fullScr
 - Server-side enforcement: `firestore.rules` (helper functions at the top)
 - Identity/role types: `src/types/index.ts` (`UserRole`, `UserType`, `UserProfile`)
 
-> ⚠️ No real credentials or service accounts appear anywhere in this repo. See [`ENVIRONMENT.md`](ENVIRONMENT.md).
+>  No real credentials or service accounts appear anywhere in this repo. See [`ENVIRONMENT.md`](ENVIRONMENT.md).

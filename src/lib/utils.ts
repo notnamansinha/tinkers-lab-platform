@@ -35,8 +35,29 @@ export function formatRelativeTime(date: FirestoreDateValue | null | undefined):
 }
 
 export function todayStr(): string {
-  const d = new Date()
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  // Today's calendar date (YYYY-MM-DD) in Asia/Kolkata — the SAME clock the
+  // Cloud Functions use (todayInIndia in functions/src/lib/helpers.ts). Every
+  // date constraint in the app (booking min-date, checkout due dates, overdue
+  // comparisons) is expressed in IST; using the browser-local timezone here
+  // makes the client disagree with the server for users outside India.
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).formatToParts(new Date())
+  const get = (type: string) => parts.find((part) => part.type === type)?.value ?? ''
+  return `${get('year')}-${get('month')}-${get('day')}`
+}
+
+/**
+ * Current wall-clock time (HH:MM, 24h) in Asia/Kolkata — mirrors
+ * nowTimeInIndia() in the Cloud Functions so the client disables already-
+ * passed booking slots for "today" exactly like the server rejects them.
+ */
+export function nowTimeStr(): string {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: false,
+  }).formatToParts(new Date())
+  const get = (type: string) => parts.find((part) => part.type === type)?.value ?? ''
+  return `${get('hour')}:${get('minute')}`
 }
 
 /**

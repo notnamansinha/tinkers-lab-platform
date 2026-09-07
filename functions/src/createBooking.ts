@@ -1,7 +1,7 @@
 import { onCall } from 'firebase-functions/v2/https'
 import { HttpsError } from 'firebase-functions/v2/https'
 import { getFirestore, FieldValue } from 'firebase-admin/firestore'
-import { getUserProfile, todayInIndia } from './lib/helpers'
+import { getUserProfile, todayInIndia, nowTimeInIndia } from './lib/helpers'
 
 const db = getFirestore()
 
@@ -29,6 +29,8 @@ const DATE_PATTERN = /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/
 const MAX_CONSUMABLES_KEYS = 100
 const MAX_CONSUMABLES_KEY_LEN = 50
 const MAX_CONSUMABLES_VALUE_LEN = 200
+// Anti-abuse rate limit: at most 10 bookings per user per day (IST).
+const MAX_BOOKINGS_PER_DAY = 10
 
 function isRealDate(value: string): boolean {
   if (!DATE_PATTERN.test(value)) return false
@@ -102,6 +104,14 @@ export const createBooking = onCall(
     if (input.date < todayInIndia()) {
       throw new HttpsError('invalid-argument', 'date must not be in the past.')
     }
+    // Booking slots for TODAY must still be in the future — otherwise users
+    // can book 09:00–10:00 at 2pm and create phantom past sessions.
+    if (input.date === todayInIndia() && input.endTime <= nowTimeInIndia()) {
+      throw new HttpsError(
+        'invalid-argument',
+        'The chosen slot has already passed for today. Pick a later time slot.',
+      )
+    }
     if (input.consumables !== undefined && !isPlainConsumables(input.consumables)) {
       throw new HttpsError('invalid-argument', 'consumables must be a flat map of string/number values.')
     }
@@ -143,6 +153,12 @@ export const createBooking = onCall(
       throw new HttpsError('failed-precondition', 'Machine is not available for booking.')
     }
 
+    // ── 4b. Rate limit — at most 10 bookings per user per day (IST) ─────
+    // Evaluated INSIDE the booking transaction so a retrying transaction
+    // re-counts against committed state (the slot doc serializes same-slot
+    // races; the count closes cross-machine bursts on retry).
+    const today = todayInIndia()
+
     // ── 5. Conflict detection + atomic write (server-side) ─────────
     const bookingId = db.collection('projects').doc(input.projectId)
       .collection('bookings').doc().id
@@ -152,6 +168,11 @@ export const createBooking = onCall(
       .where('equipmentId', '==', input.equipmentId)
       .where('date', '==', input.date)
       .where('status', '==', 'approved')
+    const dailyCountRef = () => db
+      .collectionGroup('bookings')
+      .where('userId', '==', uid)
+      .where('date', '==', today)
+      .count()
 
     await db.runTransaction(async (tx) => {
       // Re-read inside the transaction for isolation.
@@ -164,6 +185,11 @@ export const createBooking = onCall(
             `Time slot conflicts with an existing booking (${b.startTime}–${b.endTime}).`,
           )
         }
+      }
+
+      const dailyCount = await tx.get(dailyCountRef())
+      if (dailyCount.data().count >= MAX_BOOKINGS_PER_DAY) {
+        throw new HttpsError('resource-exhausted', `You can make at most ${MAX_BOOKINGS_PER_DAY} bookings per day. Please try again tomorrow.`)
       }
 
       const bookingRef = db

@@ -1,4 +1,4 @@
-# ⚡ Tinkers' Lab Platform
+# Tinkers' Lab Platform
 
 > **Modern Makerspace & Fabrication Lab Management Platform** for Ahmedabad University's Innovation & Tinkering Lab.
 > Streamlines machine reservations, tool borrowing, project consumable logging, inventory control, workshop registrations, and laboratory maintenance across mobile and desktop.
@@ -7,7 +7,7 @@
 
 ---
 
-## 📑 Table of Contents
+## Table of Contents
 
 - [Overview](#-overview)
 - [Key Features](#-key-features)
@@ -21,7 +21,7 @@
 
 ---
 
-## 🎯 Overview
+## Overview
 
 The **Tinkers' Lab Platform** is an enterprise-grade web application built to digitize and automate the day-to-day operations of an academic makerspace. It connects students, faculty researchers, startup founders, external visitors, lab assistants, and super admins into a single unified operating system.
 
@@ -33,7 +33,7 @@ The **Tinkers' Lab Platform** is an enterprise-grade web application built to di
 
 ---
 
-## 🚀 Key Features
+## Key Features
 
 - **Tier 1 machine booking** — calendar-based time-slot reservations for laser cutters, 3D printers, CNC routers; auto-confirm with client & server-side conflict detection; consumable logging; safety pre-requisites.
 - **Tier 2 tool checkout** — rapid checkout/return for power drills, soldering kits, multimeters, hand tools; location tracking (in-lab / off-site); condition inspection; automated overdue tracking.
@@ -45,7 +45,7 @@ The **Tinkers' Lab Platform** is an enterprise-grade web application built to di
 
 ---
 
-## 🛡 Role-Based Access Control (RBAC)
+## Role-Based Access Control (RBAC)
 
 The platform decouples **Identity** (`userType`) from **Permissions** (`role`):
 
@@ -60,7 +60,7 @@ The platform decouples **Identity** (`userType`) from **Permissions** (`role`):
 
 ---
 
-## 💻 Tech Stack
+## Tech Stack
 
 ### Frontend
 - **Framework**: [React 19](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/)
@@ -80,7 +80,7 @@ The platform decouples **Identity** (`userType`) from **Permissions** (`role`):
 
 ---
 
-## 📂 Repository Layout
+## Repository Layout
 
 ```
 tinkers-lab-platform/
@@ -94,11 +94,11 @@ tinkers-lab-platform/
 │   ├── services/firebase/     # Firestore service layer (auth, projects, bookings, …)
 │   ├── styles/                # Global CSS / Tailwind layer
 │   └── types/                 # Domain model types (single source of truth)
-├── functions/                 # ☁️ Cloud Functions (server-side enforcement)
+├── functions/                 #  Cloud Functions (server-side enforcement)
 │   └── src/                   # createProject, createBooking, submitFeedback,
 │                              #   sweepOverdueCheckouts, notifyOnProject/BookingUpdate
-├── tests/                     # 🔐 Emulator-based security-rule tests (requires Java)
-├── docs/                      # 📚 All documentation (start here → docs/README.md)
+├── tests/                     #  Emulator-based security-rule tests (requires Java)
+├── docs/                      #  All documentation (start here → docs/README.md)
 │   ├── architecture/          # overview.md, data-architecture.md
 │   ├── firebase/              # FIRESTORE.md, AUTH.md, STORAGE.md, DEPLOYMENT.md, ENVIRONMENT.md
 │   ├── design/                # DESIGN.md, design-system.md
@@ -121,7 +121,7 @@ tinkers-lab-platform/
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 - **Node.js** v18+, **npm** v9+
@@ -139,7 +139,7 @@ npm install
 cp .env.example .env.local
 # fill in your Firebase web-app values (Firebase Console → Project Settings → Your apps)
 ```
-Full variable reference: [`docs/firebase/ENVIRONMENT.md`](docs/firebase/ENVIRONMENT.md). ⚠️ Never commit `.env.local`.
+Full variable reference: [`docs/firebase/ENVIRONMENT.md`](docs/firebase/ENVIRONMENT.md).  Never commit `.env.local`.
 
 ### 3. Run locally
 ```bash
@@ -152,19 +152,19 @@ npm run emulators
 VITE_USE_EMULATORS=true npm run dev
 ```
 
-> ⚠️ Project & booking creation, feedback, and overdue sweeping are **server-enforced by Cloud Functions** — run the emulator suite locally, or deploy functions (`npm run deploy:functions`) before exercising those flows.
+>  Project & booking creation, feedback, and overdue sweeping are **server-enforced by Cloud Functions** — run the emulator suite locally, or deploy functions (`npm run deploy:functions`) before exercising those flows.
 
 ### 5. Verify / build
 ```bash
 npm run lint
 npm run build
-npm test            # unit tests
-npm run test:rules  # security-rule tests (requires Java — CI runs these)
+npm test            # unit + component tests (95)
+npm run test:rules  # rules + Cloud Function emulator tests (375; requires Java — CI runs these)
 ```
 
 ---
 
-## 📚 Documentation
+## Documentation
 
 All documentation lives in [`docs/`](docs/) — see the **[Documentation Index](docs/README.md)** for the full map.
 
@@ -180,12 +180,12 @@ All documentation lives in [`docs/`](docs/) — see the **[Documentation Index](
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! Please read [`CONTRIBUTING.md`](CONTRIBUTING.md) for code standards, branching, and the pull-request process. Run `npm run lint` and `npm run build` before opening a PR.
 
 ---
 
-## 📄 License
+## License
 
 Proprietary software developed for the Innovation & Tinkering Lab, Ahmedabad University. All rights reserved.

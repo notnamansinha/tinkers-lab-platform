@@ -35,7 +35,11 @@ export default function DashboardPage() {
         where('date', '==', today),
       )
       const snap = await getDocs(q)
-      return snap.docs.map(d => ({ id: d.id, ...d.data() }) as Booking)
+      return snap.docs
+        .map(d => ({ id: d.id, ...d.data() }) as Booking)
+        // Count only sessions that will actually happen — cancelled and
+        // rejected bookings are not "confirmed machine time".
+        .filter(b => b.status !== 'cancelled' && b.status !== 'rejected')
     },
     enabled: Boolean(user),
   })

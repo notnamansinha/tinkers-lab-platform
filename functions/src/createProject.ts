@@ -32,6 +32,9 @@ const EXPECTED_NEEDS = [
 // else (tracking pixels, phishing links, mixed http) is rejected server-side.
 const STORAGE_URL_PATTERN = /^https:\/\/firebasestorage\.googleapis\.com\//
 const MAX_FILE_URLS = 12
+// Server-side anti-abuse rate limit (mirrors the prompt's hardening goal):
+// at most 5 project registrations per user per rolling hour.
+const MAX_PROJECTS_PER_HOUR = 5
 
 function isAllowedFileUrl(value: unknown): value is string {
   return typeof value === 'string'
@@ -118,11 +121,26 @@ export const createProject = onCall(
       }
     }
 
-    // ── 3. Atomic write: counter + project + timeline + roster ─────
+    // ── 3. Rate limit — at most 5 projects per user per rolling hour ────
+    // Evaluated INSIDE the counter transaction: the shared counters/projects
+    // doc serializes concurrent creations, and a retrying transaction
+    // re-counts against the committed state instead of a stale outer count.
+    const hourAgo = new Date(Date.now() - 60 * 60 * 1000)
+    const recentProjectsQuery = () => db
+      .collection('projects')
+      .where('userId', '==', uid)
+      .where('createdAt', '>=', hourAgo)
+
+    // ── 4. Atomic write: counter + project + timeline + roster ─────
     const counterRef = db.collection('counters').doc('projects')
     const projectRef = db.collection('projects').doc()
 
     await db.runTransaction(async (tx) => {
+      const recentCount = await tx.get(recentProjectsQuery().count())
+      if (recentCount.data().count >= MAX_PROJECTS_PER_HOUR) {
+        throw new HttpsError('resource-exhausted', `You can register at most ${MAX_PROJECTS_PER_HOUR} projects per hour. Please try again later.`)
+      }
+
       const counterSnap = await tx.get(counterRef)
       const counterData = counterSnap.exists ? counterSnap.data() : undefined
       const nextId = counterData && typeof counterData.nextId === 'number' ? counterData.nextId : 1

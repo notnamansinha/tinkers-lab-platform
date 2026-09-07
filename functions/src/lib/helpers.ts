@@ -17,6 +17,18 @@ export function todayInIndia(): string {
 }
 
 /**
+ * Current wall-clock time (HH:MM, 24h) in Asia/Kolkata. Used together with
+ * todayInIndia() to reject booking slots that have already passed today.
+ */
+export function nowTimeInIndia(): string {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: false,
+  }).formatToParts(new Date())
+  const get = (type: string) => parts.find((part) => part.type === type)?.value ?? ''
+  return `${get('hour')}:${get('minute')}`
+}
+
+/**
  * Create an in-app notification for a user (admin SDK — bypasses rules,
  * but the Firestore rules still restrict client-created notifications).
  */

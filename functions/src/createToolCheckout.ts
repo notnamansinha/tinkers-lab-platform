@@ -86,24 +86,7 @@ export const createToolCheckout = onCall(
       throw new HttpsError('invalid-argument', 'Invalid checkout condition.')
     }
 
-    // ── Cap concurrent open checkouts (anti-hoarding) ───────────────
-    // A user cannot accumulate an unbounded pile of unreturned tools.
-    const openSnap = await db
-      .collectionGroup('checkouts')
-      .where('userId', '==', request.auth.uid)
-      .where('action', '==', 'checking_out')
-      .get()
-    let openCount = 0
-    for (const doc of openSnap.docs) {
-      if (doc.data().returnedAt == null) openCount += 1
-    }
-    if (openCount >= MAX_OPEN_CHECKOUTS) {
-      throw new HttpsError(
-        'resource-exhausted',
-        `You already have ${openCount} open tool checkouts. Return some tools before checking out more.`,
-      )
-    }
-
+    // ── Validate the target project (owner + active) before the write ──
     const projectRef = db.collection('projects').doc(input.projectId)
     const projectSnap = await projectRef.get()
     if (!projectSnap.exists || projectSnap.data()?.userId !== request.auth.uid) {
@@ -114,9 +97,39 @@ export const createToolCheckout = onCall(
       throw new HttpsError('failed-precondition', 'Project must be active to check out tools.')
     }
 
+    // ── Cap concurrent open checkouts (anti-hoarding) ───────────────
+    // The count is evaluated INSIDE the transaction and every creation also
+    // increments a shared per-user marker doc (counters/opencheckouts/{uid}),
+    // so concurrent creations serialize: a racing second request either
+    // aborts or, on retry, re-counts against the committed state and is
+    // rejected once the cap is reached.
     const checkoutRef = projectRef.collection('checkouts').doc()
     const logRef = projectRef.collection('activityLog').doc()
     await db.runTransaction(async (tx) => {
+      const openSnap = await tx.get(
+        db
+          .collectionGroup('checkouts')
+          .where('userId', '==', request.auth!.uid)
+          .where('action', '==', 'checking_out'),
+      )
+      let openCount = 0
+      for (const doc of openSnap.docs) {
+        if (doc.data().returnedAt == null) openCount += 1
+      }
+      if (openCount >= MAX_OPEN_CHECKOUTS) {
+        throw new HttpsError(
+          'resource-exhausted',
+          `You already have ${openCount} open tool checkouts. Return some tools before checking out more.`,
+        )
+      }
+      // Shared write point: concurrent creations for the same user conflict
+      // here and are serialized by the transaction engine.
+      tx.set(
+        db.collection('counters').doc(`opencheckouts_${request.auth!.uid}`),
+        { n: FieldValue.increment(1) },
+        { merge: true },
+      )
+
       tx.set(checkoutRef, {
         userId: request.auth!.uid,
         userEmail: user.email ?? '',

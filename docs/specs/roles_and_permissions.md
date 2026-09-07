@@ -33,51 +33,51 @@ The Tinkerers' Lab platform utilizes a strict Role-Based Access Control (RBAC) s
 
 | Feature Module | Permission | `super_admin` | `faculty` | `lab_assistant` | `student` |
 | --- | --- | :---: | :---: | :---: | :---: |
-| **Profile** | Login / Logout | ✓ | ✓ | ✓ | ✓ |
-| | View/Edit Own Profile | ✓ | ✓ | ✓ | ✓ |
-| **Projects** | Create Project | ✓ | ✓ | ✓ | ✓ |
-| | View Own Projects | ✓ | ✓ | ✓ | ✓ |
-| | View All Projects | ✓ | ✓ | ✓ | ✗ |
-| | Edit Own Project | ✓ | ✓ | ✓ | ✓ |
-| | Approve/Reject (status change) | ✓ | ✗ | ✗ | ✗ |
-| | Delete Project | ✓ | ✗ | ✗ | ✗ |
-| **Feedback** | Submit Feedback | ✓ | ✓ | ✓ | ✓ |
-| | Read All Feedback | ✓ | ✓ | ✓ | ✗ |
-| **Users** | View All Users | ✓ | ✗ | ✗ | ✗ |
-| | Create/Edit/Delete Users | ✓ | ✗ | ✗ | ✗ |
-| | Assign Roles | ✓ | ✗ | ✗ | ✗ |
-| **Equipment** | View Equipment | ✓ | ✓ | ✓ | ✓ |
-| | Create/Edit Equipment | ✓ | ✓ | ✓ | ✗ |
-| | Upload/Delete Equipment Images | ✓ | ✓ | ✓ | ✗ |
-| | Update Status | ✓ | ✓ | ✓ | ✗ |
-| | Delete Equipment | ✓ | ✗ | ✗ | ✗ |
-| **Bookings** | Create Booking | ✓ | ✓ | ✓ | ✓ |
-| | View Own Bookings | ✓ | ✓ | ✓ | ✓ |
-| | Cancel Own Booking | ✓ | ✓ | ✓ | ✓ |
-| | View All Bookings | ✓ | ✓ | ✓ | ✗ |
-| | Approve/Reject Bookings | ✓ | ✓ | ✓ | ✗ |
-| | Cancel Any Booking | ✓ | ✗ | ✓ | ✗ |
-| | Check In/Out Equipment | ✓ | ✗ | ✓ | ✗ |
-| **Inventory** | View Inventory | ✓ | ✓ | ✓ | ✓ |
-| | Add/Edit Inventory | ✓ | ✗ | ✓ | ✗ |
-| | Update Stock | ✓ | ✗ | ✓ | ✗ |
-| | Delete Inventory | ✓ | ✗ | ✗ | ✗ |
-| **Maintenance** | View Records | ✓ | ✓ | ✓ | ✓ |
-| | Create/Edit Records | ✓ | ✗ | ✓ | ✗ |
-| | Close Tasks / Take Offline | ✓ | ✗ | ✓ | ✗ |
-| **Workshops** | View Workshops | ✓ | ✓ | ✓ | ✓ |
-| | Register for Workshop | ✓ | ✓ | ✓ | ✓ |
-| | Create/Edit Workshop | ✓ | ✓ | ✓ | ✗ |
-| | Manage Attendance | ✓ | ✓ | ✓ | ✗ |
-| | Delete Workshop | ✓ | ✓ | ✗ | ✗ |
-| **Documents** | View Documentation | ✓ | ✓ | ✓ | ✓ |
-| | Upload Documentation | ✓ | ✓ | ✓ | ✗ |
-| | Delete Documentation | ✓ | ✗ | ✗ | ✗ |
-| **Reports** | View Dashboard | ✓ | ✓ | ✓ | ✓ |
-| | View Analytics | ✓ | △ (Own) | △ (Ops) | ✗ |
-| | Export Reports | ✓ | △ | △ | ✗ |
-| **Admin** | Application Settings | ✓ | ✗ | ✗ | ✗ |
-| | View Audit Logs | ✓ | ✗ | ✗ | ✗ |
+| **Profile** | Login / Logout |  |  |  |  |
+| | View/Edit Own Profile |  |  |  |  |
+| **Projects** | Create Project |  |  |  |  |
+| | View Own Projects |  |  |  |  |
+| | View All Projects |  |  |  |  |
+| | Edit Own Project |  |  |  |  |
+| | Approve/Reject (status change) |  |  |  |  |
+| | Delete Project |  |  |  |  |
+| **Feedback** | Submit Feedback |  |  |  |  |
+| | Read All Feedback |  |  |  |  |
+| **Users** | View All Users |  |  |  |  |
+| | Create/Edit/Delete Users |  |  |  |  |
+| | Assign Roles |  |  |  |  |
+| **Equipment** | View Equipment |  |  |  |  |
+| | Create/Edit Equipment |  |  |  |  |
+| | Upload/Delete Equipment Images |  |  |  |  |
+| | Update Status |  |  |  |  |
+| | Delete Equipment |  |  |  |  |
+| **Bookings** | Create Booking |  |  |  |  |
+| | View Own Bookings |  |  |  |  |
+| | Cancel Own Booking |  |  |  |  |
+| | View All Bookings |  |  |  |  |
+| | Approve/Reject Bookings |  |  |  |  |
+| | Cancel Any Booking |  |  |  |  |
+| | Check In/Out Equipment |  |  |  |  |
+| **Inventory** | View Inventory |  |  |  |  |
+| | Add/Edit Inventory |  |  |  |  |
+| | Update Stock |  |  |  |  |
+| | Delete Inventory |  |  |  |  |
+| **Maintenance** | View Records |  |  |  |  |
+| | Create/Edit Records |  |  |  |  |
+| | Close Tasks / Take Offline |  |  |  |  |
+| **Workshops** | View Workshops |  |  |  |  |
+| | Register for Workshop |  |  |  |  |
+| | Create/Edit Workshop |  |  |  |  |
+| | Manage Attendance |  |  |  |  |
+| | Delete Workshop |  |  |  |  |
+| **Documents** | View Documentation |  |  |  |  |
+| | Upload Documentation |  |  |  |  |
+| | Delete Documentation |  |  |  |  |
+| **Reports** | View Dashboard |  |  |  |  |
+| | View Analytics |  | △ (Own) | △ (Ops) |  |
+| | Export Reports |  | △ | △ |  |
+| **Admin** | Application Settings |  |  |  |  |
+| | View Audit Logs |  |  |  |  |
 
 > [!NOTE]
 > The authoritative source of truth is the security rules (`firestore.rules`, `storage.rules`). This matrix is a human-readable summary and may lag the rules; where they disagree, the rules win. Staff-level access in the rules (`isStaff`) covers `super_admin`, `faculty`, and `lab_assistant`.

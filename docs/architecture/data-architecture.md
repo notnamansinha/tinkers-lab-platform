@@ -4,7 +4,7 @@
 >
 > **Companion docs:** [`overview.md`](overview.md) (system overview) · [`../README.md`](../README.md) (docs index) · [`../../src/types/index.ts`](../../src/types/index.ts) (single source of truth for all TypeScript types)
 >
-> **⚠️ June restructure:** bookings, tool checkouts, and a new activity log now live as **subcollections under each project** (`projects/{projectId}/bookings/…`, `projects/{projectId}/checkouts/…`, `projects/{projectId}/activityLog/…`). Cross-project views use **collection-group queries**. Project codes (`TL-XXX`) are generated from an **atomic counter** document (`counters/projects`). Migration script: `scripts/migrateToSubcollections.ts`.
+> ** June restructure:** bookings, tool checkouts, and a new activity log now live as **subcollections under each project** (`projects/{projectId}/bookings/…`, `projects/{projectId}/checkouts/…`, `projects/{projectId}/activityLog/…`). Cross-project views use **collection-group queries**. Project codes (`TL-XXX`) are generated from an **atomic counter** document (`counters/projects`). Migration script: `scripts/migrateToSubcollections.ts`.
 
 ---
 
@@ -293,7 +293,7 @@ await runTransaction(db, async (tx) => {
 
 - Uses a **transaction on `counters/projects`** → race-free `TL-XXX` generation (fixes the old `getCountFromServer()` race).
 - The counter increment and the project document write happen **atomically together**.
-- ⚠️ **Since the Cloud Functions layer landed, this transaction runs server-side** in the `createProject` callable (`functions/src/createProject.ts`) — direct client writes to `counters` and `projects` are denied by rules so a client cannot tamper with the counter.
+-  **Since the Cloud Functions layer landed, this transaction runs server-side** in the `createProject` callable (`functions/src/createProject.ts`) — direct client writes to `counters` and `projects` are denied by rules so a client cannot tamper with the counter.
 
 ---
 
@@ -468,7 +468,7 @@ Defined in [`firestore.indexes.json`](../../firestore.indexes.json). Composite i
 | `maintenance` | `equipmentId↑, createdAt↓` |
 | `projects` | `status↑, createdAt↓` · `userId↑, status↑, createdAt↓` · `userEmail↑, status↑, createdAt↓` |
 
-Single-field queries (e.g. `where('userId','==',uid)`, `where('status','==',x)`, `where('action','==',...)`, `where('isOverdue','==',true)`) need no explicit index. ⚠️ Deploy these via `firebase deploy --only firestore:indexes` — collection-group indexes are NOT auto-created like single-field ones.
+Single-field queries (e.g. `where('userId','==',uid)`, `where('status','==',x)`, `where('action','==',...)`, `where('isOverdue','==',true)`) need no explicit index.  Deploy these via `firebase deploy --only firestore:indexes` — collection-group indexes are NOT auto-created like single-field ones.
 
 ---
 
